@@ -1,0 +1,55 @@
+#version 130
+precision highp float;
+
+uniform vec3 diffuse;
+uniform vec3 ambient;
+uniform vec3 specular;
+
+uniform float shininess;
+uniform float opacity;
+
+
+uniform sampler2D diffuseTexture;
+uniform int usesTexture;
+
+uniform sampler2D normalTexture;
+uniform int usesNormalTexture;
+
+in vec3 worldPos;
+in vec3 toCamera;
+flat in vec3 normal;
+in vec2 uvs;
+
+out vec4 FragColor;
+
+const vec3 lightPos = vec3(0,10000,1000);
+const vec3 lightColor = vec3(1,1,1);
+const float gamma=2.2;
+
+void main()  {
+    vec3 norm = normalize(normal);
+    vec3 lightDir = normalize(lightPos - worldPos);
+    vec3 diffuseColor = diffuse;
+    if(usesTexture==1){
+            vec4 diffuseTextureColor= texture(diffuseTexture,uvs);
+            diffuseColor = diffuseTextureColor.rgb;
+            if(diffuseTextureColor.a < 0.1){
+                discard;
+            }
+    }
+    if(usesNormalTexture==1){
+        //norm = texture(normalTexture,uvs).rgb;
+    }
+    float brightness = max(dot(norm,lightDir),0.0);
+
+    vec3 unitCamVec = normalize(toCamera);
+    vec3 fromLightVector = - lightDir;
+    vec3 reflectedLight = reflect(fromLightVector, norm);
+    float specularFactor = pow(max(dot(reflectedLight,unitCamVec),0),shininess);
+    vec3 finalSpecular = max(specularFactor * specular * lightColor,vec3(0));
+    vec3 resultingColor =  (ambient*lightColor+brightness*lightColor+finalSpecular)*diffuseColor;
+    vec3 reinhardToneMapping = resultingColor /(resultingColor + vec3(1.0));
+    vec3 gammaCorrected = pow(reinhardToneMapping, vec3(1.0 / gamma));
+	FragColor=vec4(reinhardToneMapping,1);
+	FragColor.a = opacity;
+}
