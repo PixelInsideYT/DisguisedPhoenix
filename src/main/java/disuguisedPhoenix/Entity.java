@@ -58,7 +58,6 @@ public class Entity {
             for (Entity e : possibleCollisions) {
                 Collider eCollider = e.getCollider();
                 if (eCollider != null) {
-                    //   Collider toTest21 = e.collider.cloneAndTransform(e.getTransformationMatrix());
                     Vector3f mtv = SAT.getMTV(own, velocity, eCollider, dt);
                     if (mtv != null) {
                         position.add(mtv);

@@ -6,6 +6,7 @@ import engine.collision.ConvexShape;
 import engine.input.InputManager;
 import engine.input.KeyboardInputMap;
 import engine.input.MouseInputMap;
+import engine.util.Zeitgeist;
 import graphics.camera.Camera;
 import graphics.context.Display;
 import graphics.loader.ModelLoader;
@@ -39,7 +40,7 @@ public class Main {
         List<Entity> staticObjects = new ArrayList<>();
         List<Entity> modelActivation = new ArrayList<>();
 
-        Player player = new Player(ModelLoader.getModel("pfalz/flugzeug.obj","pfalz/collider.obj"), new Vector3f(-40, 0, -40), mim);
+        Player player = new Player(ModelLoader.getModel("pfalz/flugzeug.obj", "pfalz/collider.obj"), new Vector3f(-40, 0, -40), mim);
         Model propellor = ModelLoader.getModel("pfalz/propellor.obj");
         System.err.println("In the scene are: " + NumberFormat.getIntegerInstance().format(ModelLoader.verticies) + " verticies and: " + NumberFormat.getIntegerInstance().format(ModelLoader.faces) + " faces!");
         Shader shader = new Shader(Shader.loadShaderCode("testVS"), Shader.loadShaderCode("testFS")).combine();
@@ -48,9 +49,8 @@ public class Main {
         shader.connectSampler("normalTexture", 1);
         TestRenderer renderer = new TestRenderer(shader);
         Terrain terrain = new Terrain(new Vector3f(0, 0, 0));
-        //  IntStream.range(0, 5).forEach(i -> staticObjects.addAll(generateNextEntities(terrain))/*  modelActivation.add(generateActivationSwitch(terrain))*/);
-        staticObjects.addAll(IntStream.range(0, 10).mapToObj(i -> generateEntiy(terrain, "lowPolyTree/tree2.obj", 0, 6f, 0, 30)).collect(Collectors.toList()));
-
+        IntStream.range(0, 6).forEach(i -> modelActivation.add(generateActivationSwitch(terrain)));
+     //  IntStream.range(0,6).forEach(i->staticObjects.addAll(generateNextEntities(terrain)));
         Matrix4f terrainTransformation = new Matrix4f();
         terrainTransformation.translate(0, 0, 0);
         Matrix4f projMatrix = new Matrix4f();
@@ -74,90 +74,95 @@ public class Main {
         //  input.addInputMapping(freeFlightCam);
         System.err.println("STARTUP TIME: " + (System.currentTimeMillis() - startUpTime) / 1000f);
         //  display.activateWireframe();
-        int minFps = Integer.MAX_VALUE;
-        int maxFPS = Integer.MIN_VALUE;
-        float avgFps = 0;
-        float count = 0;
+        Zeitgeist zeitgeist = new Zeitgeist();
+        boolean wireframe = false;
+        boolean collisionBoxes = false;
+        long lastSwitchWireframe = System.currentTimeMillis();
+        long lastSwitchCollision = System.currentTimeMillis();
+
         while (!display.shouldClose()) {
-            long time = System.currentTimeMillis();
+            float dt = zeitgeist.getDelta();
             display.pollEvents();
+            if(input.isKeyDown(GLFW.GLFW_KEY_O)&&System.currentTimeMillis()-lastSwitchWireframe>100){
+                wireframe=!wireframe;
+                lastSwitchWireframe = System.currentTimeMillis();
+            } if(input.isKeyDown(GLFW.GLFW_KEY_L)&&System.currentTimeMillis()-lastSwitchCollision>100){
+                collisionBoxes=!collisionBoxes;
+                lastSwitchCollision = System.currentTimeMillis();
+            }
+            if(wireframe){
+                display.activateWireframe();
+            }
             display.clear();
+            player.move(terrain, dt, staticObjects);
             Camera ffc = player.cam;
-            ffc.update(1f / 60f);
+            ffc.update(dt);
             input.updateInputMaps();
-            player.move(terrain, 1f / 60f, staticObjects);
             renderer.begin(ffc.getViewMatrix(), projMatrix);
-           /* List<Entity> toRemove = new ArrayList<>();
+            List<Entity> toRemove = new ArrayList<>();
             modelActivation.forEach(entity -> {
-                entity.update(1f / 60f);
+                entity.update(dt, modelActivation);
                 if (player.position.distance(entity.position) < 60) {
                     toRemove.add(entity);
                     staticObjects.addAll(generateNextEntities(terrain));
                 }
                 renderer.render(entity.getModel(), entity.getTransformationMatrix());
             });
-            modelActivation.removeAll(toRemove);*/
+            modelActivation.removeAll(toRemove);
             staticObjects.forEach(entity -> renderer.render(entity.getModel(), entity.getTransformationMatrix()));
             renderer.render(player.getModel(), player.getTransformationMatrix());
             renderer.render(propellor, player.getPropellorMatrix());
             renderer.render(terrain.model, terrainTransformation);
-            display.activateWireframe();
+            if(collisionBoxes) {
+                display.activateWireframe();
 
-            staticObjects.forEach(entity -> {
-                Collider collider = entity.getCollider();
-                if (collider != null) {
-                    collider.allTheShapes.stream().forEach(i -> {
-                        if (i instanceof ConvexShape) {
-                            ConvexShape cs = (ConvexShape) i;
-                            if (cs.canBeRenderd()) {
-                                Vao toRender = cs.getModel();
-                                toRender.bind();
-                                shader.loadMatrix("transformationMatrix", cs.getTransformation());
-                                GL11.glDrawElements(GL11.GL_TRIANGLES, toRender.getIndiciesLength(), GL11.GL_UNSIGNED_INT, 0);
-                                toRender.unbind();
+                staticObjects.forEach(entity -> {
+                    Collider collider = entity.getCollider();
+                    if (collider != null) {
+                        collider.allTheShapes.stream().forEach(i -> {
+                            if (i instanceof ConvexShape) {
+                                ConvexShape cs = (ConvexShape) i;
+                                if (cs.canBeRenderd()) {
+                                    Vao toRender = cs.getModel();
+                                    toRender.bind();
+                                    shader.loadMatrix("transformationMatrix", cs.getTransformation());
+                                    GL11.glDrawElements(GL11.GL_TRIANGLES, toRender.getIndiciesLength(), GL11.GL_UNSIGNED_INT, 0);
+                                    toRender.unbind();
+                                }
                             }
-                        }
-                    });
-                    Vao toRender = collider.boundingBoxModel;
-                    toRender.bind();
-                    shader.loadMatrix("transformationMatrix", entity.getTransformationMatrix());
-                    GL11.glDrawElements(GL11.GL_TRIANGLES, toRender.getIndiciesLength(), GL11.GL_UNSIGNED_INT, 0);
-                    toRender.unbind();
-                }
-            });
-            Collider playerCollider = player.getCollider();
-           playerCollider.allTheShapes.stream().forEach(i -> {
-                if (i instanceof ConvexShape) {
-                    ConvexShape cs = (ConvexShape) i;
-                    if (cs.canBeRenderd()) {
-                        Vao toRender = cs.getModel();
+                        });
+                        Vao toRender = collider.boundingBoxModel;
                         toRender.bind();
-                        shader.loadMatrix("transformationMatrix", cs.getTransformation());
+                        shader.loadMatrix("transformationMatrix", entity.getTransformationMatrix());
                         GL11.glDrawElements(GL11.GL_TRIANGLES, toRender.getIndiciesLength(), GL11.GL_UNSIGNED_INT, 0);
                         toRender.unbind();
                     }
-                }
-            });
-            Vao toRender = playerCollider.boundingBoxModel;
-            toRender.bind();
-            shader.loadMatrix("transformationMatrix", player.getTransformationMatrix());
-            GL11.glDrawElements(GL11.GL_TRIANGLES, toRender.getIndiciesLength(), GL11.GL_UNSIGNED_INT, 0);
-            toRender.unbind();
-            display.deactivateWireframe();
+                });
+                Collider playerCollider = player.getCollider();
+                playerCollider.allTheShapes.stream().forEach(i -> {
+                    if (i instanceof ConvexShape) {
+                        ConvexShape cs = (ConvexShape) i;
+                        if (cs.canBeRenderd()) {
+                            Vao toRender = cs.getModel();
+                            toRender.bind();
+                            shader.loadMatrix("transformationMatrix", cs.getTransformation());
+                            GL11.glDrawElements(GL11.GL_TRIANGLES, toRender.getIndiciesLength(), GL11.GL_UNSIGNED_INT, 0);
+                            toRender.unbind();
+                        }
+                    }
+                });
+                Vao toRender = playerCollider.boundingBoxModel;
+                toRender.bind();
+                shader.loadMatrix("transformationMatrix", player.getTransformationMatrix());
+                GL11.glDrawElements(GL11.GL_TRIANGLES, toRender.getIndiciesLength(), GL11.GL_UNSIGNED_INT, 0);
+                toRender.unbind();
+                display.deactivateWireframe();
+            }
             renderer.end();
             display.flipBuffers();
-            float fps = 1f / ((System.currentTimeMillis() - time) / 1000f);
-            minFps = Math.min(minFps, (int) fps);
-            maxFPS = Math.max(maxFPS, (int) fps);
-            avgFps += fps;
-            count++;
-            display.setFrameTitle("Disguised Phoenix: " + (int) fps);
-            try {
-                Thread.sleep(20);
-            } catch (InterruptedException e) {
-            }
+            zeitgeist.sleep();
+            display.setFrameTitle("Disguised Phoenix: "+zeitgeist.getFPS()+" FPS");
         }
-        System.out.println("min: " + minFps + " max: " + maxFPS + " avg: " + avgFps / count);
         TextureLoader.cleanUpAllTextures();
         Vao.cleanUpAllVaos();
         Shader.cleanUpAllShaders();
@@ -168,31 +173,40 @@ public class Main {
         switch (activated) {
             case 0:
                 activated++;
-                return IntStream.range(0, 10000).mapToObj(i -> generateEntiy(terrain, "plants/grass.obj", 0, 6f, 0, 10)).collect(Collectors.toList());
+                return IntStream.range(0, 50).mapToObj(i -> generateEntiy(terrain, "lowPolyTree/bendyTree.obj","lowPolyTree/bendyTreeCollider.obj", 0f, 6f, 0f, 100)).collect(Collectors.toList());
+
             case 1:
                 activated++;
-                return IntStream.range(0, 50).mapToObj(i -> generateEntiy(terrain, "lowPolyTree/testTree.obj", 0, 6f, 0, 40)).collect(Collectors.toList());
+                return IntStream.range(0, 50).mapToObj(i -> generateEntiy(terrain, "lowPolyTree/testTree.obj","lowPolyTree/testTreeCollider.obj", 0, 6f, 0, 40)).collect(Collectors.toList());
             case 2:
                 activated++;
-                return IntStream.range(0, 250).mapToObj(i -> generateEntiy(terrain, "plants/flowerTest1.obj", 0, 6f, 0, 20)).collect(Collectors.toList());
+                return IntStream.range(0, 250).mapToObj(i -> generateEntiy(terrain, "plants/flowerTest1.obj","plants/flowerTest1Collider.obj", 0, 6f, 0, 20)).collect(Collectors.toList());
             case 3:
                 activated++;
-                return IntStream.range(0, 50).mapToObj(i -> generateEntiy(terrain, "lowPolyTree/tree2.obj", 0, 6f, 0, 30)).collect(Collectors.toList());
+                return IntStream.range(0, 50).mapToObj(i -> generateEntiy(terrain, "lowPolyTree/tree2.obj","lowPolyTree/tree2Collider.obj", 0, 6f, 0, 30)).collect(Collectors.toList());
             case 4:
                 activated++;
-                return IntStream.range(0, 500).mapToObj(i -> generateEntiy(terrain, "misc/rock.obj", 6f, 6f, 6f, 10)).collect(Collectors.toList());
+                return IntStream.range(0, 500).mapToObj(i -> generateEntiy(terrain, "misc/rock.obj","misc/rock.obj", 6f, 6f, 6f, 10)).collect(Collectors.toList());
+            case 5:
+                activated++;
+                return IntStream.range(0, 10000).mapToObj(i -> generateEntiy(terrain, "plants/grass.obj",null, 0, 6f, 0, 10)).collect(Collectors.toList());
 
         }
         return null;
     }
 
-    private static Entity generateEntiy(Terrain terrain, String modelName, float rotRandomX, float rotRandomY, float rotRandomZ, float scale) {
+    private static Entity generateEntiy(Terrain terrain, String modelName, String collider, float rotRandomX, float rotRandomY, float rotRandomZ, float scale) {
         Random rnd = new Random();
         float x = rnd.nextFloat() * Terrain.SIZE;
         float z = rnd.nextFloat() * Terrain.SIZE;
         float h = terrain.getHeightOfTerrain(x, z);
         float scaleDiffrence = (rnd.nextFloat() * 2f - 1) * 0.5f + 1.0f;
-        Entity e = new Entity(ModelLoader.getModel(modelName,"lowPolyTree/tree2Collider.obj"), new Vector3f(x, h, z), rnd.nextFloat() * rotRandomX, rnd.nextFloat() * rotRandomY, rnd.nextFloat() * rotRandomZ, scale * scaleDiffrence);
+        Entity e = null;
+        if (collider != null) {
+            e = new Entity(ModelLoader.getModel(modelName, collider), new Vector3f(x, h, z), rnd.nextFloat() * rotRandomX, rnd.nextFloat() * rotRandomY, rnd.nextFloat() * rotRandomZ, scale * scaleDiffrence);
+        } else {
+            e = new Entity(ModelLoader.getModel(modelName), new Vector3f(x, h, z), rnd.nextFloat() * rotRandomX, rnd.nextFloat() * rotRandomY, rnd.nextFloat() * rotRandomZ, scale * scaleDiffrence);
+        }
         return e;
     }
 

@@ -27,7 +27,7 @@ public class Player extends Entity {
     private Vector3i currentTurnDirection;
 
     private float propRotation;
-    Quaternionf propellorWorldRotation=new Quaternionf();
+    Quaternionf propellorWorldRotation = new Quaternionf();
 
     private float currentFlySpeed = 300;
 
@@ -35,7 +35,7 @@ public class Player extends Entity {
     public ThirdPersonCamera cam;
     private Vector3f lookAtPosition = new Vector3f();
 
-    private float accelerate=0;
+    private float accelerate = 0;
 
     public Player(Model model, Vector3f position, MouseInputMap mim) {
         super(model, position, 0, 0, 0, 0.1f);
@@ -48,36 +48,40 @@ public class Player extends Entity {
 
     public void move(Terrain terrain, float dt, List<Entity> possibleCollisions) {
         checkInputs();
-        int correctionDirectionY = Math.abs(currentTurnSpeed.y) < 0.05f ? 0 : currentTurnSpeed.y > 0 ? -1 : 1;
+        if(Math.abs(currentTurnSpeed.y) <= TURN_SPEED_ACCEL * dt&&currentTurnDirection.y==0)currentTurnSpeed.y=0;
+        if(Math.abs(currentTurnSpeed.x) <= TURN_SPEED_ACCEL * dt&&currentTurnDirection.x==0)currentTurnSpeed.x=0;
+        int correctionDirectionY = Math.abs(currentTurnSpeed.y) <= TURN_SPEED_ACCEL * dt ? 0 : currentTurnSpeed.y > 0 ? -1 : 1;
         int wantedTurnDirectionY = currentTurnDirection.y != 0 ? currentTurnDirection.y : correctionDirectionY;
         currentTurnSpeed.y += wantedTurnDirectionY * TURN_SPEED_ACCEL * dt;
         currentTurnSpeed.y = Maths.clamp(currentTurnSpeed.y, -MAX_TURN_SPEED, MAX_TURN_SPEED);
-        int correctionDirectionX = Math.abs(currentTurnSpeed.x) < 0.001f ? 0 : currentTurnSpeed.x > 0 ? -1 : 1;
+        int correctionDirectionX = Math.abs(currentTurnSpeed.x) <= TILT_SPEED_ACCEL * dt ? 0 : currentTurnSpeed.x > 0 ? -1 : 1;
         int wantedTurnDirectionX = currentTurnDirection.x != 0 ? currentTurnDirection.x : correctionDirectionX;
         currentTurnSpeed.x += wantedTurnDirectionX * TILT_SPEED_ACCEL * dt;
         currentTurnSpeed.x = Maths.clamp(currentTurnSpeed.x, -MAX_TURN_SPEED, MAX_TURN_SPEED);
         rotY += currentTurnSpeed.y * dt;
         rotX += currentTurnSpeed.x * dt;
-        propRotation+=36f*dt+accelerate*20f*dt;
-        rotX = Maths.clamp(rotX, -(float) Math.PI / 3f, (float) Math.PI / 2f-0.0001f);
+        propRotation += 36f * dt + accelerate * 20f * dt;
+        rotX = Maths.clamp(rotX, -(float) Math.PI / 3f, (float) Math.PI / 2f - 0.0001f);
         rotation.identity();
         rotation.rotateYXZ(rotY, rotX, rotZ);
         propellorWorldRotation.identity();
         propellorWorldRotation.rotateYXZ(rotY, rotX, propRotation);
         Vector3f forward = rotation.transform(new Vector3f(0, 0, 1));
         currentFlySpeed += forward.y * dt * GRAVITY;
-        currentFlySpeed += accelerate*dt*250;
-        float speedDecay=0.99f;
-        currentFlySpeed = currentFlySpeed*speedDecay+MAX_FLYSPEED*(1f-speedDecay);
+        currentFlySpeed += accelerate * dt * 250;
+        float speedDecay = 0.99f;
+        currentFlySpeed = currentFlySpeed * speedDecay + MAX_FLYSPEED * (1f - speedDecay);
         currentFlySpeed = Math.max(currentFlySpeed, 400);
         velocity.set(new Vector3f(forward).mul(currentFlySpeed));
-        super.update(dt,possibleCollisions);
+        super.update(dt, possibleCollisions);
+        this.position.y = Math.max(position.y, terrain.getHeightOfTerrain(position.x, position.z));
         rotZ = Maths.map(-currentTurnSpeed.y, -MAX_TURN_SPEED, MAX_TURN_SPEED, -(float) Math.PI / 4f, (float) Math.PI / 4f);
-        lookAtPosition.set(new Vector3f(position)/*.normalize().mul(30).add(position)*/);
+        lookAtPosition.set(new Vector3f(forward).normalize().mul(30).add(position));
         cam.position.set(new Vector3f(position).add(forward.mul(-5f)));
+        cam.position.y = Math.max(cam.position.y, terrain.getHeightOfTerrain(cam.position.x, cam.position.z));
     }
 
-    public Matrix4f getPropellorMatrix(){
+    public Matrix4f getPropellorMatrix() {
         modelMatrix.identity();
         modelMatrix.translate(position);
         modelMatrix.rotate(propellorWorldRotation);
@@ -101,7 +105,7 @@ public class Player extends Entity {
         } else {
             this.currentTurnDirection.y = 0;
         }
-        accelerate=movement.getValueForAction("accel");
+        accelerate = movement.getValueForAction("accel");
     }
 
     @Override

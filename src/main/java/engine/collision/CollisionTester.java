@@ -11,8 +11,8 @@ import java.awt.event.KeyListener;
 
 public class CollisionTester {
 
-    private static int moveDirY = -1;
-    private static int moveDirX = -1;
+    private static int moveDirY = 0;
+    private static int moveDirX = 0;
 
     private static float moveSpeed = 360;
     private static float size = 150;
@@ -33,8 +33,8 @@ public class CollisionTester {
         Box smol2 = new Box();
         smol2.transform(new Matrix4f().scale(size/2f));
         smol2.transform(new Matrix4f().translate(size/2f+10,size/2f+10,0));
-        movin.allTheShapes.add(smol2);
-        movin.transform(new Matrix4f().rotateZ(0.3f));
+       // movin.allTheShapes.add(smol2);
+     //   movin.transform(new Matrix4f().rotateZ(0.3f));
         movin.transform(new Matrix4f().translate(605f,  708f,0));
 
         Collider staticShape = new Collider();
