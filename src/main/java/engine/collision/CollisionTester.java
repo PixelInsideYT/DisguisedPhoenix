@@ -14,9 +14,10 @@ public class CollisionTester {
     private static int moveDirY = 0;
     private static int moveDirX = 0;
 
-    private static float moveSpeed = 360;
+    private static float moveSpeed = 360 ;
     private static float size = 150;
-
+    private static  boolean seperate =false;
+    private static int sleep = 16;
     public static void main(String args[]) {
         JFrame frame = new JFrame("Test Collisions!");
         frame.setSize(1920, 1080);
@@ -33,9 +34,9 @@ public class CollisionTester {
         Box smol2 = new Box();
         smol2.transform(new Matrix4f().scale(size/2f));
         smol2.transform(new Matrix4f().translate(size/2f+10,size/2f+10,0));
-       // movin.allTheShapes.add(smol2);
-     //   movin.transform(new Matrix4f().rotateZ(0.3f));
-        movin.transform(new Matrix4f().translate(605f,  708f,0));
+        movin.allTheShapes.add(smol2);
+        movin.transform(new Matrix4f().rotateZ(0.3f));
+        movin.transform(new Matrix4f().translate(760f,  700,0));
 
         Collider staticShape = new Collider();
         staticShape.boundingBox = new Box();
@@ -53,8 +54,10 @@ public class CollisionTester {
                 velocity.normalize().mul(moveSpeed);
             Vector3f mtv = SAT.getMTV(movin,velocity, staticShape,dt);
             movin.transform(new Matrix4f().translate(velocity.x * dt, velocity.y * dt, 0));
+            System.out.println(mtv);
             if (mtv != null) {
                 movin.transform(new Matrix4f().translate(mtv));
+                seperate=false;
             }
             Graphics g = frame.getGraphics();
             g.clearRect(0, 0, 1920, 1080);
@@ -66,7 +69,7 @@ public class CollisionTester {
             g.dispose();
             Toolkit.getDefaultToolkit().sync();
             try {
-                Thread.sleep(16);
+                Thread.sleep(sleep);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -136,6 +139,13 @@ public class CollisionTester {
             }
             if (kc == KeyEvent.VK_RIGHT) {
                 moveDirX = 1;
+            }
+            if(kc==KeyEvent.VK_S){
+                seperate=true;
+            } if(kc==KeyEvent.VK_PLUS){
+                sleep=16;
+            } if(kc==KeyEvent.VK_MINUS){
+                sleep=200;
             }
         }
 

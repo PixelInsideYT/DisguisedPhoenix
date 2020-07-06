@@ -17,8 +17,8 @@ public class FreeFlightCamera extends Camera {
     private float xzSpeed;
 
 
-    private float normalSpeed = 40;
-    private float fastSpeed = 240;
+    private float normalSpeed = 400;
+    private float fastSpeed = 1000;
 
     private float angle = 0f;
 

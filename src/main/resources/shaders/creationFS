@@ -1,0 +1,15 @@
+#version 130
+precision highp float;
+
+uniform sampler2D textureMap;
+
+in vec3 worldPos;
+flat in vec3 normal;
+in vec2 uvs;
+
+out vec4 FragColor;
+
+void main()  {
+    FragColor = texture(textureMap,uvs);
+    if(FragColor.a < 0.1) discard;
+}

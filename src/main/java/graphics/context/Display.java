@@ -62,7 +62,7 @@ public class Display {
         // Make the OpenGL context current
         glfwMakeContextCurrent(window);
         // Enable v-sync
-        glfwSwapInterval(0);
+        glfwSwapInterval(1);
         GL.createCapabilities();
         // Make the window visible
         glfwSetWindowSizeCallback(window, new GLFWWindowSizeCallback() {

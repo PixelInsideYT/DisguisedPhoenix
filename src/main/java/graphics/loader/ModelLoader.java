@@ -27,7 +27,7 @@ public class ModelLoader {
 
     private static Map<String, Model> alreadyLoadedModels = new HashMap<>();
 
-    private static final int loadFlags = Assimp.aiProcess_Triangulate | Assimp.aiProcess_JoinIdenticalVertices
+    private static final int loadFlags = Assimp.aiProcess_Triangulate | Assimp.aiProcess_JoinIdenticalVertices | aiProcess_GenNormals
             | Assimp.aiProcess_ValidateDataStructure | Assimp.aiProcess_ImproveCacheLocality | Assimp.aiProcess_RemoveRedundantMaterials
             | Assimp.aiProcess_FindInvalidData | Assimp.aiProcess_FindInstances | Assimp.aiProcess_OptimizeMeshes | Assimp.aiProcess_OptimizeGraph;
 
@@ -52,7 +52,6 @@ public class ModelLoader {
             min.min(cs.getMin());
             c.addCollisionShape(cs);
         }
-        System.out.println(min + " " + max + " " + verticies);
         c.setBoundingBox(new Box(min, max));
         return c;
     }
@@ -98,7 +97,6 @@ public class ModelLoader {
             Vao meshVao = processMesh(mesh);
             meshes.add(new Mesh(meshVao, getGlobalMaterialPointer(base, mesh.mMaterialIndex(), materialPointer)));
         }
-        System.out.println("loaded " + name + ": " + numMeshes + " with " + vertexCount + " verticies! materials: " + materials.size());
         verticies += vertexCount;
         Assimp.aiReleaseImport(scene);
         return new Model(meshes.stream().toArray(Mesh[]::new));
@@ -173,7 +171,6 @@ public class ModelLoader {
             case aiTextureMapMode_Decal:
                 return GL15.GL_CLAMP_TO_BORDER;
         }
-        System.err.println(assimpWrap + " is not a assimp wrap mode");
         return -1;
     }
 
@@ -189,17 +186,16 @@ public class ModelLoader {
         int count = mesh.mNumVertices();
         vao.addDataAttributes(0, 3, verticies.address(), verticies.remaining() * AIVector3D.SIZEOF);
         vao.addDataAttributes(1, 2, getTextureCoords(count, mesh.mTextureCoords(0)));
-        if (normals != null)
-            vao.addDataAttributes(2, 3, normals.address(), normals.remaining() * AIVector3D.SIZEOF);
-        else
-            System.out.println(mesh.mNormals() + " but normals are null " + mesh.mName().dataString());
+        if (normals != null) {
+           vao.addDataAttributes(2, 3, normals.address(), normals.remaining() * AIVector3D.SIZEOF);
+        }else{
+            System.err.println(mesh.mNormals() + " but normals are null " + mesh.mName().dataString());}
         int faceCount = mesh.mNumFaces();
         faces += faceCount;
         int[] indicies = new int[faceCount * 3];
         for (int i = 0; i < faceCount; i++) {
             AIFace face = mesh.mFaces().get(i);
             if (face.mNumIndices() != 3) {
-                System.out.println("Your triangulation doesnt work " + face.mNumIndices());
             } else {
                 IntBuffer faceIndiecies = face.mIndices();
                 faceIndiecies.get(indicies, i * 3, 3);
@@ -238,7 +234,6 @@ public class ModelLoader {
                 axeItr.remove();
             }
         }
-        System.out.println(axes.size() + " " + cornerPoints.size());
         ConvexShape cs = null;
         if (useVao) {
             Vao meshVao = processMesh(mesh);
@@ -274,7 +269,6 @@ public class ModelLoader {
         store.clear();
         boolean rt = Assimp.aiGetMaterialFloatArray(mat, key, Assimp.aiTextureType_NONE, 0, store,
                 inOut) == Assimp.aiReturn_SUCCESS && inOut.get(0) == 1;
-        System.out.println("Key: " + key + " " + store.get(0) + " " + inOut.get(0));
         return rt;
     }
 

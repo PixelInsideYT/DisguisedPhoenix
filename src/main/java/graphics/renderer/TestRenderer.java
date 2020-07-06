@@ -50,12 +50,12 @@ public class TestRenderer {
             boolean usesDiffuseTexture = mat.diffuseTextureId > 0;
             if (usesDiffuseTexture) {
                 GL13.glActiveTexture(GL13.GL_TEXTURE0);
-                GL11.glBindTexture(GL11.GL_TEXTURE_2D, mat.diffuseTextureId);
+              //  GL11.glBindTexture(GL11.GL_TEXTURE_2D, mat.diffuseTextureId);
             }
             shader.loadInt("usesTexture", usesDiffuseTexture ? 1 : 0);
             boolean usesNormalTexture = mat.normalsTextureTd > 0;
             if (usesNormalTexture) {
-                GL13.glActiveTexture(GL13.GL_TEXTURE0);
+                GL13.glActiveTexture(GL13.GL_TEXTURE1);
                 GL11.glBindTexture(GL11.GL_TEXTURE_2D, mat.normalsTextureTd);
             }
             shader.loadInt("usesNormalTexture", usesDiffuseTexture ? 1 : 0);
