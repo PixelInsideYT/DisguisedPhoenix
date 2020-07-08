@@ -96,7 +96,7 @@ public class Shader {
         return this;
     }
 
-    protected void bindAttribute(int attribute, String variableName) {
+    public void bindAttribute(int attribute, String variableName) {
         GL20.glBindAttribLocation(shaderProgram, attribute, variableName);
     }
 

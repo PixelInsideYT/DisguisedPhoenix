@@ -41,7 +41,7 @@ public class Zeitgeist {
     }
 
     public int getDelay() {
-        return (int) Math.max((1f / FPS_CAP - delta) * 1000, 0);
+        return (int) Math.max((1f / FPS_CAP - delta) * 1000, 1);
     }
 
     public int getFPS(){

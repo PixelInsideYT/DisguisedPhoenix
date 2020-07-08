@@ -37,6 +37,10 @@ public class Display {
         glfwDefaultWindowHints(); // optional, the current window hints are already the default
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE); // the window will stay hidden after creation
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE); // the window will be resizable
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
         glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
         glfwWindowHint(GLFW_SAMPLES, 4);
         // Create the window
@@ -62,14 +66,13 @@ public class Display {
         // Make the OpenGL context current
         glfwMakeContextCurrent(window);
         // Enable v-sync
-        glfwSwapInterval(1);
+         glfwSwapInterval(1);
         GL.createCapabilities();
         // Make the window visible
         glfwSetWindowSizeCallback(window, new GLFWWindowSizeCallback() {
             public void invoke(long window, int w, int h) {
                 if (w > 0 && h > 0) {
                     GL11.glViewport(0, 0, w, h);
-
                 }
                 System.out.println("Window is resized, aspect ratio: " + (w / (float) h));
             }

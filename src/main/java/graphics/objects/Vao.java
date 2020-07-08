@@ -11,7 +11,9 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Vao{
+import static org.lwjgl.opengl.GL33.glVertexAttribDivisor;
+
+public class Vao {
     private static List<Vao> allVaos = new ArrayList<>();
 
     int vaoId, indiciesLength;
@@ -91,6 +93,15 @@ public class Vao{
         vbos.add(vboID);
         indiciesLength = length;
         return this;
+    }
+
+    public void addInstancedAttribute(int vboID, int attributeNumber, int coordinateSize, int instancedDataLength, int offset) {
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboID);
+        GL20.glVertexAttribPointer(attributeNumber, coordinateSize, GL11.GL_FLOAT, false, instancedDataLength*4,offset*4);
+        glVertexAttribDivisor(attributeNumber,1);
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+        vbos.add(vboID);
+        attribNumbers.add(attributeNumber);
     }
 
     private FloatBuffer storeDataInFloatBuffer(float[] data) {
