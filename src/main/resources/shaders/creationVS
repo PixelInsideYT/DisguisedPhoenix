@@ -1,7 +1,6 @@
 #version 140
 precision highp float;
 in vec3 pos;
-in vec2 textureCoords;
 in vec3 normals;
 
 uniform mat4 projMatrix;
@@ -26,5 +25,4 @@ void main(){
 
     uvs = front + side + top + vec2(time*100);
     uvs = uvs / 500;
-    uvs = uvs + min(textureCoords,0.0);
 }

@@ -185,9 +185,8 @@ public class ModelLoader {
         AIVector3D.Buffer normals = mesh.mNormals();
         int count = mesh.mNumVertices();
         vao.addDataAttributes(0, 3, verticies.address(), verticies.remaining() * AIVector3D.SIZEOF);
-        vao.addDataAttributes(1, 2, getTextureCoords(count, mesh.mTextureCoords(0)));
         if (normals != null) {
-           vao.addDataAttributes(2, 3, normals.address(), normals.remaining() * AIVector3D.SIZEOF);
+           vao.addDataAttributes(1, 3, normals.address(), normals.remaining() * AIVector3D.SIZEOF);
         }else{
             System.err.println(mesh.mNormals() + " but normals are null " + mesh.mName().dataString());}
         int faceCount = mesh.mNumFaces();

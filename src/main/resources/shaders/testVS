@@ -1,7 +1,6 @@
 #version 140
-precision highp float;
+
 in vec3 pos;
-in vec2 textureCoords;
 in vec3 normals;
 
 uniform mat4 projMatrix;
@@ -11,10 +10,8 @@ uniform mat4 transformationMatrix;
 out vec3 toCamera;
 out vec3 worldPos;
 flat out vec3 normal;
-out vec2 uvs;
 
 void main(){
-    uvs = textureCoords;
     normal=(transformationMatrix*vec4(normals,0.0)).xyz;
     vec4 aPos = transformationMatrix*vec4(pos,1);
 	gl_Position =projMatrix*viewMatrix*aPos;
