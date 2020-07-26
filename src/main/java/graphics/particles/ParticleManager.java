@@ -23,7 +23,7 @@ public class ParticleManager {
 
 
     public ParticleManager() {
-        shader = new Shader(Shader.loadShaderCode("particleVS"), Shader.loadShaderCode("particleFS")).combine();
+        shader = new Shader(Shader.loadShaderCode("particleVS.glsl"), Shader.loadShaderCode("particleFS.glsl")).combine();
         shader.bindAtrributs("pos");
         shader.loadUniforms("viewMatrix", "projMatrix","transformationMatrix","color");
         particleVao = new Vao();

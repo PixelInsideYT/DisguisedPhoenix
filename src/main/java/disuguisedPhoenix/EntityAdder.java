@@ -24,19 +24,12 @@ import java.util.stream.IntStream;
 public class EntityAdder {
 
     private Shader creationShader;
-    private int fontTextureId;
 
-    private Model sphere;
-    private Vector3f spherePosition;
-    private float sphereSize;
-    Matrix4f modelMatrix = new Matrix4f();
 
-    private float growSpeed = 1000f;
 
     private float growSpeedPlants = 10f;
 
     private int activated = 0;
-    private float time = 0;
 
     private Map<Entity, Float> entityWantedSize = new HashMap<>();
     private ParticleManager pm;
@@ -44,18 +37,13 @@ public class EntityAdder {
     private BiMap<Entity, ParticleEmitter> reachedEntities = new BiMap<>();
 
     public EntityAdder(ParticleManager pm) {
-        creationShader = new Shader(Shader.loadShaderCode("creationVS"), Shader.loadShaderCode("creationFS")).combine();
+        creationShader = new Shader(Shader.loadShaderCode("creationVS.glsl"), Shader.loadShaderCode("creationGS.glsl"),Shader.loadShaderCode("creationFS.glsl")).combine();
         creationShader.bindAtrributs("pos", "normals")
-                .loadUniforms("projMatrix", "viewMatrix", "transformationMatrix", "time", "textureMap");
-        spherePosition = new Vector3f();
-        sphere = ModelLoader.getModel("misc/sphere.obj");
-        fontTextureId = TextureLoader.loadTexture("misc/uv.jpg");
+                .loadUniforms("projMatrix", "viewMatrix", "transformationMatrix", "percentage");
         this.pm = pm;
     }
 
     public void update(float dt) {
-        sphereSize += dt * growSpeed;
-        time += dt;
         for (Entity e : entityWantedSize.keySet()) {
             if (toReachEntities.get(e).toRemove()){
                 if(reachedEntities.get(e)==null){
@@ -73,34 +61,30 @@ public class EntityAdder {
             creationShader.bind();
             creationShader.loadMatrix("projMatrix", projMatrix);
             creationShader.loadMatrix("viewMatrix", camMatrix);
-            GL13.glActiveTexture(GL13.GL_TEXTURE0);
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, fontTextureId);
-            creationShader.loadFloat("time", time);
-            modelMatrix.identity().translate(spherePosition).scale(sphereSize);
-            //  render(sphere, modelMatrix);
-            Map<Model, List<Matrix4f>> renderMap = new HashMap<>();
+            Map<Model, List<Entity>> renderMap = new HashMap<>();
             entityWantedSize.keySet().forEach(e -> addEntity(e, renderMap));
             for (Model m : renderMap.keySet()) {
-                render(m, renderMap.get(m).stream().toArray(Matrix4f[]::new));
+                render(m, renderMap.get(m).stream().toArray(Entity[]::new));
             }
             creationShader.unbind();
         }
     }
 
-    private static void addEntity(Entity entity, Map<Model, List<Matrix4f>> modelMap) {
+    private static void addEntity(Entity entity, Map<Model, List<Entity>> modelMap) {
         Model m = entity.getModel();
         if (modelMap.get(m) == null) {
             modelMap.put(m, new ArrayList<>());
         }
-        modelMap.get(m).add(entity.getTransformationMatrix());
+        modelMap.get(m).add(entity);
     }
 
-    private void render(Model model, Matrix4f... modelMatrixArray) {
+    private void render(Model model, Entity... toRenderEntities) {
         for (Mesh m : model.meshes) {
             Vao toRender = m.mesh;
             toRender.bind();
-            for (Matrix4f modelMatrix : modelMatrixArray) {
-                creationShader.loadMatrix("transformationMatrix", modelMatrix);
+            for (Entity e : toRenderEntities) {
+                creationShader.loadMatrix("transformationMatrix", e.getTransformationMatrix());
+                creationShader.loadFloat("percentage",e.scale/entityWantedSize.get(e));
                 GL11.glDrawElements(GL11.GL_TRIANGLES, toRender.getIndiciesLength(), GL11.GL_UNSIGNED_INT, 0);
             }
             toRender.unbind();
@@ -124,9 +108,6 @@ public class EntityAdder {
     }
 
     public void generateNextEntities(Vector3f playerPos, Terrain terrain) {
-        spherePosition.set(playerPos);
-        sphereSize = 0;
-        time = 0;
         List<Entity> newEntities = generateNextEntities(terrain);
         float particleLifeTime = 0.3f;
         int particlesCount = (int)(10000f/newEntities.size()/particleLifeTime);

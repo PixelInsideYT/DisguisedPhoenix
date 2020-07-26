@@ -8,6 +8,7 @@ import engine.input.KeyboardInputMap;
 import engine.input.MouseInputMap;
 import engine.util.Zeitgeist;
 import graphics.camera.Camera;
+import graphics.camera.FreeFlightCamera;
 import graphics.context.Display;
 import graphics.loader.ModelLoader;
 import graphics.loader.TextureLoader;
@@ -37,15 +38,16 @@ public class Main {
 
     public static void main(String args[]) {
         long startUpTime = System.currentTimeMillis();
-        Display display = new Display(1080, 720);
+        Display display = new Display(1920, 1280);
+        display.setClearColor(new Color(53*2,81*2,92*2));
         MouseInputMap mim = new MouseInputMap();
         List<Entity> staticObjects = new ArrayList<>();
         List<Entity> modelActivation = new ArrayList<>();
 
-        Player player = new Player(ModelLoader.getModel("pfalz/flugzeug.obj", "pfalz/collider.obj"), new Vector3f(-40, 0, -40), mim);
+        Player player = new Player(ModelLoader.getModel("misc/quickBirb.obj", "pfalz/collider.obj"), new Vector3f(-40, 0, -40), mim);
         Model propellor = ModelLoader.getModel("pfalz/propellor.obj");
         System.err.println("In the scene are: " + NumberFormat.getIntegerInstance().format(ModelLoader.verticies) + " verticies and: " + NumberFormat.getIntegerInstance().format(ModelLoader.faces) + " faces!");
-        Shader shader = new Shader(Shader.loadShaderCode("testVS"), Shader.loadShaderCode("testFS")).combine();
+        Shader shader = new Shader(Shader.loadShaderCode("testVS.glsl"), Shader.loadShaderCode("testFS.glsl")).combine();
         shader.bindAtrributs("pos", "normals").loadUniforms("projMatrix", "viewMatrix", "transformationMatrix", "diffuse", "usesTexture", "diffuseTexture", "ambient", "specular", "normalTexture", "usesNormalTexture", "shininess", "opacity");
         shader.connectSampler("diffuseTexture", 0);
         shader.connectSampler("normalTexture", 1);
@@ -53,29 +55,26 @@ public class Main {
         TestRenderer renderer = new TestRenderer(shader);
 
         Terrain terrain = new Terrain(new Vector3f(0, 0, 0));
-          IntStream.range(0, 6).forEach(i -> modelActivation.add(generateActivationSwitch(terrain)));
+        //  IntStream.range(0, 6).forEach(i -> modelActivation.add(generateActivationSwitch(terrain)));
       //  IntStream.range(0, 6).forEach(i -> staticObjects.addAll(generateNextEntities(terrain)));
         Matrix4f terrainTransformation = new Matrix4f();
         terrainTransformation.translate(0, 0, 0);
         Matrix4f projMatrix = new Matrix4f();
         projMatrix.perspective((float) Math.toRadians(70), /*0.8136752f*/16f / 9f, 1f, 100000);
-        display.setClearColor(Color.white);
         InputManager input = new InputManager(display.getWindowId());
         KeyboardInputMap kim = new KeyboardInputMap().addMapping("forward", GLFW.GLFW_KEY_W).addMapping("backward", GLFW.GLFW_KEY_S).addMapping("turnLeft", GLFW.GLFW_KEY_A).addMapping("turnRight", GLFW.GLFW_KEY_D).addMapping("accel", GLFW.GLFW_KEY_SPACE);
         KeyboardInputMap freeFlightCam = new KeyboardInputMap().addMapping("forward", GLFW.GLFW_KEY_W).addMapping("backward", GLFW.GLFW_KEY_S).addMapping("goLeft", GLFW.GLFW_KEY_A).addMapping("goRight", GLFW.GLFW_KEY_D).addMapping("up", GLFW.GLFW_KEY_SPACE).addMapping("down", GLFW.GLFW_KEY_LEFT_SHIFT).addMapping("fastFlight", GLFW.GLFW_KEY_LEFT_CONTROL);
         input.addInputMapping(kim);
         input.addInputMapping(freeFlightCam);
         input.addInputMapping(mim);
-        // FreeFlightCamera ffc = new FreeFlightCamera(mim, freeFlightCam);
+        //FreeFlightCamera ffc = new FreeFlightCamera(mim, freeFlightCam);
         EntityAdder adder = new EntityAdder(pm);
         player.movement = kim;
         GL11.glEnable(GL11.GL_DEPTH_TEST);
         GL11.glEnable(GL12.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         GL11.glCullFace(GL12.GL_BACK);
-        // GL11.glEnable(GL11.GL_CULL_FACE);
-        //input.hideMouseCursor();
-        //  input.addInputMapping(freeFlightCam);
+        GL11.glEnable(GL11.GL_CULL_FACE);
         System.err.println("STARTUP TIME: " + (System.currentTimeMillis() - startUpTime) / 1000f);
         //  display.activateWireframe();
         Zeitgeist zeitgeist = new Zeitgeist();
@@ -83,7 +82,9 @@ public class Main {
         boolean collisionBoxes = false;
         long lastSwitchWireframe = System.currentTimeMillis();
         long lastSwitchCollision = System.currentTimeMillis();
+       input.hideMouseCursor();
         while (!display.shouldClose()) {
+            //player.setPosition(new Vector3f(0));
             float dt = zeitgeist.getDelta();
             display.pollEvents();
             if (input.isKeyDown(GLFW.GLFW_KEY_O) && System.currentTimeMillis() - lastSwitchWireframe > 100) {
@@ -101,7 +102,7 @@ public class Main {
             display.clear();
             pm.update(dt);
             player.move(terrain, dt, staticObjects);
-            Camera ffc = player.cam;
+           Camera ffc = player.cam;
             ffc.update(dt);
             input.updateInputMaps();
             adder.update(dt);

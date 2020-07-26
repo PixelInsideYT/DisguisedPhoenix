@@ -17,6 +17,7 @@ import java.util.Map;
 
 import static org.lwjgl.opengl.GL11.GL_FALSE;
 import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL32.GL_GEOMETRY_SHADER;
 
 public class Shader {
     private static List<Integer> allShaderProgramms = new ArrayList<Integer>();
@@ -31,7 +32,11 @@ public class Shader {
         shaders.add(attachShader(GL_VERTEX_SHADER, vertex));
         shaders.add(attachShader(GL_FRAGMENT_SHADER, fragment));
     }
-
+    public Shader(String vertex,String geometry, String fragment) {
+        shaders.add(attachShader(GL_VERTEX_SHADER, vertex));
+        shaders.add(attachShader(GL_GEOMETRY_SHADER, geometry));
+        shaders.add(attachShader(GL_FRAGMENT_SHADER, fragment));
+    }
     private int attachShader(int type, String code) {
         int shader = glCreateShader(type);
         glShaderSource(shader, code);
