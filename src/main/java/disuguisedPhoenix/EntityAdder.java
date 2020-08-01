@@ -3,7 +3,6 @@ package disuguisedPhoenix;
 import disuguisedPhoenix.terrain.Terrain;
 import engine.util.BiMap;
 import graphics.loader.ModelLoader;
-import graphics.loader.TextureLoader;
 import graphics.objects.Shader;
 import graphics.objects.Vao;
 import graphics.particles.ParticleEmitter;
@@ -15,7 +14,6 @@ import graphics.world.Model;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -24,7 +22,6 @@ import java.util.stream.IntStream;
 public class EntityAdder {
 
     private Shader creationShader;
-
 
 
     private float growSpeedPlants = 10f;
@@ -37,18 +34,17 @@ public class EntityAdder {
     private BiMap<Entity, ParticleEmitter> reachedEntities = new BiMap<>();
 
     public EntityAdder(ParticleManager pm) {
-        creationShader = new Shader(Shader.loadShaderCode("creationVS.glsl"), Shader.loadShaderCode("creationGS.glsl"),Shader.loadShaderCode("creationFS.glsl")).combine();
-        creationShader.bindAtrributs("pos", "normals")
-                .loadUniforms("projMatrix", "viewMatrix", "transformationMatrix", "percentage");
+        creationShader = new Shader(Shader.loadShaderCode("creationVS.glsl"), Shader.loadShaderCode("creationGS.glsl"), Shader.loadShaderCode("creationFS.glsl")).combine("pos", "color");
+        creationShader.loadUniforms("projMatrix", "viewMatrix", "transformationMatrix", "percentage");
         this.pm = pm;
     }
 
     public void update(float dt) {
         for (Entity e : entityWantedSize.keySet()) {
-            if (toReachEntities.get(e).toRemove()){
-                if(reachedEntities.get(e)==null){
-                    float emitTime = entityWantedSize.get(e)/growSpeedPlants;
-                    reachedEntities.put(e,new UpwardsParticles(new Vector3f(e.getPosition()),400,10,emitTime));
+            if (toReachEntities.get(e).toRemove()) {
+                if (reachedEntities.get(e) == null) {
+                    float emitTime = entityWantedSize.get(e) / growSpeedPlants;
+                    reachedEntities.put(e, new UpwardsParticles(new Vector3f(e.getPosition()), 400, 10, emitTime));
                     pm.addParticleEmitter(reachedEntities.get(e));
                 }
                 e.scale += dt * growSpeedPlants;
@@ -84,7 +80,7 @@ public class EntityAdder {
             toRender.bind();
             for (Entity e : toRenderEntities) {
                 creationShader.loadMatrix("transformationMatrix", e.getTransformationMatrix());
-                creationShader.loadFloat("percentage",e.scale/entityWantedSize.get(e));
+                creationShader.loadFloat("percentage", e.scale / entityWantedSize.get(e));
                 GL11.glDrawElements(GL11.GL_TRIANGLES, toRender.getIndiciesLength(), GL11.GL_UNSIGNED_INT, 0);
             }
             toRender.unbind();
@@ -110,11 +106,11 @@ public class EntityAdder {
     public void generateNextEntities(Vector3f playerPos, Terrain terrain) {
         List<Entity> newEntities = generateNextEntities(terrain);
         float particleLifeTime = 0.3f;
-        int particlesCount = (int)(10000f/newEntities.size()/particleLifeTime);
+        int particlesCount = (int) (10000f / newEntities.size() / particleLifeTime);
         newEntities.forEach(e -> {
             entityWantedSize.put(e, e.scale);
             e.scale = 0;
-            ParticleEmitter pe = new PointSeekingEmitter(playerPos, e.position, 700f, particlesCount,terrain);
+            ParticleEmitter pe = new PointSeekingEmitter(playerPos, e.position, 700f, particlesCount, terrain);
             pm.addParticleEmitter(pe);
             toReachEntities.put(e, pe);
         });
@@ -124,23 +120,25 @@ public class EntityAdder {
         switch (activated) {
             case 0:
                 activated++;
-                return IntStream.range(0, 50).mapToObj(i -> generateEntiy(terrain, "lowPolyTree/bendyTree.obj", "lowPolyTree/bendyTreeCollider.obj", 0f, 6f, 0f, 100)).collect(Collectors.toList());
-
+                return IntStream.range(0, 250).mapToObj(i -> generateEntiy(terrain, "plants/flowerTest1.fbx", "plants/flowerTest1Collider.obj", 0, 6f, 0, 20)).collect(Collectors.toList());
             case 1:
                 activated++;
-                return IntStream.range(0, 50).mapToObj(i -> generateEntiy(terrain, "lowPolyTree/testTree.obj", "lowPolyTree/testTreeCollider.obj", 0, 6f, 0, 40)).collect(Collectors.toList());
+                return IntStream.range(0, 50).mapToObj(i -> generateEntiy(terrain, "lowPolyTree/vc.fbx", null, 0f, 6f, 0f, 100)).collect(Collectors.toList());
             case 2:
                 activated++;
-                return IntStream.range(0, 250).mapToObj(i -> generateEntiy(terrain, "plants/flowerTest1.obj", "plants/flowerTest1Collider.obj", 0, 6f, 0, 20)).collect(Collectors.toList());
+                return IntStream.range(0, 50).mapToObj(i -> generateEntiy(terrain, "lowPolyTree/ballTree.fbx", "lowPolyTree/ballTreeCollider.obj", 0, 6f, 0, 40)).collect(Collectors.toList());
             case 3:
                 activated++;
-                return IntStream.range(0, 50).mapToObj(i -> generateEntiy(terrain, "lowPolyTree/tree2.obj", "lowPolyTree/tree2Collider.obj", 0, 6f, 0, 30)).collect(Collectors.toList());
+                return IntStream.range(0, 50).mapToObj(i -> generateEntiy(terrain, "lowPolyTree/bendyTree.fbx", "lowPolyTree/bendyTreeCollider.obj", 0f, 6f, 0f, 100)).collect(Collectors.toList());
             case 4:
                 activated++;
-                return IntStream.range(0, 500).mapToObj(i -> generateEntiy(terrain, "misc/rock.obj", "misc/rock.obj", 6f, 6f, 6f, 10)).collect(Collectors.toList());
+                return IntStream.range(0, 50).mapToObj(i -> generateEntiy(terrain, "lowPolyTree/tree2.fbx", "lowPolyTree/tree2Collider.obj", 0, 6f, 0, 30)).collect(Collectors.toList());
             case 5:
                 activated++;
-                return IntStream.range(0, 10000).mapToObj(i -> generateEntiy(terrain, "plants/grass.obj", null, 0, 6f, 0, 10)).collect(Collectors.toList());
+                return IntStream.range(0, 500).mapToObj(i -> generateEntiy(terrain, "misc/rock.fbx", "misc/rock.fbx", 6f, 6f, 6f, 10)).collect(Collectors.toList());
+            case 6:
+                activated++;
+                return IntStream.range(0, 10000).mapToObj(i -> generateEntiy(terrain, "plants/grass.fbx", null, 0, 6f, 0, 10)).collect(Collectors.toList());
 
         }
         return null;

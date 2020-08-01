@@ -26,8 +26,6 @@ public class Player extends Entity {
     private Vector3f currentTurnSpeed;
     private Vector3i currentTurnDirection;
 
-    private float propRotation;
-    Quaternionf propellorWorldRotation = new Quaternionf();
 
     private float currentFlySpeed = 300;
 
@@ -60,12 +58,9 @@ public class Player extends Entity {
         currentTurnSpeed.x = Maths.clamp(currentTurnSpeed.x, -MAX_TURN_SPEED, MAX_TURN_SPEED);
         rotY += currentTurnSpeed.y * dt;
         rotX += currentTurnSpeed.x * dt;
-        propRotation += 36f * dt + accelerate * 20f * dt;
         rotX = Maths.clamp(rotX, -(float) Math.PI / 3f, (float) Math.PI / 2f - 0.0001f);
         rotation.identity();
         rotation.rotateYXZ(rotY, rotX, rotZ);
-        propellorWorldRotation.identity();
-        propellorWorldRotation.rotateYXZ(rotY, rotX, propRotation);
         Vector3f forward = rotation.transform(new Vector3f(0, 0, 1));
         currentFlySpeed += forward.y * dt * GRAVITY;
         currentFlySpeed += accelerate * dt * 250;
@@ -79,14 +74,6 @@ public class Player extends Entity {
         lookAtPosition.set(new Vector3f(forward).normalize().mul(30).add(position));
         cam.position.set(new Vector3f(position).add(forward.mul(-5f)));
         cam.position.y = Math.max(cam.position.y, terrain.getHeightOfTerrain(cam.position.x, cam.position.z));
-    }
-
-    public Matrix4f getPropellorMatrix() {
-        modelMatrix.identity();
-        modelMatrix.translate(position);
-        modelMatrix.rotate(propellorWorldRotation);
-        modelMatrix.scale(scale);
-        return modelMatrix;
     }
 
 

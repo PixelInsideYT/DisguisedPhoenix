@@ -1,22 +1,23 @@
 #version 140
 
 in vec3 pos;
-in vec3 normals;
+in vec3 vertexColor;
 
 uniform mat4 projMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 transformationMatrix;
 
+out vec3 diffuse;
 out vec3 toCamera;
 out vec3 worldPos;
-flat out vec3 normal;
+out vec3 viewPos;
 
 void main(){
-    normal=(transformationMatrix*vec4(normals,0.0)).xyz;
+    diffuse=vertexColor;
     vec4 aPos = transformationMatrix*vec4(pos,1);
-	gl_Position =projMatrix*viewMatrix*aPos;
 	worldPos = aPos.xyz;
-
-	toCamera = (inverse(viewMatrix) * vec4(0.0,0.0,0.0,1.0)).xyz - worldPos;
-
+	vec4 bPos = viewMatrix*aPos;
+	viewPos = bPos.xyz;
+	gl_Position =projMatrix*bPos;
+	toCamera = (viewMatrix * vec4(0.0,0.0,0.0,1.0)).xyz - worldPos;
 }

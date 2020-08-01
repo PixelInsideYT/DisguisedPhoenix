@@ -42,7 +42,7 @@ public class TestRenderer {
     private void bindMaterial(Material mat, Shader shader) {
         if (mat != currentMaterial) {
             currentMaterial = mat;
-            shader.load3DVector("diffuse", mat.diffuse);
+           // shader.load3DVector("diffuse", mat.diffuse);
             shader.load3DVector("ambient", mat.ambient);
             shader.load3DVector("specular", mat.specular);
             shader.loadFloat("shininess", mat.shininess);

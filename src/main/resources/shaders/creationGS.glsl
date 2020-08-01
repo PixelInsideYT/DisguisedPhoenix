@@ -4,7 +4,9 @@ layout ( triangles ) in;
 layout ( triangle_strip, max_vertices = 3 ) out;
 
 in vec3 worldPos[];
+in vec3 vertexColor[];
 
+out vec3 color;
 out vec3 normal;
 out vec3 barycentric;
 
@@ -15,16 +17,19 @@ void main() {
     normal = calculatedNormal;
     barycentric = vec3(1,0,0);
     gl_Position = gl_in[0].gl_Position;
+    color = vertexColor[0];
     EmitVertex();
 
     normal = calculatedNormal;
     barycentric = vec3(0,1,0);
     gl_Position = gl_in[1].gl_Position;
+    color = vertexColor[1];
     EmitVertex();
 
     normal = calculatedNormal;
     barycentric = vec3(0,0,1);
     gl_Position = gl_in[2].gl_Position;
+    color = vertexColor[2];
     EmitVertex();
 
     EndPrimitive();

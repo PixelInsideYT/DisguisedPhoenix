@@ -13,6 +13,7 @@ public class Terrain {
 
     public static final float SIZE = 10000f;
     private static final int VERTEX_COUNT = 32;
+    private static final Vector3f terrainColor = new Vector3f(86f/255f,125f/255f,70f/255f);
 
     public Vector3f position;
     public Model model;
@@ -47,8 +48,7 @@ public class Terrain {
         heights = new float[VERTEX_COUNT][VERTEX_COUNT];
         int count = VERTEX_COUNT * VERTEX_COUNT;
         float[] vertices = new float[count * 3];
-        float[] normals = new float[count * 3];
-        float[] textureCoords = new float[count * 2];
+        float[] colors = new float[count * 3];
         int[] indices = new int[6 * (VERTEX_COUNT - 1) * (VERTEX_COUNT * 1)];
         int vertexPointer = 0;
         for (int i = 0; i < VERTEX_COUNT; i++) {
@@ -58,12 +58,9 @@ public class Terrain {
                 heights[j][i] = height;
                 vertices[vertexPointer * 3 + 1] = height;
                 vertices[vertexPointer * 3 + 2] = (float) i / ((float) VERTEX_COUNT - 1) * SIZE;
-                Vector3f normal = calculateNormal(j, i);
-                normals[vertexPointer * 3] = normal.x;
-                normals[vertexPointer * 3 + 1] = normal.y;
-                normals[vertexPointer * 3 + 2] = normal.z;
-                textureCoords[vertexPointer * 2] = (float) j / ((float) VERTEX_COUNT - 1);
-                textureCoords[vertexPointer * 2 + 1] = (float) i / ((float) VERTEX_COUNT - 1);
+                colors[vertexPointer * 3] = terrainColor.x;
+                colors[vertexPointer * 3 + 1] = terrainColor.y;
+                colors[vertexPointer * 3 + 2] = terrainColor.z;
                 vertexPointer++;
             }
         }
@@ -82,9 +79,9 @@ public class Terrain {
                 indices[pointer++] = bottomRight;
             }
         }
-        Vao rt = new Vao().addDataAttributes(0, 3, vertices);
-        rt.addDataAttributes(1, 2, textureCoords);
-        rt.addDataAttributes(2, 3, normals);
+        Vao rt = new Vao();
+        rt.addDataAttributes(0, 3, vertices);
+        rt.addDataAttributes(1, 3, colors);
         rt.addIndicies(indices);
         rt.unbind();
         Material m = new Material("terrainMaterial");

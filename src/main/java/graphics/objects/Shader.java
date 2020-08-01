@@ -70,10 +70,11 @@ public class Shader {
         return shaderSource.toString();
     }
 
-    public Shader combine() {
+    public Shader combine(String... attributes) {
         shaderProgram = glCreateProgram();
         allShaderProgramms.add(shaderProgram);
         shaders.forEach(i -> glAttachShader(shaderProgram, i));
+        bindAtributs(attributes);
         glLinkProgram(shaderProgram);
         if (GL20.glGetProgrami(shaderProgram, GL_LINK_STATUS) == GL_FALSE) {
             System.out.println(GL20.glGetProgramInfoLog(shaderProgram, 500));
@@ -92,13 +93,10 @@ public class Shader {
         glUseProgram(0);
     }
 
-    public Shader bindAtrributs(String... attributes) {
-        bind();
+    private void bindAtributs(String... attributes) {
         for (int i = 0; i < attributes.length; i++) {
             bindAttribute(i, attributes[i]);
         }
-        unbind();
-        return this;
     }
 
     public void bindAttribute(int attribute, String variableName) {

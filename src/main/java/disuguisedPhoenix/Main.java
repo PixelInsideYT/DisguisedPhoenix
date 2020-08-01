@@ -27,7 +27,6 @@ import java.awt.*;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class Main {
@@ -39,24 +38,21 @@ public class Main {
     public static void main(String args[]) {
         long startUpTime = System.currentTimeMillis();
         Display display = new Display(1920, 1280);
-        display.setClearColor(new Color(53*2,81*2,92*2));
+        display.setClearColor(new Color(53 * 2, 81 * 2, 92 * 2));
         MouseInputMap mim = new MouseInputMap();
         List<Entity> staticObjects = new ArrayList<>();
         List<Entity> modelActivation = new ArrayList<>();
 
-        Player player = new Player(ModelLoader.getModel("misc/quickBirb.obj", "pfalz/collider.obj"), new Vector3f(-40, 0, -40), mim);
-        Model propellor = ModelLoader.getModel("pfalz/propellor.obj");
+        Player player = new Player(ModelLoader.getModel("misc/birb.fbx", "cube.obj"), new Vector3f(-40, 0, -40), mim);
         System.err.println("In the scene are: " + NumberFormat.getIntegerInstance().format(ModelLoader.verticies) + " verticies and: " + NumberFormat.getIntegerInstance().format(ModelLoader.faces) + " faces!");
-        Shader shader = new Shader(Shader.loadShaderCode("testVS.glsl"), Shader.loadShaderCode("testFS.glsl")).combine();
-        shader.bindAtrributs("pos", "normals").loadUniforms("projMatrix", "viewMatrix", "transformationMatrix", "diffuse", "usesTexture", "diffuseTexture", "ambient", "specular", "normalTexture", "usesNormalTexture", "shininess", "opacity");
-        shader.connectSampler("diffuseTexture", 0);
-        shader.connectSampler("normalTexture", 1);
+        Shader shader = new Shader(Shader.loadShaderCode("testVS.glsl"), Shader.loadShaderCode("testFS.glsl")).combine("pos","vertexColor");
+        shader.loadUniforms("projMatrix", "viewMatrix", "transformationMatrix", "ambient", "specular", "shininess", "opacity");
         ParticleManager pm = new ParticleManager();
         TestRenderer renderer = new TestRenderer(shader);
 
         Terrain terrain = new Terrain(new Vector3f(0, 0, 0));
-        //  IntStream.range(0, 6).forEach(i -> modelActivation.add(generateActivationSwitch(terrain)));
-      //  IntStream.range(0, 6).forEach(i -> staticObjects.addAll(generateNextEntities(terrain)));
+        IntStream.range(0, 6).forEach(i -> modelActivation.add(generateActivationSwitch(terrain)));
+        //  IntStream.range(0, 6).forEach(i -> staticObjects.addAll(generateNextEntities(terrain)));
         Matrix4f terrainTransformation = new Matrix4f();
         terrainTransformation.translate(0, 0, 0);
         Matrix4f projMatrix = new Matrix4f();
@@ -67,46 +63,56 @@ public class Main {
         input.addInputMapping(kim);
         input.addInputMapping(freeFlightCam);
         input.addInputMapping(mim);
-        //FreeFlightCamera ffc = new FreeFlightCamera(mim, freeFlightCam);
+        FreeFlightCamera flightCamera = new FreeFlightCamera(mim, freeFlightCam);
         EntityAdder adder = new EntityAdder(pm);
         player.movement = kim;
         GL11.glEnable(GL11.GL_DEPTH_TEST);
         GL11.glEnable(GL12.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         GL11.glCullFace(GL12.GL_BACK);
-        GL11.glEnable(GL11.GL_CULL_FACE);
+        //GL11.glEnable(GL11.GL_CULL_FACE);
         System.err.println("STARTUP TIME: " + (System.currentTimeMillis() - startUpTime) / 1000f);
         //  display.activateWireframe();
         Zeitgeist zeitgeist = new Zeitgeist();
         boolean wireframe = false;
         boolean collisionBoxes = false;
+        boolean freeFlightCamActivated = false;
         long lastSwitchWireframe = System.currentTimeMillis();
         long lastSwitchCollision = System.currentTimeMillis();
-       input.hideMouseCursor();
+        long lastSwitchCam = System.currentTimeMillis();
+
+        input.hideMouseCursor();
         while (!display.shouldClose()) {
-            //player.setPosition(new Vector3f(0));
             float dt = zeitgeist.getDelta();
             display.pollEvents();
             if (input.isKeyDown(GLFW.GLFW_KEY_O) && System.currentTimeMillis() - lastSwitchWireframe > 100) {
                 wireframe = !wireframe;
                 lastSwitchWireframe = System.currentTimeMillis();
-                adder.generateNextEntities(player.position,terrain);
+                adder.generateNextEntities(player.position, terrain);
             }
             if (input.isKeyDown(GLFW.GLFW_KEY_L) && System.currentTimeMillis() - lastSwitchCollision > 100) {
                 collisionBoxes = !collisionBoxes;
                 lastSwitchCollision = System.currentTimeMillis();
+            }if (input.isKeyDown(GLFW.GLFW_KEY_C) && System.currentTimeMillis() - lastSwitchCam > 100) {
+                freeFlightCamActivated = !freeFlightCamActivated;
+                lastSwitchCam = System.currentTimeMillis();
             }
             if (wireframe) {
-               // display.activateWireframe();
+                // display.activateWireframe();
             }
             display.clear();
             pm.update(dt);
-            player.move(terrain, dt, staticObjects);
-           Camera ffc = player.cam;
+            Camera ffc = player.cam;
+            if (!freeFlightCamActivated) {
+                player.move(terrain, dt, staticObjects);
+                flightCamera.position.set(player.position);
+            } else {
+                ffc = flightCamera;
+            }
             ffc.update(dt);
             input.updateInputMaps();
             adder.update(dt);
-            adder.render(ffc.getViewMatrix(),projMatrix);
+            adder.render(ffc.getViewMatrix(), projMatrix);
             renderer.begin(ffc.getViewMatrix(), projMatrix);
             List<Entity> toRemove = new ArrayList<>();
             modelActivation.forEach(entity -> {
@@ -118,12 +124,11 @@ public class Main {
                 renderer.render(entity.getModel(), entity.getTransformationMatrix());
             });
             modelActivation.removeAll(toRemove);
-            adder.getAddedEntities().forEach(e->addEntity(e,modelMap,staticObjects));
+            adder.getAddedEntities().forEach(e -> addEntity(e, modelMap, staticObjects));
             for (Model m : modelMap.keySet()) {
                 renderer.render(m, modelMap.get(m).stream().toArray(Matrix4f[]::new));
             }
             renderer.render(player.getModel(), player.getTransformationMatrix());
-            renderer.render(propellor, player.getPropellorMatrix());
             renderer.render(terrain.model, terrainTransformation);
             if (collisionBoxes) {
                 display.activateWireframe();
@@ -171,7 +176,7 @@ public class Main {
                 display.deactivateWireframe();
             }
             renderer.end();
-            pm.render(projMatrix,ffc.getViewMatrix());
+            pm.render(projMatrix, ffc.getViewMatrix());
             display.flipBuffers();
             display.setFrameTitle("Disguised Phoenix: " + zeitgeist.getFPS() + " FPS");
             zeitgeist.sleep();
@@ -182,13 +187,13 @@ public class Main {
         display.destroy();
     }
 
-    private static void addEntity(Entity entity,Map<Model,List<Matrix4f>> modelMap,List<Entity> staticEntities){
+    private static void addEntity(Entity entity, Map<Model, List<Matrix4f>> modelMap, List<Entity> staticEntities) {
         Model m = entity.getModel();
         if (modelMap.get(m) == null) {
             modelMap.put(m, new ArrayList<>());
         }
         modelMap.get(m).add(entity.getTransformationMatrix());
-    staticEntities.add(entity);
+        staticEntities.add(entity);
     }
 
     private static Entity generateActivationSwitch(Terrain terrain) {

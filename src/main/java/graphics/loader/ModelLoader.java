@@ -27,7 +27,7 @@ public class ModelLoader {
 
     private static Map<String, Model> alreadyLoadedModels = new HashMap<>();
 
-    private static final int loadFlags = Assimp.aiProcess_Triangulate | Assimp.aiProcess_JoinIdenticalVertices | aiProcess_GenNormals
+    private static final int loadFlags = Assimp.aiProcess_Triangulate | Assimp.aiProcess_JoinIdenticalVertices | aiProcess_GenSmoothNormals
             | Assimp.aiProcess_ValidateDataStructure | Assimp.aiProcess_ImproveCacheLocality | Assimp.aiProcess_RemoveRedundantMaterials
             | Assimp.aiProcess_FindInvalidData | Assimp.aiProcess_FindInstances | Assimp.aiProcess_OptimizeMeshes | Assimp.aiProcess_OptimizeGraph;
 
@@ -43,7 +43,6 @@ public class ModelLoader {
         Vector3f min = new Vector3f(Float.MAX_VALUE);
         int numMeshes = scene.mNumMeshes();
         PointerBuffer meshPointer = scene.mMeshes();
-        int verticies = 0;
         for (int i = 0; i < numMeshes; i++) {
             AIMesh mesh = AIMesh.create(meshPointer.get(i));
             verticies += mesh.mNumVertices();
@@ -55,16 +54,18 @@ public class ModelLoader {
         c.setBoundingBox(new Box(min, max));
         return c;
     }
-    public static Model getModel(String name,String colliderPath) {
+
+    public static Model getModel(String name, String colliderPath) {
         Model rt = alreadyLoadedModels.get(name);
         if (rt == null) {
             System.out.println("Model " + name + " isnt loaded yet. Trying to load it");
             rt = loadModel(name);
-            rt.collider = loadCollider(colliderPath,true);
+            rt.collider = loadCollider(colliderPath, true);
             alreadyLoadedModels.put(name, rt);
         }
         return rt;
     }
+
     public static Model getModel(String name) {
         Model rt = alreadyLoadedModels.get(name);
         if (rt == null) {
@@ -86,18 +87,16 @@ public class ModelLoader {
         List<Mesh> meshes = new ArrayList<>();
         List<Material> materials = new ArrayList<>();
         PointerBuffer meshPointer = scene.mMeshes();
-        int vertexCount = 0;
         int numMeshes = scene.mNumMeshes();
         int slashIndex = name.lastIndexOf("/");
         String base = "models/" + name.substring(0, slashIndex < 0 ? 0 : slashIndex);
         PointerBuffer materialPointer = scene.mMaterials();
         for (int i = 0; i < numMeshes; i++) {
             AIMesh mesh = AIMesh.create(meshPointer.get(i));
-            vertexCount += mesh.mNumVertices();
-            Vao meshVao = processMesh(mesh);
-            meshes.add(new Mesh(meshVao, getGlobalMaterialPointer(base, mesh.mMaterialIndex(), materialPointer)));
+            String materialPointerString = getGlobalMaterialPointer(base, mesh.mMaterialIndex(), materialPointer);
+            Vao meshVao = processMesh(mesh, materialPointerString);
+            meshes.add(new Mesh(meshVao, materialPointerString));
         }
-        verticies += vertexCount;
         Assimp.aiReleaseImport(scene);
         return new Model(meshes.stream().toArray(Mesh[]::new));
     }
@@ -179,29 +178,68 @@ public class ModelLoader {
         return path.dataString();
     }
 
-    private static Vao processMesh(AIMesh mesh) {
-        Vao vao = new Vao();
+    private static Vao processMesh(AIMesh mesh, String materialPointerString) {
+        List<Integer> modelIndicies = new ArrayList<>();
+        List<Vector3f> modelVerticies = new ArrayList<>();
+        Map<Vector3f, Vector3f> vertexColors = new HashMap<>();
         AIVector3D.Buffer verticies = mesh.mVertices();
-        AIVector3D.Buffer normals = mesh.mNormals();
-        int count = mesh.mNumVertices();
-        vao.addDataAttributes(0, 3, verticies.address(), verticies.remaining() * AIVector3D.SIZEOF);
-        if (normals != null) {
-           vao.addDataAttributes(1, 3, normals.address(), normals.remaining() * AIVector3D.SIZEOF);
-        }else{
-            System.err.println(mesh.mNormals() + " but normals are null " + mesh.mName().dataString());}
         int faceCount = mesh.mNumFaces();
-        faces += faceCount;
-        int[] indicies = new int[faceCount * 3];
-        for (int i = 0; i < faceCount; i++) {
-            AIFace face = mesh.mFaces().get(i);
-            if (face.mNumIndices() != 3) {
-            } else {
-                IntBuffer faceIndiecies = face.mIndices();
-                faceIndiecies.get(indicies, i * 3, 3);
+        int assimpVerticies = verticies.remaining();
+        System.out.println("loading: " + faceCount + " faces! with " + assimpVerticies + " assimp verticies");
+        AIColor4D.Buffer colors = mesh.mColors(0);
+        Vector3f alternativeColor = new Vector3f(1, 0, 1);
+        if (colors == null) {
+            System.err.println("CANT LOAD colors ");
+            if (materialPointerString != null) {
+                alternativeColor = Material.allMaterials.get(materialPointerString).diffuse;
             }
         }
-        vao.addIndicies(indicies);
+        for (int i = 0; i < faceCount; i++) {
+            AIFace face = mesh.mFaces().get(i);
+            IntBuffer indicies = face.mIndices();
+            for (int j = 0; j < indicies.remaining(); j++) {
+                int index = indicies.get(j);
+                Vector3f pos = getVec(verticies.get(index));
+                if (!modelVerticies.contains(pos)) {
+                    modelVerticies.add(pos);
+                }
+                if (colors != null) {
+                    AIColor4D vertexColor = colors.get(index);
+                    vertexColors.put(pos, new Vector3f(vertexColor.r(), vertexColor.g(), vertexColor.b()));
+                } else {
+                    vertexColors.put(pos, alternativeColor);
+                }
+                modelIndicies.add(modelVerticies.indexOf(pos));
+            }
+            if ((faceCount / 20) > 0 && i % (faceCount / 20) == 0) {
+                System.out.print(".");
+            }
+        }
+        System.out.println();
+        System.out.println(mesh.mName().dataString() + " has: " + modelVerticies.size() + " verticies! You saved " + (assimpVerticies - modelVerticies.size()) + " verticies!");
+        float[] vaoVerticies = new float[modelVerticies.size() * 3];
+        float[] vaoColor = new float[modelVerticies.size() * 3];
+        int vertexPointer = 0;
+        int colorPointer = 0;
+        for (int i = 0; i < modelVerticies.size(); i++) {
+            Vector3f pos = modelVerticies.get(i);
+            Vector3f color = vertexColors.get(pos);
+            vaoVerticies[vertexPointer++] = pos.x;
+            vaoVerticies[vertexPointer++] = pos.y;
+            vaoVerticies[vertexPointer++] = pos.z;
+            vaoColor[colorPointer++] = color.x;
+            vaoColor[colorPointer++] = color.y;
+            vaoColor[colorPointer++] = color.z;
+        }
+        Vao vao = new Vao();
+        vao.addDataAttributes(0, 3, vaoVerticies);
+        vao.addDataAttributes(1, 3, vaoColor);
+        vao.addIndicies(modelIndicies.stream().mapToInt(i -> i).toArray());
         return vao;
+    }
+
+    private static Vector3f getVec(AIVector3D vec) {
+        return new Vector3f(vec.x(), vec.y(), vec.z());
     }
 
     private static ConvexShape meshToCollisionShape(boolean useVao, AIMesh mesh) {
@@ -235,7 +273,7 @@ public class ModelLoader {
         }
         ConvexShape cs = null;
         if (useVao) {
-            Vao meshVao = processMesh(mesh);
+            Vao meshVao = processMesh(mesh, null);
             cs = new ConvexShape(cornerPoints.stream().toArray(Vector3f[]::new), axes.stream().toArray(Vector3f[]::new), meshVao);
         } else {
             cs = new ConvexShape(cornerPoints.stream().toArray(Vector3f[]::new), axes.stream().toArray(Vector3f[]::new));

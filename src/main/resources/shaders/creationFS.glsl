@@ -2,6 +2,7 @@
 precision highp float;
 
 in vec3 normal;
+in vec3 color;
 in vec3 barycentric;
 
 out vec4 FragColor;
@@ -24,9 +25,9 @@ const float solidifyTime = 0.9;
 
 void main()  {
     float barycentricMin = min(min(barycentric.x, barycentric.y), barycentric.z);
-    vec4 lineColor = vec4(0.0, 1, 0.0, 1.0)* sign(1-edgeFactor());
+    vec4 lineColor = vec4(color,1)* sign(1-edgeFactor());
     float fillStatus = min(max((percentage - solidifyTime)/(1-solidifyTime),0),1);
     FragColor = lineColor;
-    FragColor += vec4(vec3(0,1,0)*sign(fillStatus),sign(max(fillStatus*fillStatus-barycentricMin,0))*sign(fillStatus));
+    FragColor += vec4(color*sign(fillStatus),sign(max(fillStatus*fillStatus-barycentricMin,0))*sign(fillStatus));
     if(FragColor.a < 0.01)discard;
 }
