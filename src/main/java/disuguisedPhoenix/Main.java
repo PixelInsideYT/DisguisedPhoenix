@@ -45,7 +45,7 @@ public class Main {
 
         Player player = new Player(ModelLoader.getModel("misc/birb.fbx", "cube.obj"), new Vector3f(-40, 0, -40), mim);
         System.err.println("In the scene are: " + NumberFormat.getIntegerInstance().format(ModelLoader.verticies) + " verticies and: " + NumberFormat.getIntegerInstance().format(ModelLoader.faces) + " faces!");
-        Shader shader = new Shader(Shader.loadShaderCode("testVS.glsl"), Shader.loadShaderCode("testFS.glsl")).combine("pos","vertexColor");
+        Shader shader = new Shader(Shader.loadShaderCode("testVS.glsl"), Shader.loadShaderCode("testFS.glsl")).combine("pos", "vertexColor");
         shader.loadUniforms("projMatrix", "viewMatrix", "transformationMatrix", "ambient", "specular", "shininess", "opacity");
         ParticleManager pm = new ParticleManager();
         TestRenderer renderer = new TestRenderer(shader);
@@ -65,6 +65,7 @@ public class Main {
         input.addInputMapping(mim);
         FreeFlightCamera flightCamera = new FreeFlightCamera(mim, freeFlightCam);
         EntityAdder adder = new EntityAdder(pm);
+        //adder.getAllEntities(terrain).forEach(e -> addEntity(e, modelMap, staticObjects));
         player.movement = kim;
         GL11.glEnable(GL11.GL_DEPTH_TEST);
         GL11.glEnable(GL12.GL_BLEND);
@@ -80,8 +81,6 @@ public class Main {
         long lastSwitchWireframe = System.currentTimeMillis();
         long lastSwitchCollision = System.currentTimeMillis();
         long lastSwitchCam = System.currentTimeMillis();
-
-        input.hideMouseCursor();
         while (!display.shouldClose()) {
             float dt = zeitgeist.getDelta();
             display.pollEvents();
@@ -93,8 +92,11 @@ public class Main {
             if (input.isKeyDown(GLFW.GLFW_KEY_L) && System.currentTimeMillis() - lastSwitchCollision > 100) {
                 collisionBoxes = !collisionBoxes;
                 lastSwitchCollision = System.currentTimeMillis();
-            }if (input.isKeyDown(GLFW.GLFW_KEY_C) && System.currentTimeMillis() - lastSwitchCam > 100) {
+            }
+            if (input.isKeyDown(GLFW.GLFW_KEY_C) && System.currentTimeMillis() - lastSwitchCam > 100) {
                 freeFlightCamActivated = !freeFlightCamActivated;
+                if (freeFlightCamActivated) input.hideMouseCursor();
+                else input.showMouseCursor();
                 lastSwitchCam = System.currentTimeMillis();
             }
             if (wireframe) {
@@ -105,7 +107,7 @@ public class Main {
             Camera ffc = player.cam;
             if (!freeFlightCamActivated) {
                 player.move(terrain, dt, staticObjects);
-                flightCamera.position.set(player.position);
+                flightCamera.position.set(player.cam.position);
             } else {
                 ffc = flightCamera;
             }

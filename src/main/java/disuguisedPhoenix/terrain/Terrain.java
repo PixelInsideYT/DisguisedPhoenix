@@ -13,7 +13,8 @@ public class Terrain {
 
     public static final float SIZE = 10000f;
     private static final int VERTEX_COUNT = 32;
-    private static final Vector3f terrainColor = new Vector3f(86f/255f,125f/255f,70f/255f);
+    private static final Vector3f terrainColorSrgb = new Vector3f(0.278f,0.965f,0.255f);
+   private static final Vector3f terrainColor = new Vector3f((float)Math.pow(terrainColorSrgb.x,2.2d),(float)Math.pow(terrainColorSrgb.y,2.2d),(float)Math.pow(terrainColorSrgb.z,2.2d));
 
     public Vector3f position;
     public Model model;

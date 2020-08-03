@@ -205,7 +205,9 @@ public class ModelLoader {
                 }
                 if (colors != null) {
                     AIColor4D vertexColor = colors.get(index);
-                    vertexColors.put(pos, new Vector3f(vertexColor.r(), vertexColor.g(), vertexColor.b()));
+                    Vector3f sRGB = new Vector3f(vertexColor.r(), vertexColor.g(), vertexColor.b());
+                    Vector3f linearSRGB = new Vector3f((float)Math.pow(sRGB.x,2.2d),(float)Math.pow(sRGB.y,2.2d),(float)Math.pow(sRGB.z,2.2d));
+                    vertexColors.put(pos, linearSRGB);
                 } else {
                     vertexColors.put(pos, alternativeColor);
                 }

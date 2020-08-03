@@ -159,4 +159,10 @@ public class EntityAdder {
         return e;
     }
 
+    public List<Entity> getAllEntities(Terrain terrain) {
+        List<Entity> rt = new ArrayList<>();
+        for (int i = 0; i < 7; i++)
+            rt.addAll(generateNextEntities(terrain));
+        return rt;
+    }
 }

@@ -1,7 +1,9 @@
 #version 140
+precision highp float;
 
 in vec3 pos;
 in vec3 vertexColor;
+
 
 uniform mat4 projMatrix;
 uniform mat4 viewMatrix;

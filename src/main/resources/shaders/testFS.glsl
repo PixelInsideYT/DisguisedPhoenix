@@ -17,7 +17,7 @@ out vec4 FragColor;
 
 const vec3 lightPos = vec3(0,10000,1000);
 const vec3 lightColor = vec3(1,1,1);
-const float gamma=2.2;
+const float gamma=1;
 
 void main()  {
 
@@ -37,6 +37,8 @@ void main()  {
     vec3 resultingColor =  (ambient*lightColor+brightness*lightColor+finalSpecular)*diffuse;
     vec3 reinhardToneMapping = resultingColor /(resultingColor + vec3(1.0));
     vec3 gammaCorrected = pow(reinhardToneMapping, vec3(1.0 / gamma));
-	FragColor=vec4(reinhardToneMapping,1);
-	FragColor.a = opacity;
+    float grey = (diffuse.r+diffuse.g+diffuse.b)/3.0;
+    FragColor=vec4(vec3(grey),1);
+    FragColor=vec4(gammaCorrected,1);
+    //FragColor.a = opacity;
 }
