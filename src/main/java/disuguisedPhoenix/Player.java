@@ -72,7 +72,7 @@ public class Player extends Entity {
         this.position.y = Math.max(position.y, terrain.getHeightOfTerrain(position.x, position.z));
         rotZ = Maths.map(-currentTurnSpeed.y, -MAX_TURN_SPEED, MAX_TURN_SPEED, -(float) Math.PI / 4f, (float) Math.PI / 4f);
         lookAtPosition.set(new Vector3f(forward).normalize().mul(30).add(position));
-        cam.position.set(new Vector3f(position).add(forward.mul(-5f)));
+        cam.position.set(new Vector3f(position).add(forward.mul(-5f)).add(0,1,0));
         cam.position.y = Math.max(cam.position.y, terrain.getHeightOfTerrain(cam.position.x, cam.position.z));
     }
 
