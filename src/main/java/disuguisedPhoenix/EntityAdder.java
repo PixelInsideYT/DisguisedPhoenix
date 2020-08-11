@@ -2,14 +2,13 @@ package disuguisedPhoenix;
 
 import disuguisedPhoenix.terrain.Terrain;
 import engine.util.BiMap;
-import graphics.loader.ModelLoader;
+import engine.util.ModelFileHandler;
 import graphics.objects.Shader;
 import graphics.objects.Vao;
 import graphics.particles.ParticleEmitter;
 import graphics.particles.ParticleManager;
 import graphics.particles.PointSeekingEmitter;
 import graphics.particles.UpwardsParticles;
-import graphics.world.Mesh;
 import graphics.world.Model;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -60,7 +59,7 @@ public class EntityAdder {
             Map<Model, List<Entity>> renderMap = new HashMap<>();
             entityWantedSize.keySet().forEach(e -> addEntity(e, renderMap));
             for (Model m : renderMap.keySet()) {
-                render(m, renderMap.get(m).stream().toArray(Entity[]::new));
+                render(m, renderMap.get(m).toArray(new Entity[0]));
             }
             creationShader.unbind();
         }
@@ -68,15 +67,12 @@ public class EntityAdder {
 
     private static void addEntity(Entity entity, Map<Model, List<Entity>> modelMap) {
         Model m = entity.getModel();
-        if (modelMap.get(m) == null) {
-            modelMap.put(m, new ArrayList<>());
-        }
+        modelMap.computeIfAbsent(m, k -> new ArrayList<>());
         modelMap.get(m).add(entity);
     }
 
     private void render(Model model, Entity... toRenderEntities) {
-        for (Mesh m : model.meshes) {
-            Vao toRender = m.mesh;
+        for (Vao toRender : model.meshes) {
             toRender.bind();
             for (Entity e : toRenderEntities) {
                 creationShader.loadMatrix("transformationMatrix", e.getTransformationMatrix());
@@ -120,48 +116,51 @@ public class EntityAdder {
         switch (activated) {
             case 0:
                 activated++;
-                return IntStream.range(0, 250).mapToObj(i -> generateEntiy(terrain, "plants/flowerTest1.fbx", "plants/flowerTest1Collider.obj", 0, 6f, 0, 20)).collect(Collectors.toList());
+                return IntStream.range(0, 250).mapToObj(i -> generateEntiy(terrain, "plants/flowerTest1.modelFile", 0, 6f, 0, 20)).collect(Collectors.toList());
             case 1:
                 activated++;
-                return IntStream.range(0, 50).mapToObj(i -> generateEntiy(terrain, "lowPolyTree/vc.fbx", null, 0f, 6f, 0f, 100)).collect(Collectors.toList());
+                return IntStream.range(0, 20).mapToObj(i -> generateEntiy(terrain, "lowPolyTree/vc.modelFile", 0f, 6f, 0f, 100)).collect(Collectors.toList());
             case 2:
                 activated++;
-                return IntStream.range(0, 50).mapToObj(i -> generateEntiy(terrain, "lowPolyTree/ballTree.fbx", "lowPolyTree/ballTreeCollider.obj", 0, 6f, 0, 40)).collect(Collectors.toList());
+                return IntStream.range(0, 50).mapToObj(i -> generateEntiy(terrain, "lowPolyTree/ballTree.modelFile", 0, 6f, 0, 40)).collect(Collectors.toList());
             case 3:
                 activated++;
-                return IntStream.range(0, 50).mapToObj(i -> generateEntiy(terrain, "lowPolyTree/bendyTree.fbx", "lowPolyTree/bendyTreeCollider.obj", 0f, 6f, 0f, 100)).collect(Collectors.toList());
+                return IntStream.range(0, 50).mapToObj(i -> generateEntiy(terrain, "lowPolyTree/bendyTree.modelFile", 0f, 6f, 0f, 100)).collect(Collectors.toList());
             case 4:
                 activated++;
-                return IntStream.range(0, 50).mapToObj(i -> generateEntiy(terrain, "lowPolyTree/tree2.fbx", "lowPolyTree/tree2Collider.obj", 0, 6f, 0, 30)).collect(Collectors.toList());
+                return IntStream.range(0, 50).mapToObj(i -> generateEntiy(terrain, "lowPolyTree/tree2.modelFile", 0, 6f, 0, 30)).collect(Collectors.toList());
             case 5:
                 activated++;
-                return IntStream.range(0, 500).mapToObj(i -> generateEntiy(terrain, "misc/rock.fbx", "misc/rock.fbx", 6f, 6f, 6f, 10)).collect(Collectors.toList());
+                return IntStream.range(0, 500).mapToObj(i -> generateEntiy(terrain, "misc/rock.modelFile", 6f, 6f, 6f, 10)).collect(Collectors.toList());
             case 6:
                 activated++;
-                return IntStream.range(0, 10000).mapToObj(i -> generateEntiy(terrain, "plants/grass.fbx", null, 0, 6f, 0, 10)).collect(Collectors.toList());
+                return IntStream.range(0, 50000).mapToObj(i -> generateEntiy(terrain, "plants/grass.modelFile", 0, 6f, 0, 10)).collect(Collectors.toList());
+            case 7:
+                activated++;
+                return IntStream.range(0, 100).mapToObj(i -> generateEntiy(terrain, "plants/mushroom.modelFile", 0, 6f, 0, 10)).collect(Collectors.toList());
+            case 8:
+                activated++;
+                return IntStream.range(0, 100).mapToObj(i -> generateEntiy(terrain, "misc/tutorialCrystal.modelFile", 0, 6f, 0, 20)).collect(Collectors.toList());
+            case 9:
+                activated++;
+                return IntStream.range(0, 500).mapToObj(i -> generateEntiy(terrain, "plants/glockenblume.modelFile", 0, 6f, 0, 20)).collect(Collectors.toList());
 
         }
-        return null;
+        return new ArrayList<>();
     }
 
-    private Entity generateEntiy(Terrain terrain, String modelName, String collider, float rotRandomX, float rotRandomY, float rotRandomZ, float scale) {
+    private Entity generateEntiy(Terrain terrain, String modelFile, float rotRandomX, float rotRandomY, float rotRandomZ, float scale) {
         Random rnd = new Random();
         float x = rnd.nextFloat() * Terrain.SIZE;
         float z = rnd.nextFloat() * Terrain.SIZE;
         float h = terrain.getHeightOfTerrain(x, z);
         float scaleDiffrence = (rnd.nextFloat() * 2f - 1) * 0.5f + 1.0f;
-        Entity e;
-        if (collider != null) {
-            e = new Entity(ModelLoader.getModel(modelName, collider), new Vector3f(x, h, z), rnd.nextFloat() * rotRandomX, rnd.nextFloat() * rotRandomY, rnd.nextFloat() * rotRandomZ, scale * scaleDiffrence);
-        } else {
-            e = new Entity(ModelLoader.getModel(modelName), new Vector3f(x, h, z), rnd.nextFloat() * rotRandomX, rnd.nextFloat() * rotRandomY, rnd.nextFloat() * rotRandomZ, scale * scaleDiffrence);
-        }
-        return e;
+        return new Entity(ModelFileHandler.getModel(modelFile), new Vector3f(x, h, z), rnd.nextFloat() * rotRandomX, rnd.nextFloat() * rotRandomY, rnd.nextFloat() * rotRandomZ, scale * scaleDiffrence);
     }
 
     public List<Entity> getAllEntities(Terrain terrain) {
         List<Entity> rt = new ArrayList<>();
-        for (int i = 0; i < 7; i++)
+        for (int i = 0; i < 10; i++)
             rt.addAll(generateNextEntities(terrain));
         return rt;
     }

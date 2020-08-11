@@ -1,8 +1,5 @@
 package disuguisedPhoenix.terrain;
 
-import disuguisedPhoenix.Main;
-import graphics.world.Material;
-import graphics.world.Mesh;
 import graphics.world.Model;
 import graphics.objects.Vao;
 import org.joml.SimplexNoise;
@@ -48,20 +45,25 @@ public class Terrain {
     private Model createTerrain() {
         heights = new float[VERTEX_COUNT][VERTEX_COUNT];
         int count = VERTEX_COUNT * VERTEX_COUNT;
-        float[] vertices = new float[count * 3];
-        float[] colors = new float[count * 3];
-        int[] indices = new int[6 * (VERTEX_COUNT - 1) * (VERTEX_COUNT * 1)];
+        float[] vertices = new float[count * 4];
+        float[] colors = new float[count * 4];
+        int[] indices = new int[6 * (VERTEX_COUNT - 1) * VERTEX_COUNT];
         int vertexPointer = 0;
         for (int i = 0; i < VERTEX_COUNT; i++) {
             for (int j = 0; j < VERTEX_COUNT; j++) {
-                vertices[vertexPointer * 3] = (float) j / ((float) VERTEX_COUNT - 1) * SIZE;
+                vertices[vertexPointer * 4] = (float) j / ((float) VERTEX_COUNT - 1) * SIZE;
                 float height = getHeight(j, i);
                 heights[j][i] = height;
-                vertices[vertexPointer * 3 + 1] = height;
-                vertices[vertexPointer * 3 + 2] = (float) i / ((float) VERTEX_COUNT - 1) * SIZE;
-                colors[vertexPointer * 3] = terrainColor.x;
-                colors[vertexPointer * 3 + 1] = terrainColor.y;
-                colors[vertexPointer * 3 + 2] = terrainColor.z;
+                vertices[vertexPointer * 4 + 1] = height;
+                vertices[vertexPointer * 4 + 2] = (float) i / ((float) VERTEX_COUNT - 1) * SIZE;
+                //wobble
+                vertices[vertexPointer * 4 + 3] = 0f;
+
+                colors[vertexPointer * 4] = terrainColor.x;
+                colors[vertexPointer * 4 + 1] = terrainColor.y;
+                colors[vertexPointer * 4 + 2] = terrainColor.z;
+                //shininess
+                colors[vertexPointer * 4 + 3] =  1080;
                 vertexPointer++;
             }
         }
@@ -81,14 +83,11 @@ public class Terrain {
             }
         }
         Vao rt = new Vao();
-        rt.addDataAttributes(0, 3, vertices);
-        rt.addDataAttributes(1, 3, colors);
+        rt.addDataAttributes(0, 4, vertices);
+        rt.addDataAttributes(1, 4, colors);
         rt.addIndicies(indices);
         rt.unbind();
-        Material m = new Material("terrainMaterial");
-        Material.allMaterials.put(m.name,m);
-        m.diffuse = new Vector3f(0.1f,1f,0.1f);
-        return new Model(new Mesh[]{new Mesh(rt,"terrainMaterial")});
+        return new Model(new Vao[]{rt});
     }
 
     private static float barryCentric(Vector3f p1, Vector3f p2, Vector3f p3, Vector2f pos) {

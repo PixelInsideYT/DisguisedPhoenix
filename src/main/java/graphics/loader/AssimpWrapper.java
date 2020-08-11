@@ -5,7 +5,6 @@ import engine.collision.Collider;
 import engine.collision.ConvexShape;
 import graphics.objects.Vao;
 import graphics.world.Material;
-import graphics.world.Mesh;
 import graphics.world.Model;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
@@ -23,7 +22,7 @@ import java.util.*;
 
 import static org.lwjgl.assimp.Assimp.*;
 
-public class ModelLoader {
+public class AssimpWrapper {
 
     private static Map<String, Model> alreadyLoadedModels = new HashMap<>();
 
@@ -35,7 +34,7 @@ public class ModelLoader {
         Collider c = new Collider();
         int flags = 0;
         if (loadToVao) flags = flags | Assimp.aiProcess_Triangulate;
-        AIScene scene = Assimp.aiImportFile("src/main/resources/models/" + name, flags);
+        AIScene scene = Assimp.aiImportFile(name, flags);
         if (scene == null || (scene.mFlags() & Assimp.AI_SCENE_FLAGS_INCOMPLETE) == 1 || (scene.mFlags() & Assimp.AI_SCENE_FLAGS_VALIDATION_WARNING) == 1 || scene.mRootNode() == null) {
             System.err.println("ERROR::ASSIMP: " + Assimp.aiGetErrorString());
         }
@@ -51,7 +50,7 @@ public class ModelLoader {
             min.min(cs.getMin());
             c.addCollisionShape(cs);
         }
-        c.setBoundingBox(new Box(min, max));
+        c.setBoundingBox(new Box(min, max),loadToVao);
         return c;
     }
 
@@ -60,7 +59,7 @@ public class ModelLoader {
         if (rt == null) {
             System.out.println("Model " + name + " isnt loaded yet. Trying to load it");
             rt = loadModel(name);
-            rt.collider = loadCollider(colliderPath, true);
+            rt.collider = loadCollider("src/main/resources/models/"+colliderPath, true);
             alreadyLoadedModels.put(name, rt);
         }
         return rt;
@@ -84,7 +83,7 @@ public class ModelLoader {
         if (scene == null || (scene.mFlags() & Assimp.AI_SCENE_FLAGS_INCOMPLETE) == 1 || (scene.mFlags() & Assimp.AI_SCENE_FLAGS_VALIDATION_WARNING) == 1 || scene.mRootNode() == null) {
             System.err.println("ERROR::ASSIMP: " + Assimp.aiGetErrorString());
         }
-        List<Mesh> meshes = new ArrayList<>();
+        List<Vao> meshes = new ArrayList<>();
         List<Material> materials = new ArrayList<>();
         PointerBuffer meshPointer = scene.mMeshes();
         int numMeshes = scene.mNumMeshes();
@@ -93,21 +92,40 @@ public class ModelLoader {
         PointerBuffer materialPointer = scene.mMaterials();
         for (int i = 0; i < numMeshes; i++) {
             AIMesh mesh = AIMesh.create(meshPointer.get(i));
-            String materialPointerString = getGlobalMaterialPointer(base, mesh.mMaterialIndex(), materialPointer);
-            Vao meshVao = processMesh(mesh, materialPointerString);
-            meshes.add(new Mesh(meshVao, materialPointerString));
+            AIMaterial material = AIMaterial.create(materialPointer.get(mesh.mMaterialIndex()));
+            meshes.add(getVaoFromMeshInfo(processMesh(mesh, processMaterial(base, material))));
         }
         Assimp.aiReleaseImport(scene);
-        return new Model(meshes.stream().toArray(Mesh[]::new));
+        return new Model(meshes.stream().toArray(Vao[]::new));
     }
 
-    private static String getGlobalMaterialPointer(String base, int localMaterialIndex, PointerBuffer materialPointer) {
-        AIMaterial material = AIMaterial.create(materialPointer.get(localMaterialIndex));
-        String materialName = getMaterialName(material);
-        if (Material.allMaterials.get(materialName) == null) {
-            Material.allMaterials.put(materialName, processMaterial(base, material));
+    public static MeshInformation[] loadModelToMeshInfo(String name) {
+        AIScene scene = Assimp.aiImportFile(name, loadFlags);
+        if (scene == null || (scene.mFlags() & Assimp.AI_SCENE_FLAGS_INCOMPLETE) == 1 || (scene.mFlags() & Assimp.AI_SCENE_FLAGS_VALIDATION_WARNING) == 1 || scene.mRootNode() == null) {
+            System.err.println("ERROR::ASSIMP: " + Assimp.aiGetErrorString());
         }
-        return materialName;
+        PointerBuffer meshPointer = scene.mMeshes();
+        int numMeshes = scene.mNumMeshes();
+        int slashIndex = name.lastIndexOf("/");
+        String base = "models/" + name.substring(0, slashIndex < 0 ? 0 : slashIndex);
+        PointerBuffer materialPointer = scene.mMaterials();
+        MeshInformation[] rt = new MeshInformation[numMeshes];
+        for (int i = 0; i < numMeshes; i++) {
+            AIMesh mesh = AIMesh.create(meshPointer.get(i));
+            AIMaterial material = AIMaterial.create(materialPointer.get(mesh.mMaterialIndex()));
+            rt[i] = processMesh(mesh, processMaterial(base, material));
+        }
+        Assimp.aiReleaseImport(scene);
+        return rt;
+    }
+
+
+    private static Vao getVaoFromMeshInfo(MeshInformation mi) {
+        Vao vao = new Vao();
+        vao.addDataAttributes(0, 3, mi.vertexPositions);
+        vao.addDataAttributes(1, 3, mi.colors);
+        vao.addIndicies(mi.indicies);
+        return vao;
     }
 
 
@@ -140,7 +158,7 @@ public class ModelLoader {
 
         String texturePath = getTexturePath(aiMaterial, aiTextureType_DIFFUSE, diffusePath, wrapMode);
         if (texturePath != null && texturePath.length() > 0) {
-            if (ModelLoader.class.getClassLoader().getResourceAsStream(base + "/" + texturePath) != null) {
+            if (AssimpWrapper.class.getClassLoader().getResourceAsStream(base + "/" + texturePath) != null) {
                 material.diffuseTextureId = TextureLoader.loadTexture(base + "/" + texturePath, assimpWrapToOpenGLWrap(wrapMode.get(0)), GL11.GL_LINEAR);
             } else {
                 System.out.println("Cannot find texture: " + base + "/" + texturePath);
@@ -149,7 +167,7 @@ public class ModelLoader {
         AIString normalMapPath = AIString.calloc();
         texturePath = getTexturePath(aiMaterial, aiTextureType_NORMALS, normalMapPath, wrapMode);
         if (texturePath != null && texturePath.length() > 0) {
-            if (ModelLoader.class.getClassLoader().getResourceAsStream(base + "/" + texturePath) != null) {
+            if (AssimpWrapper.class.getClassLoader().getResourceAsStream(base + "/" + texturePath) != null) {
                 material.normalsTextureTd = TextureLoader.loadTexture(base + "/" + texturePath, assimpWrapToOpenGLWrap(wrapMode.get(0)), GL11.GL_LINEAR);
             } else {
                 System.out.println("Cannot find texture: " + base + "/" + texturePath);
@@ -178,20 +196,19 @@ public class ModelLoader {
         return path.dataString();
     }
 
-    private static Vao processMesh(AIMesh mesh, String materialPointerString) {
+    private static MeshInformation processMesh(AIMesh mesh, Material material) {
+        String meshName = mesh.mName().dataString();
         List<Integer> modelIndicies = new ArrayList<>();
         List<Vector3f> modelVerticies = new ArrayList<>();
         Map<Vector3f, Vector3f> vertexColors = new HashMap<>();
         AIVector3D.Buffer verticies = mesh.mVertices();
         int faceCount = mesh.mNumFaces();
-        int assimpVerticies = verticies.remaining();
-        System.out.println("loading: " + faceCount + " faces! with " + assimpVerticies + " assimp verticies");
         AIColor4D.Buffer colors = mesh.mColors(0);
         Vector3f alternativeColor = new Vector3f(1, 0, 1);
         if (colors == null) {
             System.err.println("CANT LOAD colors ");
-            if (materialPointerString != null) {
-                alternativeColor = Material.allMaterials.get(materialPointerString).diffuse;
+            if (material != null) {
+                alternativeColor = material.diffuse;
             }
         }
         for (int i = 0; i < faceCount; i++) {
@@ -206,7 +223,7 @@ public class ModelLoader {
                 if (colors != null) {
                     AIColor4D vertexColor = colors.get(index);
                     Vector3f sRGB = new Vector3f(vertexColor.r(), vertexColor.g(), vertexColor.b());
-                    Vector3f linearSRGB = new Vector3f((float)Math.pow(sRGB.x,2.2d),(float)Math.pow(sRGB.y,2.2d),(float)Math.pow(sRGB.z,2.2d));
+                    Vector3f linearSRGB = new Vector3f((float) Math.pow(sRGB.x, 2.2d), (float) Math.pow(sRGB.y, 2.2d), (float) Math.pow(sRGB.z, 2.2d));
                     vertexColors.put(pos, linearSRGB);
                 } else {
                     vertexColors.put(pos, alternativeColor);
@@ -217,8 +234,6 @@ public class ModelLoader {
                 System.out.print(".");
             }
         }
-        System.out.println();
-        System.out.println(mesh.mName().dataString() + " has: " + modelVerticies.size() + " verticies! You saved " + (assimpVerticies - modelVerticies.size()) + " verticies!");
         float[] vaoVerticies = new float[modelVerticies.size() * 3];
         float[] vaoColor = new float[modelVerticies.size() * 3];
         int vertexPointer = 0;
@@ -233,11 +248,7 @@ public class ModelLoader {
             vaoColor[colorPointer++] = color.y;
             vaoColor[colorPointer++] = color.z;
         }
-        Vao vao = new Vao();
-        vao.addDataAttributes(0, 3, vaoVerticies);
-        vao.addDataAttributes(1, 3, vaoColor);
-        vao.addIndicies(modelIndicies.stream().mapToInt(i -> i).toArray());
-        return vao;
+        return new MeshInformation(meshName, material, vaoVerticies, vaoColor, modelIndicies.stream().mapToInt(i -> i).toArray());
     }
 
     private static Vector3f getVec(AIVector3D vec) {
@@ -275,10 +286,10 @@ public class ModelLoader {
         }
         ConvexShape cs = null;
         if (useVao) {
-            Vao meshVao = processMesh(mesh, null);
-            cs = new ConvexShape(cornerPoints.stream().toArray(Vector3f[]::new), axes.stream().toArray(Vector3f[]::new), meshVao);
+            Vao meshVao = getVaoFromMeshInfo(processMesh(mesh, null));
+            cs = new ConvexShape(cornerPoints.toArray(new Vector3f[0]), axes.toArray(new Vector3f[0]), meshVao);
         } else {
-            cs = new ConvexShape(cornerPoints.stream().toArray(Vector3f[]::new), axes.stream().toArray(Vector3f[]::new));
+            cs = new ConvexShape(cornerPoints.toArray(new Vector3f[0]), axes.toArray(new Vector3f[0]));
         }
         return cs;
     }
@@ -306,9 +317,8 @@ public class ModelLoader {
     private static boolean readMaterialFloat(final AIMaterial mat, final String key, final FloatBuffer store,
                                              final IntBuffer inOut) {
         store.clear();
-        boolean rt = Assimp.aiGetMaterialFloatArray(mat, key, Assimp.aiTextureType_NONE, 0, store,
+        return Assimp.aiGetMaterialFloatArray(mat, key, Assimp.aiTextureType_NONE, 0, store,
                 inOut) == Assimp.aiReturn_SUCCESS && inOut.get(0) == 1;
-        return rt;
     }
 
 }

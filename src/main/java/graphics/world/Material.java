@@ -7,8 +7,6 @@ import java.util.Map;
 
 public class Material {
 
-    public static Map<String, Material> allMaterials = new HashMap<>();
-
     public static final Vector3f DEFAULT_COLOUR = new Vector3f(1, 1, 1);
 
     public String name;

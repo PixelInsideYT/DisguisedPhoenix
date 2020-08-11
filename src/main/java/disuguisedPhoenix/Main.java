@@ -6,11 +6,12 @@ import engine.collision.ConvexShape;
 import engine.input.InputManager;
 import engine.input.KeyboardInputMap;
 import engine.input.MouseInputMap;
+import engine.util.ModelFileHandler;
 import engine.util.Zeitgeist;
 import graphics.camera.Camera;
 import graphics.camera.FreeFlightCamera;
 import graphics.context.Display;
-import graphics.loader.ModelLoader;
+import graphics.loader.AssimpWrapper;
 import graphics.loader.TextureLoader;
 import graphics.objects.Shader;
 import graphics.objects.Vao;
@@ -22,6 +23,7 @@ import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL30;
 
 import java.awt.*;
 import java.text.NumberFormat;
@@ -38,20 +40,23 @@ public class Main {
     public static void main(String args[]) {
         long startUpTime = System.currentTimeMillis();
         Display display = new Display(1920, 1280);
-        display.setClearColor(new Color(53 * 2, 81 * 2, 92 * 2));
+        //display.setClearColor(new Color(53 * 2, 81 * 2, 92 * 2));
+        display.setClearColor(new Color(450/3, 450/3, 450/3));
         MouseInputMap mim = new MouseInputMap();
         List<Entity> staticObjects = new ArrayList<>();
         List<Entity> modelActivation = new ArrayList<>();
 
-        Player player = new Player(ModelLoader.getModel("misc/birb.fbx", "cube.obj"), new Vector3f(-40, 0, -40), mim);
-        System.err.println("In the scene are: " + NumberFormat.getIntegerInstance().format(ModelLoader.verticies) + " verticies and: " + NumberFormat.getIntegerInstance().format(ModelLoader.faces) + " faces!");
+        Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(-40, 0, -40), mim);
+        System.err.println("In the scene are: " + NumberFormat.getIntegerInstance().format(AssimpWrapper.verticies) + " verticies and: " + NumberFormat.getIntegerInstance().format(AssimpWrapper.faces) + " faces!");
         Shader shader = new Shader(Shader.loadShaderCode("testVS.glsl"), Shader.loadShaderCode("testFS.glsl")).combine("pos", "vertexColor");
-        shader.loadUniforms("projMatrix", "viewMatrix", "transformationMatrix", "ambient", "specular", "shininess", "opacity");
+        shader.loadUniforms("projMatrix","noiseMap","time", "viewMatrix", "transformationMatrix");
+        shader.connectSampler("noiseMap",0);
+        int noiseTexture = TextureLoader.loadTexture("misc/noiseMap.png", GL30.GL_REPEAT,GL30.GL_LINEAR);
         ParticleManager pm = new ParticleManager();
         TestRenderer renderer = new TestRenderer(shader);
 
         Terrain terrain = new Terrain(new Vector3f(0, 0, 0));
-        IntStream.range(0, 6).forEach(i -> modelActivation.add(generateActivationSwitch(terrain)));
+        IntStream.range(0, 7).forEach(i -> modelActivation.add(generateActivationSwitch(terrain)));
         //  IntStream.range(0, 6).forEach(i -> staticObjects.addAll(generateNextEntities(terrain)));
         Matrix4f terrainTransformation = new Matrix4f();
         terrainTransformation.translate(0, 0, 0);
@@ -65,13 +70,13 @@ public class Main {
         input.addInputMapping(mim);
         FreeFlightCamera flightCamera = new FreeFlightCamera(mim, freeFlightCam);
         EntityAdder adder = new EntityAdder(pm);
-        //adder.getAllEntities(terrain).forEach(e -> addEntity(e, modelMap, staticObjects));
+                adder.getAllEntities(terrain).forEach(e -> addEntity(e, modelMap, staticObjects));
         player.movement = kim;
         GL11.glEnable(GL11.GL_DEPTH_TEST);
         GL11.glEnable(GL12.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         GL11.glCullFace(GL12.GL_BACK);
-        //GL11.glEnable(GL11.GL_CULL_FACE);
+        GL11.glEnable(GL11.GL_CULL_FACE);
         System.err.println("STARTUP TIME: " + (System.currentTimeMillis() - startUpTime) / 1000f);
         //  display.activateWireframe();
         Zeitgeist zeitgeist = new Zeitgeist();
@@ -81,13 +86,17 @@ public class Main {
         long lastSwitchWireframe = System.currentTimeMillis();
         long lastSwitchCollision = System.currentTimeMillis();
         long lastSwitchCam = System.currentTimeMillis();
+        GL30.glActiveTexture(GL30.GL_TEXTURE0);
+        GL30.glBindTexture(GL30.GL_TEXTURE_2D,noiseTexture);
+        float time =0f;
         while (!display.shouldClose()) {
             float dt = zeitgeist.getDelta();
+            time+=dt;
             display.pollEvents();
             if (input.isKeyDown(GLFW.GLFW_KEY_O) && System.currentTimeMillis() - lastSwitchWireframe > 100) {
                 wireframe = !wireframe;
                 lastSwitchWireframe = System.currentTimeMillis();
-                adder.generateNextEntities(player.position, terrain);
+                //adder.generateNextEntities(player.position, terrain);
             }
             if (input.isKeyDown(GLFW.GLFW_KEY_L) && System.currentTimeMillis() - lastSwitchCollision > 100) {
                 collisionBoxes = !collisionBoxes;
@@ -100,7 +109,9 @@ public class Main {
                 lastSwitchCam = System.currentTimeMillis();
             }
             if (wireframe) {
-                // display.activateWireframe();
+                display.activateWireframe();
+            }else{
+                display.deactivateWireframe();
             }
             display.clear();
             pm.update(dt);
@@ -116,6 +127,7 @@ public class Main {
             adder.update(dt);
             adder.render(ffc.getViewMatrix(), projMatrix);
             renderer.begin(ffc.getViewMatrix(), projMatrix);
+            shader.loadFloat("time",time);
             List<Entity> toRemove = new ArrayList<>();
             modelActivation.forEach(entity -> {
                 entity.update(dt, modelActivation);
@@ -128,7 +140,7 @@ public class Main {
             modelActivation.removeAll(toRemove);
             adder.getAddedEntities().forEach(e -> addEntity(e, modelMap, staticObjects));
             for (Model m : modelMap.keySet()) {
-                renderer.render(m, modelMap.get(m).stream().toArray(Matrix4f[]::new));
+                renderer.render(m, modelMap.get(m).toArray(new Matrix4f[0]));
             }
             renderer.render(player.getModel(), player.getTransformationMatrix());
             renderer.render(terrain.model, terrainTransformation);
@@ -145,7 +157,7 @@ public class Main {
                                     Vao toRender = cs.getModel();
                                     toRender.bind();
                                     shader.loadMatrix("transformationMatrix", cs.getTransformation());
-                                    GL11.glDrawElements(GL11.GL_TRIANGLES, toRender.getIndiciesLength(), GL11.GL_UNSIGNED_INT, 0);
+                                    GL11.glDrawElements(GL11.GL_LINES, toRender.getIndiciesLength(), GL11.GL_UNSIGNED_INT, 0);
                                     toRender.unbind();
                                 }
                             }
@@ -153,7 +165,7 @@ public class Main {
                         Vao toRender = collider.boundingBoxModel;
                         toRender.bind();
                         shader.loadMatrix("transformationMatrix", entity.getTransformationMatrix());
-                        GL11.glDrawElements(GL11.GL_TRIANGLES, toRender.getIndiciesLength(), GL11.GL_UNSIGNED_INT, 0);
+                    //    GL11.glDrawElements(GL11.GL_LINES, toRender.getIndiciesLength(), GL11.GL_UNSIGNED_INT, 0);
                         toRender.unbind();
                     }
                 });
@@ -165,7 +177,7 @@ public class Main {
                             Vao toRender = cs.getModel();
                             toRender.bind();
                             shader.loadMatrix("transformationMatrix", cs.getTransformation());
-                            GL11.glDrawElements(GL11.GL_TRIANGLES, toRender.getIndiciesLength(), GL11.GL_UNSIGNED_INT, 0);
+                            GL11.glDrawElements(GL11.GL_LINES, toRender.getIndiciesLength(), GL11.GL_UNSIGNED_INT, 0);
                             toRender.unbind();
                         }
                     }
@@ -173,7 +185,7 @@ public class Main {
                 Vao toRender = playerCollider.boundingBoxModel;
                 toRender.bind();
                 shader.loadMatrix("transformationMatrix", player.getTransformationMatrix());
-                GL11.glDrawElements(GL11.GL_TRIANGLES, toRender.getIndiciesLength(), GL11.GL_UNSIGNED_INT, 0);
+                GL11.glDrawElements(GL11.GL_LINES, toRender.getIndiciesLength(), GL11.GL_UNSIGNED_INT, 0);
                 toRender.unbind();
                 display.deactivateWireframe();
             }
@@ -191,9 +203,7 @@ public class Main {
 
     private static void addEntity(Entity entity, Map<Model, List<Matrix4f>> modelMap, List<Entity> staticEntities) {
         Model m = entity.getModel();
-        if (modelMap.get(m) == null) {
-            modelMap.put(m, new ArrayList<>());
-        }
+        modelMap.computeIfAbsent(m, k -> new ArrayList<>());
         modelMap.get(m).add(entity.getTransformationMatrix());
         staticEntities.add(entity);
     }
@@ -203,6 +213,6 @@ public class Main {
         float x = rnd.nextFloat() * Terrain.SIZE;
         float z = rnd.nextFloat() * Terrain.SIZE;
         float h = terrain.getHeightOfTerrain(x, z);
-        return new RotatingEntity(ModelLoader.getModel("cube.obj"), x, h + 50, z, 40);
+        return new RotatingEntity(ModelFileHandler.getModel("cube.modelFile"), x, h + 50, z, 40);
     }
 }

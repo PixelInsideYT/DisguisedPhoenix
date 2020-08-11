@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 public class Collider {
 
     public List<CollisionShape> allTheShapes = new ArrayList<>();
-    CollisionShape boundingBox;
+    public CollisionShape boundingBox;
     public Vao boundingBoxModel;
 
     public Collider cloneAndTransform(Matrix4f matrix) {
@@ -31,8 +31,9 @@ public class Collider {
         allTheShapes.add(shape);
     }
 
-    public void setBoundingBox(Box b) {
+    public void setBoundingBox(Box b, boolean renderable) {
         this.boundingBox = b;
+        if(renderable)
         boundingBoxModel = createModel(b);
     }
 

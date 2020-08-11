@@ -1,17 +1,18 @@
 package graphics.world;
 
 import engine.collision.Collider;
+import graphics.objects.Vao;
 
 public class Model {
 
-    public Mesh[] meshes;
+    public Vao[] meshes;
     public Collider collider;
 
-    public Model(Mesh[] meshes) {
+    public Model(Vao[] meshes) {
         this.meshes = meshes;
     }
 
-    public Model(Mesh[] meshes, Collider collider) {
+    public Model(Vao[] meshes, Collider collider) {
         this.meshes = meshes;
         this.collider = collider;
     }
