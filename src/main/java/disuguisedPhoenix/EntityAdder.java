@@ -22,42 +22,47 @@ public class EntityAdder {
 
     private Shader creationShader;
 
-
-    private float growSpeedPlants = 10f;
+    private float particlesPerSecondPerAreaUnit=0.0005f;
+    private float builtSpeed = 0.1f;
 
     private int activated = 0;
 
-    private Map<Entity, Float> entityWantedSize = new HashMap<>();
+    private Map<Entity, Float> entityBuiltProgress = new HashMap<>();
     private ParticleManager pm;
     private BiMap<Entity, ParticleEmitter> toReachEntities = new BiMap<>();
-    private BiMap<Entity, ParticleEmitter> reachedEntities = new BiMap<>();
+    private BiMap<Entity, UpwardsParticles> reachedEntities = new BiMap<>();
 
     public EntityAdder(ParticleManager pm) {
         creationShader = new Shader(Shader.loadShaderCode("creationVS.glsl"), Shader.loadShaderCode("creationGS.glsl"), Shader.loadShaderCode("creationFS.glsl")).combine("pos", "color");
-        creationShader.loadUniforms("projMatrix", "viewMatrix", "transformationMatrix", "percentage");
+        creationShader.loadUniforms("projMatrix", "viewMatrix", "transformationMatrix", "builtProgress", "modelHeight");
         this.pm = pm;
     }
 
     public void update(float dt) {
-        for (Entity e : entityWantedSize.keySet()) {
+        for (Entity e : entityBuiltProgress.keySet()) {
             if (toReachEntities.get(e).toRemove()) {
                 if (reachedEntities.get(e) == null) {
-                    float emitTime = entityWantedSize.get(e) / growSpeedPlants;
-                    reachedEntities.put(e, new UpwardsParticles(new Vector3f(e.getPosition()), 400, 10, emitTime));
+                    float emitTime = 1f / builtSpeed;
+                    float particleHeight = e.scale * e.getModel().height;
+                    float radius = e.scale * e.getModel().radiusXZ;
+                    reachedEntities.put(e, new UpwardsParticles(new Vector3f(e.getPosition()), radius, 500, 3.14f*radius*radius*particlesPerSecondPerAreaUnit, emitTime));
                     pm.addParticleEmitter(reachedEntities.get(e));
+                } else {
+                    reachedEntities.get(e).center.y += dt * builtSpeed * e.getModel().height * e.scale;
                 }
-                e.scale += dt * growSpeedPlants;
+                float newBuiltProgress = entityBuiltProgress.get(e).floatValue() + dt * builtSpeed;
+                entityBuiltProgress.put(e, newBuiltProgress);
             }
         }
     }
 
     public void render(Matrix4f camMatrix, Matrix4f projMatrix) {
-        if (entityWantedSize.keySet().size() > 0) {
+        if (entityBuiltProgress.keySet().size() > 0) {
             creationShader.bind();
             creationShader.loadMatrix("projMatrix", projMatrix);
             creationShader.loadMatrix("viewMatrix", camMatrix);
             Map<Model, List<Entity>> renderMap = new HashMap<>();
-            entityWantedSize.keySet().forEach(e -> addEntity(e, renderMap));
+            entityBuiltProgress.keySet().forEach(e -> addEntity(e, renderMap));
             for (Model m : renderMap.keySet()) {
                 render(m, renderMap.get(m).toArray(new Entity[0]));
             }
@@ -74,9 +79,10 @@ public class EntityAdder {
     private void render(Model model, Entity... toRenderEntities) {
         for (Vao toRender : model.meshes) {
             toRender.bind();
+            creationShader.loadFloat("modelHeight", model.height);
             for (Entity e : toRenderEntities) {
                 creationShader.loadMatrix("transformationMatrix", e.getTransformationMatrix());
-                creationShader.loadFloat("percentage", e.scale / entityWantedSize.get(e));
+                creationShader.loadFloat("builtProgress", entityBuiltProgress.get(e));
                 GL11.glDrawElements(GL11.GL_TRIANGLES, toRender.getIndiciesLength(), GL11.GL_UNSIGNED_INT, 0);
             }
             toRender.unbind();
@@ -85,14 +91,13 @@ public class EntityAdder {
 
     public List<Entity> getAddedEntities() {
         List<Entity> toReturn = new ArrayList<>();
-        for (Entity e : entityWantedSize.keySet()) {
-            if (e.scale >= entityWantedSize.get(e)) {
-                e.scale = entityWantedSize.get(e);
+        for (Entity e : entityBuiltProgress.keySet()) {
+            if (entityBuiltProgress.get(e) >= 1) {
                 toReturn.add(e);
             }
         }
         toReturn.forEach(e -> {
-            entityWantedSize.remove(e);
+            entityBuiltProgress.remove(e);
             toReachEntities.removeKey(e);
             reachedEntities.removeKey(e);
         });
@@ -104,8 +109,7 @@ public class EntityAdder {
         float particleLifeTime = 0.3f;
         int particlesCount = (int) (10000f / newEntities.size() / particleLifeTime);
         newEntities.forEach(e -> {
-            entityWantedSize.put(e, e.scale);
-            e.scale = 0;
+            entityBuiltProgress.put(e, -0.01f);
             ParticleEmitter pe = new PointSeekingEmitter(playerPos, e.position, 700f, particlesCount, terrain);
             pm.addParticleEmitter(pe);
             toReachEntities.put(e, pe);
@@ -134,7 +138,7 @@ public class EntityAdder {
                 return IntStream.range(0, 500).mapToObj(i -> generateEntiy(terrain, "misc/rock.modelFile", 6f, 6f, 6f, 10)).collect(Collectors.toList());
             case 6:
                 activated++;
-                return IntStream.range(0, 50000).mapToObj(i -> generateEntiy(terrain, "plants/grass.modelFile", 0, 6f, 0, 10)).collect(Collectors.toList());
+                return IntStream.range(0, 10000).mapToObj(i -> generateEntiy(terrain, "plants/grass.modelFile", 0, 6f, 0, 10)).collect(Collectors.toList());
             case 7:
                 activated++;
                 return IntStream.range(0, 100).mapToObj(i -> generateEntiy(terrain, "plants/mushroom.modelFile", 0, 6f, 0, 10)).collect(Collectors.toList());

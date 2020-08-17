@@ -137,12 +137,21 @@ public class ModelFileHandler {
                     }
                 }
             }
+
+            float height=-Float.MAX_VALUE;
+            float radiusXZ=-Float.MAX_VALUE;
+            for(int i=0;i<posAndWobble.length/4;i++){
+                height=Math.max(height,posAndWobble[i*4+1]);//y
+                float x = posAndWobble[i*4];
+                float z = posAndWobble[i*4+2];
+                radiusXZ=Math.max(radiusXZ,(float)Math.sqrt(x*x+z*z));
+            }
             Vao meshVao = new Vao();
             meshVao.addDataAttributes(0, 4, posAndWobble);
             meshVao.addDataAttributes(1, 4, colorAndShininess);
             meshVao.addIndicies(indicies);
             meshVao.unbind();
-            rt = new Model(new Vao[]{meshVao}, collider);
+            rt = new Model(new Vao[]{meshVao},height,radiusXZ, collider);
         } catch (IOException e) {
             e.printStackTrace();
         }

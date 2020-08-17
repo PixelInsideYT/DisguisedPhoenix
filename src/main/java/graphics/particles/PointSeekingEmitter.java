@@ -54,7 +54,7 @@ public class PointSeekingEmitter implements ParticleEmitter {
         int particleCount = (int) (emitterTimeCount * ppSecond);
         for (int i = 0; i < particleCount; i++) {
             Vector3f newPos = new Vector3f(currentPos).lerp(lastPos, (float) i / (float) particleCount);
-            emittedParticles.add(new Particle(newPos, new Vector3f(r.nextFloat()), r.nextFloat() * 7f, r.nextFloat() * 10f + 5f, 0.3f, new Vector4f(1, 0, 0, 1), new Vector4f(0, 0, 1, 0.5f), 0.4f));
+            emittedParticles.add(new Particle(newPos, new Vector3f(r.nextFloat()), r.nextFloat() * 7f, r.nextFloat() * 10f + 5f, 0.3f, new Vector4f(1, 0, 0, 1f), new Vector4f(0, 0, 1, 0.5f), 0.4f));
         }
         emitterTimeCount -= particleCount * (1f / ppSecond);
         lastPos.set(currentPos);

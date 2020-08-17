@@ -96,7 +96,7 @@ public class AssimpWrapper {
             meshes.add(getVaoFromMeshInfo(processMesh(mesh, processMaterial(base, material))));
         }
         Assimp.aiReleaseImport(scene);
-        return new Model(meshes.stream().toArray(Vao[]::new));
+        return new Model(meshes.stream().toArray(Vao[]::new),0,0);
     }
 
     public static MeshInformation[] loadModelToMeshInfo(String name) {

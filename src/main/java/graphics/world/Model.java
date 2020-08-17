@@ -8,12 +8,18 @@ public class Model {
     public Vao[] meshes;
     public Collider collider;
 
-    public Model(Vao[] meshes) {
+    public float height;
+    public float radiusXZ;
+
+    public Model(Vao[] meshes, float height, float radius) {
         this.meshes = meshes;
+        this.height = height;
+        this.radiusXZ = radius;
     }
 
-    public Model(Vao[] meshes, Collider collider) {
-        this.meshes = meshes;
+    public Model(Vao[] meshes, float height, float radius, Collider collider) {
+        this(meshes, height, radius);
         this.collider = collider;
+
     }
 }

@@ -18,6 +18,7 @@ import graphics.objects.Vao;
 import graphics.particles.ParticleManager;
 import graphics.renderer.TestRenderer;
 import graphics.world.Model;
+import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
@@ -39,9 +40,9 @@ public class Main {
 
     public static void main(String args[]) {
         long startUpTime = System.currentTimeMillis();
-        Display display = new Display(1920, 1280);
-        //display.setClearColor(new Color(53 * 2, 81 * 2, 92 * 2));
-        display.setClearColor(new Color(450/3, 450/3, 450/3));
+        Display display = new Display(2560, 1440);
+       display.setClearColor(new Color(53 * 2, 81 * 2, 92 * 2));
+       // display.setClearColor(new Color(450/3, 450/3, 450/3));
         MouseInputMap mim = new MouseInputMap();
         List<Entity> staticObjects = new ArrayList<>();
         List<Entity> modelActivation = new ArrayList<>();
@@ -49,7 +50,7 @@ public class Main {
         Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(-40, 0, -40), mim);
         System.err.println("In the scene are: " + NumberFormat.getIntegerInstance().format(AssimpWrapper.verticies) + " verticies and: " + NumberFormat.getIntegerInstance().format(AssimpWrapper.faces) + " faces!");
         Shader shader = new Shader(Shader.loadShaderCode("testVS.glsl"), Shader.loadShaderCode("testFS.glsl")).combine("pos", "vertexColor");
-        shader.loadUniforms("projMatrix","noiseMap","time", "viewMatrix", "transformationMatrix");
+        shader.loadUniforms("projMatrix","noiseMap","time", "viewMatrix","viewMatrix3x3T", "transformationMatrix");
         shader.connectSampler("noiseMap",0);
         int noiseTexture = TextureLoader.loadTexture("misc/noiseMap.png", GL30.GL_REPEAT,GL30.GL_LINEAR);
         ParticleManager pm = new ParticleManager();
@@ -61,7 +62,7 @@ public class Main {
         Matrix4f terrainTransformation = new Matrix4f();
         terrainTransformation.translate(0, 0, 0);
         Matrix4f projMatrix = new Matrix4f();
-        projMatrix.perspective((float) Math.toRadians(70), /*0.8136752f*/16f / 9f, 1f, 100000);
+        projMatrix.perspective((float) Math.toRadians(70),/*0.8136752f*/16f / 9f, 1f, 100000);
         InputManager input = new InputManager(display.getWindowId());
         KeyboardInputMap kim = new KeyboardInputMap().addMapping("forward", GLFW.GLFW_KEY_W).addMapping("backward", GLFW.GLFW_KEY_S).addMapping("turnLeft", GLFW.GLFW_KEY_A).addMapping("turnRight", GLFW.GLFW_KEY_D).addMapping("accel", GLFW.GLFW_KEY_SPACE);
         KeyboardInputMap freeFlightCam = new KeyboardInputMap().addMapping("forward", GLFW.GLFW_KEY_W).addMapping("backward", GLFW.GLFW_KEY_S).addMapping("goLeft", GLFW.GLFW_KEY_A).addMapping("goRight", GLFW.GLFW_KEY_D).addMapping("up", GLFW.GLFW_KEY_SPACE).addMapping("down", GLFW.GLFW_KEY_LEFT_SHIFT).addMapping("fastFlight", GLFW.GLFW_KEY_LEFT_CONTROL);
@@ -70,7 +71,7 @@ public class Main {
         input.addInputMapping(mim);
         FreeFlightCamera flightCamera = new FreeFlightCamera(mim, freeFlightCam);
         EntityAdder adder = new EntityAdder(pm);
-                adder.getAllEntities(terrain).forEach(e -> addEntity(e, modelMap, staticObjects));
+              //  adder.getAllEntities(terrain).forEach(e -> addEntity(e, modelMap, staticObjects));
         player.movement = kim;
         GL11.glEnable(GL11.GL_DEPTH_TEST);
         GL11.glEnable(GL12.GL_BLEND);
@@ -94,9 +95,9 @@ public class Main {
             time+=dt;
             display.pollEvents();
             if (input.isKeyDown(GLFW.GLFW_KEY_O) && System.currentTimeMillis() - lastSwitchWireframe > 100) {
-                wireframe = !wireframe;
+               // wireframe = !wireframe;
                 lastSwitchWireframe = System.currentTimeMillis();
-                //adder.generateNextEntities(player.position, terrain);
+                adder.generateNextEntities(player.position, terrain);
             }
             if (input.isKeyDown(GLFW.GLFW_KEY_L) && System.currentTimeMillis() - lastSwitchCollision > 100) {
                 collisionBoxes = !collisionBoxes;
@@ -127,7 +128,9 @@ public class Main {
             adder.update(dt);
             adder.render(ffc.getViewMatrix(), projMatrix);
             renderer.begin(ffc.getViewMatrix(), projMatrix);
+            Matrix3f viewMatrix3x3Transposed = ffc.getViewMatrix().transpose3x3(new Matrix3f());
             shader.loadFloat("time",time);
+            shader.loadMatrix("viewMatrix3x3T",viewMatrix3x3Transposed);
             List<Entity> toRemove = new ArrayList<>();
             modelActivation.forEach(entity -> {
                 entity.update(dt, modelActivation);

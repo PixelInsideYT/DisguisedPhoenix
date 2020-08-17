@@ -9,6 +9,8 @@ import org.joml.Vector3f;
 public class Terrain {
 
     public static final float SIZE = 10000f;
+    public static final float TERRAIN_HEIGHT = 1000f;
+
     private static final int VERTEX_COUNT = 32;
     private static final Vector3f terrainColorSrgb = new Vector3f(0.278f,0.965f,0.255f);
    private static final Vector3f terrainColor = new Vector3f((float)Math.pow(terrainColorSrgb.x,2.2d),(float)Math.pow(terrainColorSrgb.y,2.2d),(float)Math.pow(terrainColorSrgb.z,2.2d));
@@ -87,7 +89,7 @@ public class Terrain {
         rt.addDataAttributes(1, 4, colors);
         rt.addIndicies(indices);
         rt.unbind();
-        return new Model(new Vao[]{rt});
+        return new Model(new Vao[]{rt},TERRAIN_HEIGHT,SIZE/2f);
     }
 
     private static float barryCentric(Vector3f p1, Vector3f p2, Vector3f p3, Vector2f pos) {
@@ -111,7 +113,7 @@ public class Terrain {
     }
 
     private float getHeight(int x, int z){
-        return SimplexNoise.noise(x/500f*VERTEX_COUNT,z/500f*VERTEX_COUNT)*1000f;
+        return SimplexNoise.noise(x/500f*VERTEX_COUNT,z/500f*VERTEX_COUNT)*TERRAIN_HEIGHT;
     }
 
 }

@@ -1,7 +1,7 @@
 #version 130
 precision highp float;
 
-uniform mat4 viewMatrix;
+uniform mat3 viewMatrix3x3T;
 
 in vec4 colorAndShininessPassed;
 in vec3 worldPos;
@@ -18,7 +18,7 @@ void main()  {
     vec3 xTangent = dFdx( viewPos );
     vec3 yTangent = dFdy( viewPos );
     vec3 viewSpaceNorm = normalize( cross( xTangent, yTangent ) );
-    vec3 norm = (transpose(viewMatrix) * vec4(viewSpaceNorm,0)).xyz;
+    vec3 norm = viewMatrix3x3T*viewSpaceNorm;
 
     float shininess = colorAndShininessPassed.w;
     vec3 diffuse = colorAndShininessPassed.rgb;
@@ -38,6 +38,6 @@ void main()  {
     vec3 gammaCorrected = pow(reinhardToneMapping, vec3(1.0 / gamma));
     float grey = (gammaCorrected.r+gammaCorrected.g+gammaCorrected.b)/3.0;
     FragColor=vec4(vec3(grey),1);
-   //FragColor=vec4(gammaCorrected,1);
+   FragColor=vec4(gammaCorrected,1);
     //FragColor.a = opacity;
 }
