@@ -24,7 +24,7 @@ void main()  {
     vec3 diffuse = colorAndShininessPassed.rgb;
     vec3 lightDir = normalize(lightPos - worldPos);
 
-    float brightness = max(dot(norm,lightDir),0.0);
+    float brightness = max((dot(norm,lightDir)+1)/2,0.0);
     float ambient = 0.2;
     vec3 specular = diffuse;
 

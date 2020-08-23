@@ -5,20 +5,22 @@ import graphics.objects.Vao;
 
 public class Model {
 
-    public Vao[] meshes;
+    public Vao mesh;
     public Collider collider;
 
     public float height;
     public float radiusXZ;
+    public float radius;
 
-    public Model(Vao[] meshes, float height, float radius) {
-        this.meshes = meshes;
+    public Model(Vao mesh, float height, float radiusXZ,float radius) {
+        this.mesh = mesh;
         this.height = height;
-        this.radiusXZ = radius;
+        this.radius = radius;
+        this.radiusXZ=radiusXZ;
     }
 
-    public Model(Vao[] meshes, float height, float radius, Collider collider) {
-        this(meshes, height, radius);
+    public Model(Vao mesh, float height,float radiusXZ, float radius, Collider collider) {
+        this(mesh, height, radiusXZ,radius);
         this.collider = collider;
 
     }

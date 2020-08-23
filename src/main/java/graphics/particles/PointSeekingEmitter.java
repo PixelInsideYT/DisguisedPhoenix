@@ -1,6 +1,6 @@
 package graphics.particles;
 
-import disuguisedPhoenix.terrain.Terrain;
+import disuguisedPhoenix.terrain.Island;
 import org.joml.SimplexNoise;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -20,10 +20,10 @@ public class PointSeekingEmitter implements ParticleEmitter {
     private float emitterTimeCount = 0;
     private float distance;
 
-    private Terrain terrain;
+    private Island terrain;
     private float aliveTime = 20;
 
-    public PointSeekingEmitter(Vector3f startPos, Vector3f endPos, float movementSpeed, float particlesPerSecond, Terrain terrain) {
+    public PointSeekingEmitter(Vector3f startPos, Vector3f endPos, float movementSpeed, float particlesPerSecond, Island terrain) {
         currentPos = new Vector3f(startPos);
         this.endPos = new Vector3f(endPos);
         movingDir = new Vector3f(endPos).sub(startPos).normalize();
@@ -47,7 +47,7 @@ public class PointSeekingEmitter implements ParticleEmitter {
         Vector3f currentVel = new Vector3f(movingDir).add(x, y, z).normalize();
         currentVel.lerp(wantedDir, 1f - blendFactor);
         currentPos.add(currentVel.mul(movementSpeed * dt));
-        currentPos.y = Math.max(currentPos.y, terrain.getHeightOfTerrain(currentPos.x, currentPos.z) + terrainDistance);
+        currentPos.y = Math.max(currentPos.y, terrain.getHeightOfTerrain(currentPos.x,currentPos.y, currentPos.z) + terrainDistance);
         emitterTimeCount += dt;
         List<Particle> emittedParticles = new ArrayList<>();
         Random r = new Random();

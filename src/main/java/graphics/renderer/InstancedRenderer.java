@@ -5,21 +5,25 @@ import graphics.world.Model;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
-
-public class TestRenderer implements IRenderer {
+public class InstancedRenderer implements IRenderer {
 
     private Shader shader;
+    private int instanceCount;
 
-    public TestRenderer(Shader shader) {
-        this.shader = shader;
+    public InstancedRenderer(Shader instancedShader, int instanceCount) {
+        this.shader = instancedShader;
+        this.instanceCount=instanceCount;
+
     }
 
+    @Override
     public void begin(Matrix4f camMatrix, Matrix4f projMatrix) {
         shader.bind();
         shader.loadMatrix("projMatrix", projMatrix);
         shader.loadMatrix("viewMatrix", camMatrix);
     }
 
+    @Override
     public void render(Model model, Matrix4f... modelMatrixArray) {
         model.mesh.bind();
         int indiciesLength = model.mesh.getIndiciesLength();
@@ -30,8 +34,8 @@ public class TestRenderer implements IRenderer {
         model.mesh.unbind();
     }
 
+    @Override
     public void end() {
         shader.unbind();
     }
-
 }
