@@ -53,51 +53,9 @@ public class AssimpWrapper {
         c.setBoundingBox(new Box(min, max),loadToVao);
         return c;
     }
-
-    public static Model getModel(String name, String colliderPath) {
-        Model rt = alreadyLoadedModels.get(name);
-        if (rt == null) {
-            System.out.println("Model " + name + " isnt loaded yet. Trying to load it");
-            rt = loadModel(name);
-            rt.collider = loadCollider("src/main/resources/models/"+colliderPath, true);
-            alreadyLoadedModels.put(name, rt);
-        }
-        return rt;
-    }
-
-    public static Model getModel(String name) {
-        Model rt = alreadyLoadedModels.get(name);
-        if (rt == null) {
-            System.out.println("Model " + name + " isnt loaded yet. Trying to load it");
-            rt = loadModel(name);
-            alreadyLoadedModels.put(name, rt);
-        }
-        return rt;
-    }
-
     public static int verticies = 0;
     public static int faces = 0;
 
-    private static Model loadModel(String name) {
-        AIScene scene = Assimp.aiImportFile("src/main/resources/models/" + name, loadFlags);
-        if (scene == null || (scene.mFlags() & Assimp.AI_SCENE_FLAGS_INCOMPLETE) == 1 || (scene.mFlags() & Assimp.AI_SCENE_FLAGS_VALIDATION_WARNING) == 1 || scene.mRootNode() == null) {
-            System.err.println("ERROR::ASSIMP: " + Assimp.aiGetErrorString());
-        }
-        List<Vao> meshes = new ArrayList<>();
-        List<Material> materials = new ArrayList<>();
-        PointerBuffer meshPointer = scene.mMeshes();
-        int numMeshes = scene.mNumMeshes();
-        int slashIndex = name.lastIndexOf("/");
-        String base = "models/" + name.substring(0, slashIndex < 0 ? 0 : slashIndex);
-        PointerBuffer materialPointer = scene.mMaterials();
-        for (int i = 0; i < numMeshes; i++) {
-            AIMesh mesh = AIMesh.create(meshPointer.get(i));
-            AIMaterial material = AIMaterial.create(materialPointer.get(mesh.mMaterialIndex()));
-            meshes.add(getVaoFromMeshInfo(processMesh(mesh, processMaterial(base, material))));
-        }
-        Assimp.aiReleaseImport(scene);
-        return new Model(meshes.stream().toArray(Vao[]::new),0,0);
-    }
 
     public static MeshInformation[] loadModelToMeshInfo(String name) {
         AIScene scene = Assimp.aiImportFile(name, loadFlags);

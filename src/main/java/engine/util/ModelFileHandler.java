@@ -140,18 +140,23 @@ public class ModelFileHandler {
 
             float height=-Float.MAX_VALUE;
             float radiusXZ=-Float.MAX_VALUE;
+            float radius=-Float.MAX_VALUE;
+
             for(int i=0;i<posAndWobble.length/4;i++){
-                height=Math.max(height,posAndWobble[i*4+1]);//y
                 float x = posAndWobble[i*4];
+                float y = posAndWobble[i*4+1];
                 float z = posAndWobble[i*4+2];
+                height=Math.max(height,y);
                 radiusXZ=Math.max(radiusXZ,(float)Math.sqrt(x*x+z*z));
+                radius=Math.max(radius,(float)Math.sqrt(x*x+z*z+y*y));
+
             }
             Vao meshVao = new Vao();
             meshVao.addDataAttributes(0, 4, posAndWobble);
             meshVao.addDataAttributes(1, 4, colorAndShininess);
             meshVao.addIndicies(indicies);
             meshVao.unbind();
-            rt = new Model(new Vao[]{meshVao},height,radiusXZ, collider);
+            rt = new Model(meshVao,height,radiusXZ,radius, collider);
         } catch (IOException e) {
             e.printStackTrace();
         }
