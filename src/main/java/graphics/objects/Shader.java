@@ -20,13 +20,13 @@ import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL32.GL_GEOMETRY_SHADER;
 
 public class Shader {
-    private static List<Integer> allShaderProgramms = new ArrayList<Integer>();
+    private static List<Integer> allShaderProgramms = new ArrayList<>();
     private static FloatBuffer matrixBuffer4f = BufferUtils.createFloatBuffer(16);
     private static FloatBuffer matrixBuffer3f = BufferUtils.createFloatBuffer(9);
 
     public int shaderProgram;
-    private List<Integer> shaders = new ArrayList<Integer>();
-    private Map<String, Integer> uniforms = new HashMap<String, Integer>();
+    private List<Integer> shaders = new ArrayList<>();
+    private Map<String, Integer> uniforms = new HashMap<>();
 
     public Shader(String vertex, String fragment) {
         shaders.add(attachShader(GL_VERTEX_SHADER, vertex));
@@ -99,8 +99,9 @@ public class Shader {
         }
     }
 
-    public void bindAttribute(int attribute, String variableName) {
+    public Shader bindAttribute(int attribute, String variableName) {
         GL20.glBindAttribLocation(shaderProgram, attribute, variableName);
+        return this;
     }
 
     public Shader connectSampler(String samplerName, int unit) {
@@ -111,8 +112,8 @@ public class Shader {
     }
 
     public void loadUniforms(String... uniformNames) {
-        for (int i = 0; i < uniformNames.length; i++) {
-            loadUniform(uniformNames[i]);
+        for (String uniformName : uniformNames) {
+            loadUniform(uniformName);
         }
     }
 
@@ -165,7 +166,7 @@ public class Shader {
     }
 
     public static void cleanUpAllShaders() {
-        allShaderProgramms.forEach(i -> glDeleteProgram(i));
+        allShaderProgramms.forEach(GL20::glDeleteProgram);
     }
 
 }

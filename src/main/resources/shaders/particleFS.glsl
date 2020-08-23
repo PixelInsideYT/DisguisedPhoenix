@@ -1,8 +1,8 @@
 #version 140
 
-uniform vec4 color;
+in vec4 colorPass;
 out vec4 FragColor;
 
 void main()  {
-    FragColor = color;
+    FragColor = colorPass;
 }
