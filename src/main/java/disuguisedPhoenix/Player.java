@@ -20,17 +20,12 @@ public class Player extends Entity {
 
     private static final float MAX_TURN_SPEED = 3f;
     private static final float GRAVITY = -600;
-
-    Quaternionf rotation;
-
-    private Vector3f currentTurnSpeed;
-    private Vector3i currentTurnDirection;
-
-
-    private float currentFlySpeed = 300;
-
     public InputMap movement;
     public ThirdPersonCamera cam;
+    Quaternionf rotation;
+    private Vector3f currentTurnSpeed;
+    private Vector3i currentTurnDirection;
+    private float currentFlySpeed = 300;
     private Vector3f lookAtPosition = new Vector3f();
 
     private float accelerate = 0;
@@ -46,8 +41,10 @@ public class Player extends Entity {
 
     public void move(Island terrain, float dt, List<Entity> possibleCollisions) {
         checkInputs();
-        if(Math.abs(currentTurnSpeed.y) <= TURN_SPEED_ACCEL * dt&&currentTurnDirection.y==0)currentTurnSpeed.y=0;
-        if(Math.abs(currentTurnSpeed.x) <= TURN_SPEED_ACCEL * dt&&currentTurnDirection.x==0)currentTurnSpeed.x=0;
+        if (Math.abs(currentTurnSpeed.y) <= TURN_SPEED_ACCEL * dt && currentTurnDirection.y == 0)
+            currentTurnSpeed.y = 0;
+        if (Math.abs(currentTurnSpeed.x) <= TURN_SPEED_ACCEL * dt && currentTurnDirection.x == 0)
+            currentTurnSpeed.x = 0;
         int correctionDirectionY = Math.abs(currentTurnSpeed.y) <= TURN_SPEED_ACCEL * dt ? 0 : currentTurnSpeed.y > 0 ? -1 : 1;
         int wantedTurnDirectionY = currentTurnDirection.y != 0 ? currentTurnDirection.y : correctionDirectionY;
         currentTurnSpeed.y += wantedTurnDirectionY * TURN_SPEED_ACCEL * dt;
@@ -69,11 +66,11 @@ public class Player extends Entity {
         currentFlySpeed = Math.max(currentFlySpeed, 400);
         velocity.set(new Vector3f(forward).mul(currentFlySpeed));
         super.update(dt, possibleCollisions);
-        this.position.y = Math.max(position.y, terrain.getHeightOfTerrain(position.x,position.y, position.z));
+        this.position.y = Math.max(position.y, terrain.getHeightOfTerrain(position.x, position.y, position.z));
         rotZ = Maths.map(-currentTurnSpeed.y, -MAX_TURN_SPEED, MAX_TURN_SPEED, -(float) Math.PI / 4f, (float) Math.PI / 4f);
         lookAtPosition.set(new Vector3f(forward).normalize().mul(30).add(position));
-        cam.position.set(new Vector3f(position).add(forward.mul(-5f)).add(0,1,0));
-        cam.position.y = Math.max(cam.position.y, terrain.getHeightOfTerrain(cam.position.x,cam.position.y, cam.position.z));
+        cam.position.set(new Vector3f(position).add(forward.mul(-5f)).add(0, 1, 0));
+        cam.position.y = Math.max(cam.position.y, terrain.getHeightOfTerrain(cam.position.x, cam.position.y, cam.position.z));
     }
 
 

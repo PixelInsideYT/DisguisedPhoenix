@@ -11,15 +11,13 @@ import java.util.List;
 
 public class Entity {
 
-    private Model model;
     protected Vector3f position;
     protected Vector3f velocity;
     protected Vector3f acceleration;
     protected float rotX, rotY, rotZ;
     protected float scale;
-
     protected Matrix4f modelMatrix;
-
+    private Model model;
     private boolean changedPosition = true;
     private Collider transformedCollider;
 
@@ -39,19 +37,22 @@ public class Entity {
     }
 
     public Matrix4f getTransformationMatrix() {
+        if(changedPosition){
         modelMatrix.identity();
         modelMatrix.translate(position);
         modelMatrix.rotate(rotX, 1, 0, 0);
         modelMatrix.rotate(rotY, 0, 1, 0);
         modelMatrix.rotate(rotZ, 0, 0, 1);
         modelMatrix.scale(scale);
+        changedPosition=false;
+        }
         return modelMatrix;
     }
 
     public void update(float dt, List<Entity> possibleCollisions) {
         velocity.add(new Vector3f(acceleration).mul(dt));
-        if(velocity.length()>0){
-            changedPosition=true;
+        if (velocity.length() > 0) {
+            changedPosition = true;
         }
         Collider own = getCollider();
         if (own != null) {

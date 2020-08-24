@@ -1,12 +1,13 @@
 package graphics.renderer;
 
+import disuguisedPhoenix.Main;
 import graphics.objects.Shader;
 import graphics.world.Model;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
 
-public class TestRenderer implements IRenderer {
+public class TestRenderer {
 
     private Shader shader;
 
@@ -26,6 +27,7 @@ public class TestRenderer implements IRenderer {
         for (Matrix4f modelMatrix : modelMatrixArray) {
             shader.loadMatrix("transformationMatrix", modelMatrix);
             GL11.glDrawElements(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, 0);
+            Main.drawCalls++;
         }
         model.mesh.unbind();
     }

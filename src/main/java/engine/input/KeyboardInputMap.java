@@ -9,7 +9,7 @@ public class KeyboardInputMap extends InputMap {
     protected BiMap<String, Integer> actionToKeyMap = new BiMap<>();
 
     public KeyboardInputMap() {
-        this.deviceName="Keyboard";
+        this.deviceName = "Keyboard";
     }
 
     public Set<Integer> getAllMapedKeys() {
@@ -30,7 +30,7 @@ public class KeyboardInputMap extends InputMap {
     }
 
     public KeyboardInputMap setName(String name) {
-        this.deviceName=name;
+        this.deviceName = name;
         return this;
     }
 

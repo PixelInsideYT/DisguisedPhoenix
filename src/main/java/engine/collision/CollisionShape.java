@@ -6,9 +6,8 @@ import org.joml.Vector3f;
 
 public class CollisionShape {
 
-    protected Vector3f center;
-
     public Vector3f[] cornerPoints;
+    protected Vector3f center;
     protected Vector3f[] axes;
 
     public CollisionShape(Vector3f[] cornerPoints, Vector3f[] axes) {

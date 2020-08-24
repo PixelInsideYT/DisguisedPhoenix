@@ -32,23 +32,11 @@ public class Shader {
         shaders.add(attachShader(GL_VERTEX_SHADER, vertex));
         shaders.add(attachShader(GL_FRAGMENT_SHADER, fragment));
     }
-    public Shader(String vertex,String geometry, String fragment) {
+
+    public Shader(String vertex, String geometry, String fragment) {
         shaders.add(attachShader(GL_VERTEX_SHADER, vertex));
         shaders.add(attachShader(GL_GEOMETRY_SHADER, geometry));
         shaders.add(attachShader(GL_FRAGMENT_SHADER, fragment));
-    }
-    private int attachShader(int type, String code) {
-        int shader = glCreateShader(type);
-        glShaderSource(shader, code);
-        glCompileShader(shader);
-        if (GL20.glGetShaderi(shader, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
-            System.out.println("Something went wrong for code: " + code + " \n");
-            System.out.println(GL20.glGetShaderInfoLog(shader, 500));
-            System.err.println("Could not compile shader.");
-            System.exit(-1);
-
-        }
-        return shader;
     }
 
     public static String loadShaderCode(String name) {
@@ -68,6 +56,24 @@ public class Shader {
             System.exit(-1);
         }
         return shaderSource.toString();
+    }
+
+    public static void cleanUpAllShaders() {
+        allShaderProgramms.forEach(GL20::glDeleteProgram);
+    }
+
+    private int attachShader(int type, String code) {
+        int shader = glCreateShader(type);
+        glShaderSource(shader, code);
+        glCompileShader(shader);
+        if (GL20.glGetShaderi(shader, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
+            System.out.println("Something went wrong for code: " + code + " \n");
+            System.out.println(GL20.glGetShaderInfoLog(shader, 500));
+            System.err.println("Could not compile shader.");
+            System.exit(-1);
+
+        }
+        return shader;
     }
 
     public Shader combine(String... attributes) {
@@ -106,7 +112,7 @@ public class Shader {
 
     public Shader connectSampler(String samplerName, int unit) {
         bind();
-        GL20.glUniform1i(uniforms.get(samplerName), GL13.GL_TEXTURE0+unit);
+        GL20.glUniform1i(uniforms.get(samplerName), GL13.GL_TEXTURE0 + unit);
         unbind();
         return this;
     }
@@ -163,10 +169,6 @@ public class Shader {
             glDetachShader(shaderProgram, i);
             glDeleteShader(i);
         });
-    }
-
-    public static void cleanUpAllShaders() {
-        allShaderProgramms.forEach(GL20::glDeleteProgram);
     }
 
 }

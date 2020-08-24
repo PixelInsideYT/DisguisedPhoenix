@@ -1,7 +1,6 @@
 package graphics.camera;
 
 import engine.input.MouseInputMap;
-import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 public class ThirdPersonCamera extends Camera {

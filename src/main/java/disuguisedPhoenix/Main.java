@@ -34,15 +34,17 @@ import java.util.*;
 
 public class Main {
 
-    private static int activated = 0;
-    private static Map<Model, List<Matrix4f>> modelMap = new HashMap<>();
+    private static Map<Model, List<Entity>> modelMap = new HashMap<>();
     private static FrustumIntersection cullingHelper;
     private static Matrix4f projViewMatrix = new Matrix4f();
+    private static Vector3f tempVec = new Vector3f();
 
-    public static void main(String args[]) {
+    public static int drawCalls=0;
+
+    public static void main(String[] args) {
         long startUpTime = System.currentTimeMillis();
         Display display = new Display(2560, 1440);
-        display.setClearColor(new Color(53 * 2, 81 * 2, 92 * 2));
+        display.setClearColor(new Color(59, 168, 198));
         // display.setClearColor(new Color(450/3, 450/3, 450/3));
         MouseInputMap mim = new MouseInputMap();
         List<Entity> staticObjects = new ArrayList<>();
@@ -59,7 +61,7 @@ public class Main {
         TestRenderer renderer = new TestRenderer(shader);
         List<Island> flyingIslands = new ArrayList<>();
         Random rnd = new Random();
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 50; i++) {
             Island land = new Island(generateVec(20000f), rnd.nextFloat() * 10000f + 1000);
             flyingIslands.add(land);
         }
@@ -74,26 +76,25 @@ public class Main {
         input.addInputMapping(mim);
         FreeFlightCamera flightCamera = new FreeFlightCamera(mim, freeFlightCam);
         EntityAdder adder = new EntityAdder(pm);
-        //adder.getAllEntities(flyingIslands).forEach(e -> addEntity(e, modelMap, staticObjects));
+        adder.getAllEntities(flyingIslands).forEach(e -> addEntity(e, modelMap, staticObjects));
         player.movement = kim;
         GL11.glEnable(GL11.GL_DEPTH_TEST);
         GL11.glEnable(GL12.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         GL11.glCullFace(GL12.GL_BACK);
-         GL11.glEnable(GL11.GL_CULL_FACE);
+       // GL11.glEnable(GL11.GL_CULL_FACE);
         System.err.println("STARTUP TIME: " + (System.currentTimeMillis() - startUpTime) / 1000f);
         //  display.activateWireframe();
         Zeitgeist zeitgeist = new Zeitgeist();
         boolean wireframe = false;
         boolean collisionBoxes = false;
-        boolean freeFlightCamActivated = false;
+        boolean freeFlightCamActivated = true;
         long lastSwitchWireframe = System.currentTimeMillis();
         long lastSwitchCollision = System.currentTimeMillis();
         long lastSwitchCam = System.currentTimeMillis();
         GL30.glActiveTexture(GL30.GL_TEXTURE0);
         GL30.glBindTexture(GL30.GL_TEXTURE_2D, noiseTexture);
         float time = 0f;
-        freeFlightCamActivated = true;
         input.hideMouseCursor();
         while (!display.shouldClose()) {
             float dt = zeitgeist.getDelta();
@@ -129,9 +130,9 @@ public class Main {
                 ffc = flightCamera;
             }
             ffc.update(dt);
-            //projViewMatrix.set(new Matrix4f(projMatrix));
-            projViewMatrix.identity();
-            projViewMatrix.perspective((float) Math.toRadians(50),/*0.8136752f*/16f / 9f, 1f, 100000);
+            projViewMatrix.set(projMatrix);
+            // projViewMatrix.identity();
+            // projViewMatrix.perspective((float) Math.toRadians(50),/*0.8136752f*/16f / 9f, 1f, 100000);
             projViewMatrix.mul(new Matrix4f(ffc.getViewMatrix()));
             cullingHelper.set(projViewMatrix);
             input.updateInputMaps();
@@ -154,10 +155,11 @@ public class Main {
             adder.getAddedEntities().forEach(e -> addEntity(e, modelMap, staticObjects));
             for (Model m : modelMap.keySet()) {
                 float radius = m.radius;
-                renderer.render(m, modelMap.get(m).stream().filter(matrix4f -> isInsideFrustum(matrix4f, radius)).toArray(Matrix4f[]::new));
+                renderer.render(m, modelMap.get(m).stream().filter(entity -> isInsideFrustum(entity.position,m.relativeCenter,entity.scale, radius)).map(Entity::getTransformationMatrix).toArray(Matrix4f[]::new));
             }
             renderer.render(player.getModel(), player.getTransformationMatrix());
             for (Island terrain : flyingIslands)
+                if(isInsideFrustum(terrain.position,terrain.model.relativeCenter,1, terrain.model.radius))
                 renderer.render(terrain.model, terrain.transformation);
             if (collisionBoxes) {
                 display.activateWireframe();
@@ -207,7 +209,8 @@ public class Main {
             renderer.end();
             pm.render(projMatrix, ffc.getViewMatrix());
             display.flipBuffers();
-            display.setFrameTitle("Disguised Phoenix: " + zeitgeist.getFPS() + " FPS");
+            display.setFrameTitle("Disguised Phoenix: " + zeitgeist.getFPS() + " FPS"+" "+drawCalls+" draw calls");
+            drawCalls=0;
             zeitgeist.sleep();
         }
         TextureLoader.cleanUpAllTextures();
@@ -216,10 +219,10 @@ public class Main {
         display.destroy();
     }
 
-    private static void addEntity(Entity entity, Map<Model, List<Matrix4f>> modelMap, List<Entity> staticEntities) {
+    private static void addEntity(Entity entity, Map<Model, List<Entity>> modelMap, List<Entity> staticEntities) {
         Model m = entity.getModel();
         modelMap.computeIfAbsent(m, k -> new ArrayList<>());
-        modelMap.get(m).add(entity.getTransformationMatrix());
+        modelMap.get(m).add(entity);
         staticEntities.add(entity);
     }
 
@@ -235,12 +238,8 @@ public class Main {
         return new Vector3f((float) (Math.random() * 2f - 1f) * bounds, (float) (Math.random() * 2f - 1f) * bounds, (float) (Math.random() * 2f - 1f) * bounds);
     }
 
-    private static Vector3f tempVec = new Vector3f();
-
-    private static boolean isInsideFrustum(Matrix4f matrix, float radius) {
-       float scale = matrix.getScale(tempVec).x;
-        Vector3f translation = matrix.getTranslation(tempVec);
-        return cullingHelper.testSphere(translation, radius * scale);
+    private static boolean isInsideFrustum(Vector3f pos,Vector3f ralativeCenter,float scale, float radius) {
+        return cullingHelper.testSphere(new Vector3f(ralativeCenter).mulAdd(scale,pos), radius * scale);
     }
 
 }

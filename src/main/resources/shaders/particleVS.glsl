@@ -9,6 +9,6 @@ uniform mat4 projMatrix;
 out vec4 colorPass;
 
 void main(){
-	colorPass = color;
-	gl_Position =projMatrix*viewMatrix*transformationMatrix*vec4(pos,1);
+    colorPass = color;
+    gl_Position =projMatrix*viewMatrix*transformationMatrix*vec4(pos, 1);
 }

@@ -1,7 +1,6 @@
 package graphics.camera;
 
 import engine.input.InputMap;
-import engine.input.KeyboardInputMap;
 import engine.input.MouseInputMap;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
@@ -27,13 +26,17 @@ public class FreeFlightCamera extends Camera {
 
     public FreeFlightCamera(MouseInputMap mim, InputMap otherMovement) {
         this.movement = mim;
-        this.otherMovement=otherMovement;
+        this.otherMovement = otherMovement;
+    }
+
+    public static Vector2f createUnitVecFromAngle(float angle) {
+        return new Vector2f((float) Math.cos(angle), (float) Math.sin(angle));
     }
 
     public void update(float dt) {
-        float flySpeed=normalSpeed;
-        if(otherMovement.getValueForAction("fastFlight")>0){
-            flySpeed=fastSpeed;
+        float flySpeed = normalSpeed;
+        if (otherMovement.getValueForAction("fastFlight") > 0) {
+            flySpeed = fastSpeed;
         }
         if (otherMovement.getValueForAction("goLeft") > 0) {
             this.sideSpeed = -flySpeed;
@@ -41,13 +44,15 @@ public class FreeFlightCamera extends Camera {
             this.sideSpeed = flySpeed;
         } else {
             this.sideSpeed = 0;
-        } if (otherMovement.getValueForAction("forward") > 0) {
+        }
+        if (otherMovement.getValueForAction("forward") > 0) {
             this.xzSpeed = flySpeed;
         } else if (otherMovement.getValueForAction("backward") > 0) {
             this.xzSpeed = -flySpeed;
         } else {
             this.xzSpeed = 0;
-        } if (otherMovement.getValueForAction("up") > 0) {
+        }
+        if (otherMovement.getValueForAction("up") > 0) {
             this.ySpeed = flySpeed;
         } else if (otherMovement.getValueForAction("down") > 0) {
             this.ySpeed = -flySpeed;
@@ -59,19 +64,15 @@ public class FreeFlightCamera extends Camera {
         Vector2f rotation = createUnitVecFromAngle(angle);
         direction.x = rotation.x;
         direction.z = rotation.y;
-        Vector2f sideways = createUnitVecFromAngle(angle+(float)Math.PI/2f);
-        sideways.mul(sideSpeed*dt);
-        position.x+=sideways.x;
-        position.z+=sideways.y;
+        Vector2f sideways = createUnitVecFromAngle(angle + (float) Math.PI / 2f);
+        sideways.mul(sideSpeed * dt);
+        position.x += sideways.x;
+        position.z += sideways.y;
         Vector2f xzForward = createUnitVecFromAngle(angle);
-        xzForward.mul(xzSpeed*dt);
-        position.x+=xzForward.x;
-        position.z+=xzForward.y;
-        position.y += ySpeed *dt;
-    }
-
-    public static Vector2f createUnitVecFromAngle(float angle) {
-        return new Vector2f((float) Math.cos(angle), (float) Math.sin(angle));
+        xzForward.mul(xzSpeed * dt);
+        position.x += xzForward.x;
+        position.z += xzForward.y;
+        position.y += ySpeed * dt;
     }
 
     @Override

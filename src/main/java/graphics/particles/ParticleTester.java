@@ -8,8 +8,7 @@ import graphics.objects.Vao;
 public class ParticleTester {
 
 
-
-    public static void main(String args[]) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException {
         Display display = new Display(1080, 720);
         Zeitgeist zeitgeist = new Zeitgeist();
         ParticleManager pm = new ParticleManager();
@@ -17,7 +16,7 @@ public class ParticleTester {
             float dt = zeitgeist.getDelta();
             display.pollEvents();
             display.clear();
-            pm.render(null,null);
+            pm.render(null, null);
             display.flipBuffers();
             Thread.sleep(500);
         }
@@ -25,7 +24,6 @@ public class ParticleTester {
         Shader.cleanUpAllShaders();
         display.destroy();
     }
-
 
 
 }

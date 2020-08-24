@@ -37,6 +37,12 @@ public class EntityAdder {
         this.pm = pm;
     }
 
+    private static void addEntity(Entity entity, Map<Model, List<Entity>> modelMap) {
+        Model m = entity.getModel();
+        modelMap.computeIfAbsent(m, k -> new ArrayList<>());
+        modelMap.get(m).add(entity);
+    }
+
     public void update(float dt) {
         for (Entity e : entityBuiltProgress.keySet()) {
             if (toReachEntities.get(e).toRemove()) {
@@ -49,7 +55,7 @@ public class EntityAdder {
                 } else {
                     reachedEntities.get(e).center.y += dt * builtSpeed * e.getModel().height * e.scale;
                 }
-                float newBuiltProgress = entityBuiltProgress.get(e).floatValue() + dt * builtSpeed;
+                float newBuiltProgress = entityBuiltProgress.get(e) + dt * builtSpeed;
                 entityBuiltProgress.put(e, newBuiltProgress);
             }
         }
@@ -67,12 +73,6 @@ public class EntityAdder {
             }
             creationShader.unbind();
         }
-    }
-
-    private static void addEntity(Entity entity, Map<Model, List<Entity>> modelMap) {
-        Model m = entity.getModel();
-        modelMap.computeIfAbsent(m, k -> new ArrayList<>());
-        modelMap.get(m).add(entity);
     }
 
     private void render(Model model, Entity... toRenderEntities) {
@@ -108,7 +108,7 @@ public class EntityAdder {
         islands.forEach(i -> newEntities.addAll(generateEntitiesFor(i)));
         activated++;
         float particleLifeTime = 0.3f;
-        int particlesCount = (int) (10000f / newEntities.size() / particleLifeTime);
+        int particlesCount = 100;
         newEntities.forEach(e -> {
             entityBuiltProgress.put(e, -0.01f);
             ParticleEmitter pe = new PointSeekingEmitter(playerPos, e.position, 700f, particlesCount, islands.get(0));

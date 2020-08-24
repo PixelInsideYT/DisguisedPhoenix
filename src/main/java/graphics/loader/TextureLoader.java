@@ -1,5 +1,6 @@
 package graphics.loader;
 
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.ByteBuffer;
@@ -74,6 +75,6 @@ public class TextureLoader {
     }
 
     public static void cleanUpAllTextures() {
-        nameToIdMap.values().forEach(i->glDeleteTextures(i));
+        nameToIdMap.values().forEach(GL11::glDeleteTextures);
     }
 }

@@ -18,7 +18,7 @@ public class Collider {
         Collider c = new Collider();
         c.boundingBox = this.boundingBox.cloneAndTransform(matrix);
         c.allTheShapes = this.allTheShapes.stream().map(cs -> cs.cloneAndTransform(matrix)).collect(Collectors.toList());
-        c.boundingBoxModel=this.boundingBoxModel;
+        c.boundingBoxModel = this.boundingBoxModel;
         return c;
     }
 
@@ -33,8 +33,8 @@ public class Collider {
 
     public void setBoundingBox(Box b, boolean renderable) {
         this.boundingBox = b;
-        if(renderable)
-        boundingBoxModel = createModel(b);
+        if (renderable)
+            boundingBoxModel = createModel(b);
     }
 
     private Vao createModel(Box b) {

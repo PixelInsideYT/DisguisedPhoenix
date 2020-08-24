@@ -6,9 +6,8 @@ import org.joml.Vector4f;
 
 public class Particle {
 
-    private Matrix4f transformationMatrix;
-
     protected Vector3f position;
+    private Matrix4f transformationMatrix;
     private Vector3f velocity;
 
     private float rotationVelocity;

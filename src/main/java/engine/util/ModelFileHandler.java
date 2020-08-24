@@ -9,15 +9,12 @@ import graphics.objects.Vao;
 import graphics.world.Model;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
-import sun.misc.IOUtils;
 
 import javax.swing.*;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class ModelFileHandler {
 
@@ -67,7 +64,7 @@ public class ModelFileHandler {
         ByteBuffer buffer;
         Model rt = null;
         try {
-            buffer = ByteBuffer.wrap(IOUtils.readAllBytes(stream)).order(ByteOrder.nativeOrder());
+            buffer = ByteBuffer.wrap(readAllBytes(stream)).order(ByteOrder.nativeOrder());
             stream.close();
             int vertexFloats = buffer.getInt();
             int colorFloats = buffer.getInt();
@@ -138,25 +135,33 @@ public class ModelFileHandler {
                 }
             }
 
-            float height=-Float.MAX_VALUE;
-            float radiusXZ=-Float.MAX_VALUE;
-            float radius=-Float.MAX_VALUE;
-
-            for(int i=0;i<posAndWobble.length/4;i++){
-                float x = posAndWobble[i*4];
-                float y = posAndWobble[i*4+1];
-                float z = posAndWobble[i*4+2];
-                height=Math.max(height,y);
-                radiusXZ=Math.max(radiusXZ,(float)Math.sqrt(x*x+z*z));
-                radius=Math.max(radius,(float)Math.sqrt(x*x+z*z+y*y));
+            float height = -Float.MAX_VALUE;
+            float radiusXZ = -Float.MAX_VALUE;
+            float radius = -Float.MAX_VALUE;
+            Vector3f relativeCenter = new Vector3f();
+            Vector3f farPoint = new Vector3f();
+            for (int i = 0; i < posAndWobble.length / 4; i++) {
+                float x = posAndWobble[i * 4];
+                float y = posAndWobble[i * 4 + 1];
+                float z = posAndWobble[i * 4 + 2];
+                relativeCenter.add(x, y, z);
+                height = Math.max(height, y);
+                radiusXZ = Math.max(radiusXZ, (float) Math.sqrt(x * x + z * z));
+                float newRadius = (float) Math.sqrt(x * x + z * z + y * y);
+                if (newRadius > radius) {
+                    radius = newRadius;
+                    farPoint.set(x, y, z);
+                }
 
             }
+            relativeCenter.div(posAndWobble.length / 4f);
+            radius = farPoint.distance(relativeCenter);
             Vao meshVao = new Vao();
             meshVao.addDataAttributes(0, 4, posAndWobble);
             meshVao.addDataAttributes(1, 4, colorAndShininess);
             meshVao.addIndicies(indicies);
             meshVao.unbind();
-            rt = new Model(meshVao,height,radiusXZ,radius, collider);
+            rt = new Model(meshVao, relativeCenter, height, radiusXZ, radius, collider);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -180,8 +185,8 @@ public class ModelFileHandler {
         int indiciesOffset = 0;
         int indiciesArrayOffset = 0;
         int vertexArrayOffset = 0;
-        float modelHeight = Arrays.stream(model).map(m->m.height).max(Float::compare).get();
-        for (MeshInformation mi:model) {
+        float modelHeight = Arrays.stream(model).map(m -> m.height).max(Float::compare).get();
+        for (MeshInformation mi : model) {
             String answer = JOptionPane.showInputDialog("How much should: " + mi.meshName + " be affected by wind?\nFormat [ 0; 3 ]:<wobble>\n0: constant wobble\n1: linear wobble from [0;radiusXZPlane]\n2: linear wobble from [0;height]\n3: linear wobble from [0;height+radiusXZPlane]");
             String[] answerSplit = answer.split(":");
             int type = Integer.parseInt(answerSplit[0]);
@@ -320,6 +325,66 @@ public class ModelFileHandler {
                 break;
         }
         return factor * maxWobble;
+    }
+
+    public static byte[] readAllBytes(InputStream is) throws IOException {
+        int len = Integer.MAX_VALUE;
+        int DEFAULT_BUFFER_SIZE = 8192;
+        int MAX_BUFFER_SIZE = Integer.MAX_VALUE - 8;
+        List<byte[]> bufs = null;
+        byte[] result = null;
+        int total = 0;
+        int remaining = len;
+        int n;
+        do {
+            byte[] buf = new byte[Math.min(remaining, DEFAULT_BUFFER_SIZE)];
+            int nread = 0;
+
+            // read to EOF which may read more or less than buffer size
+            while ((n = is.read(buf, nread,
+                    Math.min(buf.length - nread, remaining))) > 0) {
+                nread += n;
+                remaining -= n;
+            }
+
+            if (nread > 0) {
+                if (MAX_BUFFER_SIZE - total < nread) {
+                    throw new OutOfMemoryError("Required array size too large");
+                }
+                total += nread;
+                if (result == null) {
+                    result = buf;
+                } else {
+                    if (bufs == null) {
+                        bufs = new ArrayList<>();
+                        bufs.add(result);
+                    }
+                    bufs.add(buf);
+                }
+            }
+            // if the last call to read returned -1 or the number of bytes
+            // requested have been read then break
+        } while (n >= 0 && remaining > 0);
+
+        if (bufs == null) {
+            if (result == null) {
+                return new byte[0];
+            }
+            return result.length == total ?
+                    result : Arrays.copyOf(result, total);
+        }
+
+        result = new byte[total];
+        int offset = 0;
+        remaining = total;
+        for (byte[] b : bufs) {
+            int count = Math.min(b.length, remaining);
+            System.arraycopy(b, 0, result, offset, count);
+            offset += count;
+            remaining -= count;
+        }
+
+        return result;
     }
 
 }

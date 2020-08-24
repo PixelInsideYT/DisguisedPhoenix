@@ -14,8 +14,7 @@ public class Vao {
     private static List<Vao> allVaos = new ArrayList<>();
 
     int vaoId, indiciesLength;
-    List<Integer> vbos = new ArrayList<Integer>();
-    List<Integer> attribNumbers = new ArrayList<Integer>();
+    List<Integer> attribNumbers = new ArrayList<>();
 
     public Vao() {
         vaoId = GL30.glGenVertexArrays();
@@ -23,77 +22,50 @@ public class Vao {
         allVaos.add(this);
     }
 
+    public static void cleanUpAllVaos() {
+        allVaos.forEach(Vao::cleanUp);
+        Vbo.cleanUp();
+    }
+
     public int getIndiciesLength() {
         return indiciesLength;
     }
 
-
     public void bind() {
         GL30.glBindVertexArray(vaoId);
-        attribNumbers.forEach(i -> GL20.glEnableVertexAttribArray(i));
+        attribNumbers.forEach(GL20::glEnableVertexAttribArray);
     }
 
     public void unbind() {
-        attribNumbers.forEach(i -> GL20.glDisableVertexAttribArray(i));
+        attribNumbers.forEach(GL20::glDisableVertexAttribArray);
         GL30.glBindVertexArray(0);
     }
 
     public void cleanUp() {
         GL30.glDeleteVertexArrays(vaoId);
-        vbos.forEach(i -> GL15.glDeleteBuffers(i));
-    }
-
-    public static void cleanUpAllVaos() {
-        allVaos.forEach(vao -> vao.cleanUp());
     }
 
     public Vao addDataAttributes(int attributeNumber, int coordinateSize, float[] data) {
-        int vboID = GL15.glGenBuffers();
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboID);
-        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, data, GL15.GL_STATIC_DRAW);
+        Vbo vbo = new Vbo(data, GL15.GL_ARRAY_BUFFER, GL20.GL_STATIC_DRAW);
         GL20.glVertexAttribPointer(attributeNumber, coordinateSize, GL11.GL_FLOAT, false, 0, 0);
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-        vbos.add(vboID);
-        attribNumbers.add(attributeNumber);
-        return this;
-    }
-
-    public Vao addDataAttributes(int attributeNumber, int coordinateSize, long dataPointer, int dataLength) {
-        int vboID = GL15.glGenBuffers();
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboID);
-        GL15.nglBufferData(GL15.GL_ARRAY_BUFFER, dataLength, dataPointer, GL15.GL_STATIC_DRAW);
-        GL20.glVertexAttribPointer(attributeNumber, coordinateSize, GL11.GL_FLOAT, false, 0, 0);
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-        vbos.add(vboID);
+        vbo.unbind();
         attribNumbers.add(attributeNumber);
         return this;
     }
 
 
     public Vao addIndicies(int[] indicies) {
-        int vboID = GL15.glGenBuffers();
-        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboID);
-        GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indicies, GL15.GL_STATIC_DRAW);
-        vbos.add(vboID);
+        Vbo vbo = new Vbo(GL15.GL_ELEMENT_ARRAY_BUFFER);
+        vbo.bufferData(indicies, GL15.GL_STATIC_DRAW);
         indiciesLength = indicies.length;
         return this;
     }
 
-    public Vao addIndicies(long data, int length) {
-        int vboID = GL15.glGenBuffers();
-        GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboID);
-        GL15.nglBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, length, data, GL15.GL_STATIC_DRAW);
-        vbos.add(vboID);
-        indiciesLength = length;
-        return this;
-    }
-
-    public void addInstancedAttribute(int vboID, int attributeNumber, int coordinateSize, int instancedDataLength, int offset) {
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboID);
+    public void addInstancedAttribute(Vbo vbo, int attributeNumber, int coordinateSize, int instancedDataLength, int offset) {
+        vbo.bind();
         GL20.glVertexAttribPointer(attributeNumber, coordinateSize, GL11.GL_FLOAT, false, instancedDataLength * 4, offset * 4);
         glVertexAttribDivisor(attributeNumber, 1);
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-        vbos.add(vboID);
+        vbo.unbind();
         attribNumbers.add(attributeNumber);
     }
 

@@ -29,12 +29,13 @@ public class BiMap<K, V> {
         return inversedMap.keySet();
     }
 
-    public void removeKey(K k){
+    public void removeKey(K k) {
         V v = map.get(k);
         map.remove(k);
         inversedMap.remove(v);
     }
-    public void removeValue(V v){
+
+    public void removeValue(V v) {
         K k = inversedMap.get(v);
         inversedMap.remove(v);
         map.remove(k);

@@ -13,18 +13,47 @@ import java.util.List;
 
 public class InputManager {
 
-    private long window;
-
     private final int KEYBOARD_SIZE = 512;
+    protected GLFWJoystickCallback joystickListner = new GLFWJoystickCallback() {
 
+        @Override
+        public void invoke(int jid, int event) {
+            System.out.println(jid + "/" + GLFW.glfwGetJoystickName(jid) + " "
+                    + (event == GLFW.GLFW_CONNECTED ? "connected" : "disconnected"));
+        }
+    };
+    private long window;
     private int[] keyStates = new int[KEYBOARD_SIZE];
     private boolean[] activeKeys = new boolean[KEYBOARD_SIZE];
-
     private List<InputMap> deviceInputs = new ArrayList<>();
     private List<GLFWKeyCallback> keyCallbacks = new ArrayList<>();
-
+    protected GLFWKeyCallback keyboard = new GLFWKeyCallback() {
+        @Override
+        public void invoke(long window, int key, int scancode, int action, int mods) {
+            if (key != -1) {
+                activeKeys[key] = action != GLFW.GLFW_RELEASE;
+                keyStates[key] = action;
+            }
+            keyCallbacks.forEach(c -> c.invoke(window, key, scancode, action, mods));
+        }
+    };
     private float currentMouseX, currentMouseY, lastMouseX, lastMouseY;
+    protected GLFWCursorPosCallback mousePosListener = new GLFWCursorPosCallback() {
+        @Override
+        public void invoke(long window, double xpos, double ypos) {
+            currentMouseX = (float) xpos;
+            currentMouseY = (float) ypos;
+        }
+    };
     private int left_mouse, middle_mouse, right_mouse;
+
+    public InputManager(long window) {
+        this.window = window;
+        GLFW.glfwSetKeyCallback(window, keyboard);
+        GLFW.glfwSetCursorPosCallback(window, mousePosListener);
+        GLFW.glfwSetJoystickCallback(joystickListner);
+
+    }
 
     public void addKeyCallback(GLFWKeyCallback callback) {
         keyCallbacks.add(callback);
@@ -46,14 +75,6 @@ public class InputManager {
             }
         }
         return pressedKeys.stream().mapToInt(i -> i).toArray();
-    }
-
-    public InputManager(long window) {
-        this.window = window;
-        GLFW.glfwSetKeyCallback(window, keyboard);
-        GLFW.glfwSetCursorPosCallback(window, mousePosListener);
-        GLFW.glfwSetJoystickCallback(joystickListner);
-
     }
 
     public void updateInputMaps() {
@@ -84,35 +105,6 @@ public class InputManager {
         im.setValue(MouseInputMap.BUTTON_MIDDLE, middle_mouse == GLFW.GLFW_PRESS ? 1 : 0);
         im.setValue(MouseInputMap.BUTTON_RIGHT, right_mouse == GLFW.GLFW_PRESS ? 1 : 0);
     }
-
-    protected GLFWCursorPosCallback mousePosListener = new GLFWCursorPosCallback() {
-        @Override
-        public void invoke(long window, double xpos, double ypos) {
-            currentMouseX = (float) xpos;
-            currentMouseY = (float) ypos;
-        }
-    };
-
-
-    protected GLFWJoystickCallback joystickListner = new GLFWJoystickCallback() {
-
-        @Override
-        public void invoke(int jid, int event) {
-            System.out.println(jid + "/" + GLFW.glfwGetJoystickName(jid) + " "
-                    + (event == GLFW.GLFW_CONNECTED ? "connected" : "disconnected"));
-        }
-    };
-
-    protected GLFWKeyCallback keyboard = new GLFWKeyCallback() {
-        @Override
-        public void invoke(long window, int key, int scancode, int action, int mods) {
-            if (key != -1) {
-                activeKeys[key] = action != GLFW.GLFW_RELEASE;
-                keyStates[key] = action;
-            }
-            keyCallbacks.forEach(c -> c.invoke(window, key, scancode, action, mods));
-        }
-    };
 
     private void updateKeyboard(KeyboardInputMap keyboardMap) {
         for (int key : keyboardMap.getAllMapedKeys()) {

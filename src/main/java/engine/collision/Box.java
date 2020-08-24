@@ -9,7 +9,7 @@ public class Box extends CollisionShape {
     }
 
     public Box(Vector3f min, Vector3f max) {
-        super(getCornerPoints(min,max), getAxes());
+        super(getCornerPoints(min, max), getAxes());
     }
 
     private static Vector3f[] getAxes() {

@@ -25,9 +25,9 @@ const float solidifyTime = 0.9;
 
 void main()  {
     float barycentricMin = min(min(barycentric.x, barycentric.y), barycentric.z);
-    vec4 lineColor = vec4(color,1)* sign(1-edgeFactor());
-    float fillStatus = min(max((builtProgress - solidifyTime)/(1-solidifyTime),0),1);
+    vec4 lineColor = vec4(color, 1)* sign(1-edgeFactor());
+    float fillStatus = min(max((builtProgress - solidifyTime)/(1-solidifyTime), 0), 1);
     FragColor = lineColor;
-    FragColor += vec4(color*sign(fillStatus),sign(max(fillStatus*fillStatus-barycentricMin,0))*sign(fillStatus));
-    if(FragColor.a < 0.01||discardHeight<0)discard;
+    FragColor += vec4(color*sign(fillStatus), sign(max(fillStatus*fillStatus-barycentricMin, 0))*sign(fillStatus));
+    if (FragColor.a < 0.01||discardHeight<0)discard;
 }

@@ -6,7 +6,6 @@ import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.glfw.GLFWWindowSizeCallback;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryStack;
 
 import java.awt.*;
@@ -67,7 +66,7 @@ public class Display {
         // Make the OpenGL context current
         glfwMakeContextCurrent(window);
         // Enable v-sync
-         glfwSwapInterval(1);
+        glfwSwapInterval(1);
         GL.createCapabilities();
         // Make the window visible
         glfwSetWindowSizeCallback(window, new GLFWWindowSizeCallback() {

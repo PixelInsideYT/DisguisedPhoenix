@@ -21,10 +21,9 @@ public class Island {
 
     public Model model;
     public Matrix4f transformation;
-
+    public Vector3f position;
     private float size;
     private int vertexCount;
-    public Vector3f position;
     private float[][] heights;
     private float[][] bottems;
 
@@ -35,6 +34,18 @@ public class Island {
         model = createTerrain();
         transformation = new Matrix4f();
         transformation.translate(position);
+    }
+
+    private static float barryCentric(Vector3f p1, Vector3f p2, Vector3f p3, Vector2f pos) {
+        float det = (p2.z - p3.z) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.z - p3.z);
+        float l1 = ((p2.z - p3.z) * (pos.x - p3.x) + (p3.x - p2.x) * (pos.y - p3.z)) / det;
+        float l2 = ((p3.z - p1.z) * (pos.x - p3.x) + (p1.x - p3.x) * (pos.y - p3.z)) / det;
+        float l3 = 1.0f - l1 - l2;
+        return l1 * p1.y + l2 * p2.y + l3 * p3.y;
+    }
+
+    private static Vector3f gammaCorrect(Vector3f inColor) {
+        return new Vector3f((float) Math.pow(inColor.x, 2.2d), (float) Math.pow(inColor.y, 2.2d), (float) Math.pow(inColor.z, 2.2d));
     }
 
     public float getSize() {
@@ -56,7 +67,7 @@ public class Island {
         int gridX = (int) Math.floor(terrainX / gridSquareSize);
         int gridZ = (int) Math.floor(terrainZ / gridSquareSize);
         if (gridX >= toInterpolate.length - 1 || gridZ >= toInterpolate.length - 1 || gridX < 0 || gridZ < 0 || worldY - this.position.y < -TERRAIN_HEIGHT) {
-            return 0;
+            return outsideAnswer;
         }
         float xCoord = (terrainX % gridSquareSize) / gridSquareSize;
         float zCoord = (terrainZ % gridSquareSize) / gridSquareSize;
@@ -69,6 +80,18 @@ public class Island {
         return answer + this.position.y;
     }
 
+   /* private Vector3f calculateNormal(int x, int z) {
+        float heightL = getHeight(x - 1, z);
+        float heightR = getHeight(x + 1, z);
+        float heightD = getHeight(x, z - 1);
+        float heightU = getHeight(x, z + 1);
+
+        Vector3f normal = new Vector3f(heightL - heightR, 2f, heightD - heightU);
+        normal.normalize();
+        return normal;
+
+    }*/
+
     private Model createTerrain() {
         heights = new float[vertexCount][vertexCount];
         int count = vertexCount * vertexCount * 2;
@@ -77,22 +100,50 @@ public class Island {
         float sizeMultiplier = size / vertexCount;
         float[] verticies = new float[count * 4];
         float[] colors = new float[count * 4];
-        System.out.println(vertexCount);
         int[] indicies = new int[12 * (vertexCount - 1) * (vertexCount - 1) + (vertexCount - 1) * 24];
         int pointer = 0;
+        Vector3f relativeCenter = new Vector3f();
+        Vector3f farPoint = new Vector3f();
+        float radius = -Float.MAX_VALUE;
+        float height = -Float.MAX_VALUE;
+        float radiusXZ = -Float.MAX_VALUE;
+
         for (int z = 0; z < vertexCount; z++) {
             for (int x = 0; x < vertexCount; x++) {
                 int pos = pointer * 4;
 
                 verticies[pos] = x * sizeMultiplier;
-                verticies[pos + 1] = heights[x][z] = getHeight(x * size / (float) vertexCount + position.x, z * size / (float) vertexCount + position.z,x,z);
+                verticies[pos + 1] = heights[x][z] = getHeight(x * size / (float) vertexCount + position.x, z * size / (float) vertexCount + position.z, x, z);
                 verticies[pos + 2] = z * sizeMultiplier;
                 verticies[pos + 3] = 0f;
 
+                float modelX = verticies[pos];
+                float modelY = verticies[pos + 1];
+                float modelZ = verticies[pos + 2];
+                relativeCenter.add(modelX, modelY, modelZ);
+                height = Math.max(height, modelY);
+                radiusXZ = Math.max(radiusXZ, (float) Math.sqrt(modelX * modelX + modelZ * modelZ));
+                float newRadius = (float) Math.sqrt(modelX * modelX + modelY * modelY + modelZ * modelZ);
+                if (newRadius > radius) {
+                    radius = newRadius;
+                    farPoint.set(modelX, modelY, modelZ);
+                }
+
                 verticies[pos + bottemOffset] = x * sizeMultiplier;
-                verticies[pos + 1 + bottemOffset] = getIslandBottem(x * size / (float) vertexCount + position.x, z * size / (float) vertexCount + position.z,x,z);
+                verticies[pos + 1 + bottemOffset] = getIslandBottem(x * size / (float) vertexCount + position.x, z * size / (float) vertexCount + position.z, x, z);
                 verticies[pos + 2 + bottemOffset] = z * sizeMultiplier;
                 verticies[pos + 3 + bottemOffset] = 0f;
+                modelX = verticies[pos + bottemOffset];
+                modelY = verticies[pos + 1] + bottemOffset;
+                modelZ = verticies[pos + 2 + bottemOffset];
+                relativeCenter.add(modelX, modelY, modelZ);
+                height = Math.max(height, modelY);
+                radiusXZ = Math.max(radiusXZ, (float) Math.sqrt(modelX * modelX + modelZ * modelZ));
+                newRadius = (float) Math.sqrt(modelX * modelX + modelY * modelY + modelZ * modelZ);
+                if (newRadius > radius) {
+                    radius = newRadius;
+                    farPoint.set(modelX, modelY, modelZ);
+                }
 
                 colors[pos] = terrainColor.x;
                 colors[pos + 1] = terrainColor.y;
@@ -169,69 +220,47 @@ public class Island {
 
             }
         }
+        relativeCenter.div(count);
+        radius = farPoint.distance(relativeCenter);
         Vao vao = new Vao();
         vao.addDataAttributes(0, 4, verticies);
         vao.addDataAttributes(1, 4, colors);
         vao.addIndicies(indicies);
         vao.unbind();
-        return new Model(vao, size, TERRAIN_HEIGHT,size);
+        return new Model(vao, relativeCenter, height, radiusXZ, radius);
     }
 
-    private static float barryCentric(Vector3f p1, Vector3f p2, Vector3f p3, Vector2f pos) {
-        float det = (p2.z - p3.z) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.z - p3.z);
-        float l1 = ((p2.z - p3.z) * (pos.x - p3.x) + (p3.x - p2.x) * (pos.y - p3.z)) / det;
-        float l2 = ((p3.z - p1.z) * (pos.x - p3.x) + (p1.x - p3.x) * (pos.y - p3.z)) / det;
-        float l3 = 1.0f - l1 - l2;
-        return l1 * p1.y + l2 * p2.y + l3 * p3.y;
-    }
-
-   /* private Vector3f calculateNormal(int x, int z) {
-        float heightL = getHeight(x - 1, z);
-        float heightR = getHeight(x + 1, z);
-        float heightD = getHeight(x, z - 1);
-        float heightU = getHeight(x, z + 1);
-
-        Vector3f normal = new Vector3f(heightL - heightR, 2f, heightD - heightU);
-        normal.normalize();
-        return normal;
-
-    }*/
-
-    private float getIslandBottem(float x, float z, int gridX,int gridZ){
+    private float getIslandBottem(float x, float z, int gridX, int gridZ) {
         float result = 0;
         for (int i = 0; i < octaves; i++) {
             float heightFactor = (float) Math.pow(fallOff, i);
             float octaveFactor = (float) Math.pow(2f, i);
-            result -=(SimplexNoise.noise(x * NOISE_SCALE * octaveFactor, z * NOISE_SCALE * octaveFactor)+1f) * TERRAIN_HEIGHT * heightFactor+100;
+            result -= (SimplexNoise.noise(x * NOISE_SCALE * octaveFactor, z * NOISE_SCALE * octaveFactor) + 1f) * TERRAIN_HEIGHT * heightFactor + 100;
         }
-        float v2f = vertexCount/2f;
+        float v2f = vertexCount / 2f;
         float dx = v2f - gridX;
-        float dz =v2f - gridZ;
-        float distanceFromCenter = (float)Math.sqrt(dx*dx+dz*dz);
-        return heights[gridX][gridZ]-100;
+        float dz = v2f - gridZ;
+        float distanceFromCenter = (float) Math.sqrt(dx * dx + dz * dz);
+        return heights[gridX][gridZ] - 100;
     }
 
-    private float getHeight(float x, float z, int gridX,int gridZ) {
+    private float getHeight(float x, float z, int gridX, int gridZ) {
         float result = 0;
         for (int i = 0; i < octaves; i++) {
             float heightFactor = (float) Math.pow(fallOff, i);
             float octaveFactor = (float) Math.pow(2f, i);
             result += SimplexNoise.noise(x * NOISE_SCALE * octaveFactor, z * NOISE_SCALE * octaveFactor) * TERRAIN_HEIGHT * heightFactor;
         }
-        float v2f = vertexCount/2f;
-        float radius = (float)Math.sqrt(2f*Math.pow(v2f,2));
+        float v2f = vertexCount / 2f;
+        float radius = (float) Math.sqrt(2f * Math.pow(v2f, 2));
         float dx = v2f - gridX;
-        float dz =v2f - gridZ;
-        float distanceFromCenter = (float)Math.sqrt(dx*dx+dz*dz);
-        return result * Maths.clamp(1f - distanceFromCenter / radius,0,1);
+        float dz = v2f - gridZ;
+        float distanceFromCenter = (float) Math.sqrt(dx * dx + dz * dz);
+        return result * Maths.clamp(1f - distanceFromCenter / radius, 0, 1);
     }
 
     private Vector3f getColor(int x, int z) {
         return terrainColor;
-    }
-
-    private static Vector3f gammaCorrect(Vector3f inColor) {
-        return new Vector3f((float) Math.pow(inColor.x, 2.2d), (float) Math.pow(inColor.y, 2.2d), (float) Math.pow(inColor.z, 2.2d));
     }
 
 }

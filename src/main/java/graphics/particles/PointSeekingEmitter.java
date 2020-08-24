@@ -22,6 +22,7 @@ public class PointSeekingEmitter implements ParticleEmitter {
 
     private Island terrain;
     private float aliveTime = 20;
+    private float terrainDistance = 50f;
 
     public PointSeekingEmitter(Vector3f startPos, Vector3f endPos, float movementSpeed, float particlesPerSecond, Island terrain) {
         currentPos = new Vector3f(startPos);
@@ -32,13 +33,12 @@ public class PointSeekingEmitter implements ParticleEmitter {
         distance = startPos.distance(endPos);
         this.terrain = terrain;
         lastPos = new Vector3f(currentPos);
+        //TODO:make particles per second and size dependend on player distance
     }
-
-    private float terrainDistance = 50f;
 
     @Override
     public List<Particle> getParticles(float dt) {
-        aliveTime-=dt;
+        aliveTime -= dt;
         float blendFactor = currentPos.distance(endPos) / distance;
         Vector3f wantedDir = new Vector3f(endPos).sub(currentPos).normalize();
         float x = SimplexNoise.noise(currentPos.z / 500f, currentPos.y / 500f);
@@ -47,7 +47,7 @@ public class PointSeekingEmitter implements ParticleEmitter {
         Vector3f currentVel = new Vector3f(movingDir).add(x, y, z).normalize();
         currentVel.lerp(wantedDir, 1f - blendFactor);
         currentPos.add(currentVel.mul(movementSpeed * dt));
-        currentPos.y = Math.max(currentPos.y, terrain.getHeightOfTerrain(currentPos.x,currentPos.y, currentPos.z) + terrainDistance);
+        currentPos.y = Math.max(currentPos.y, terrain.getHeightOfTerrain(currentPos.x, currentPos.y, currentPos.z) + terrainDistance);
         emitterTimeCount += dt;
         List<Particle> emittedParticles = new ArrayList<>();
         Random r = new Random();
@@ -63,7 +63,7 @@ public class PointSeekingEmitter implements ParticleEmitter {
 
     @Override
     public boolean toRemove() {
-        return new Vector3f(endPos).sub(currentPos).dot(movingDir) <= 0 || endPos.distance(currentPos) <= terrainDistance * 2f||aliveTime<0;
+        return new Vector3f(endPos).sub(currentPos).dot(movingDir) <= 0 || endPos.distance(currentPos) <= terrainDistance * 2f || aliveTime < 0;
     }
 
 }

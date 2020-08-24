@@ -24,11 +24,12 @@ import static org.lwjgl.assimp.Assimp.*;
 
 public class AssimpWrapper {
 
-    private static Map<String, Model> alreadyLoadedModels = new HashMap<>();
-
     private static final int loadFlags = Assimp.aiProcess_Triangulate | Assimp.aiProcess_JoinIdenticalVertices | aiProcess_GenSmoothNormals
             | Assimp.aiProcess_ValidateDataStructure | Assimp.aiProcess_ImproveCacheLocality | Assimp.aiProcess_RemoveRedundantMaterials
             | Assimp.aiProcess_FindInvalidData | Assimp.aiProcess_FindInstances | Assimp.aiProcess_OptimizeMeshes | Assimp.aiProcess_OptimizeGraph;
+    public static int verticies = 0;
+    public static int faces = 0;
+    private static Map<String, Model> alreadyLoadedModels = new HashMap<>();
 
     public static Collider loadCollider(String name, boolean loadToVao) {
         Collider c = new Collider();
@@ -50,12 +51,9 @@ public class AssimpWrapper {
             min.min(cs.getMin());
             c.addCollisionShape(cs);
         }
-        c.setBoundingBox(new Box(min, max),loadToVao);
+        c.setBoundingBox(new Box(min, max), loadToVao);
         return c;
     }
-    public static int verticies = 0;
-    public static int faces = 0;
-
 
     public static MeshInformation[] loadModelToMeshInfo(String name) {
         AIScene scene = Assimp.aiImportFile(name, loadFlags);

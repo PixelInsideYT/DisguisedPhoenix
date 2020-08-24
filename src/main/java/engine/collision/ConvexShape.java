@@ -4,8 +4,6 @@ import graphics.objects.Vao;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-import java.util.Arrays;
-
 public class ConvexShape extends CollisionShape {
 
     private Vao model;
@@ -22,22 +20,22 @@ public class ConvexShape extends CollisionShape {
         transformation = new Matrix4f();
     }
 
-    public ConvexShape clone(){
+    public ConvexShape clone() {
         Vector3f[] clonedCornerPoints = new Vector3f[this.cornerPoints.length];
         Vector3f[] clonedAxes = new Vector3f[this.axes.length];
-        for(int i=0;i<clonedCornerPoints.length;i++){
-            clonedCornerPoints[i]=new Vector3f(this.cornerPoints[i]);
+        for (int i = 0; i < clonedCornerPoints.length; i++) {
+            clonedCornerPoints[i] = new Vector3f(this.cornerPoints[i]);
         }
-        for(int i=0;i<axes.length;i++){
-            clonedAxes[i]=new Vector3f(this.axes[i]);
+        for (int i = 0; i < axes.length; i++) {
+            clonedAxes[i] = new Vector3f(this.axes[i]);
         }
-        return new ConvexShape(clonedCornerPoints,clonedAxes,model);
+        return new ConvexShape(clonedCornerPoints, clonedAxes, model);
     }
 
     @Override
     public void transform(Matrix4f matrix) {
         super.transform(matrix);
-        matrix.mul(transformation,transformation);
+        matrix.mul(transformation, transformation);
     }
 
     public boolean canBeRenderd() {
@@ -48,7 +46,7 @@ public class ConvexShape extends CollisionShape {
         return transformation;
     }
 
-    public final Vao getModel(){
+    public final Vao getModel() {
         return model;
     }
 
