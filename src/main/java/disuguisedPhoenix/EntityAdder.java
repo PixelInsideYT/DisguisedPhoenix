@@ -1,6 +1,7 @@
 package disuguisedPhoenix;
 
 import disuguisedPhoenix.terrain.Island;
+import disuguisedPhoenix.terrain.PopulatedIsland;
 import engine.util.BiMap;
 import engine.util.ModelFileHandler;
 import graphics.objects.Shader;
@@ -192,12 +193,11 @@ public class EntityAdder {
         return new Entity(ModelFileHandler.getModel(modelFile), new Vector3f(x, h, z), rnd.nextFloat() * rotRandomX, rnd.nextFloat() * rotRandomY, rnd.nextFloat() * rotRandomZ, scale * scaleDiffrence);
     }
 
-    public List<Entity> getAllEntities(List<Island> flyingIslands) {
+    public List<Entity> getAllEntities(PopulatedIsland flyingIslands) {
         List<Entity> rt = new ArrayList<>();
+        activated=0;
         for (int i = 0; i < 10; i++) {
-            for (Island terrain : flyingIslands) {
-                rt.addAll(generateEntitiesFor(terrain));
-            }
+            rt.addAll(generateEntitiesFor(flyingIslands.island));
             activated++;
         }
         return rt;

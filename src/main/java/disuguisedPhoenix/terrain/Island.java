@@ -104,7 +104,6 @@ public class Island {
         int pointer = 0;
         Vector3f relativeCenter = new Vector3f();
         Vector3f farPoint = new Vector3f();
-        float radius = -Float.MAX_VALUE;
         float height = -Float.MAX_VALUE;
         float radiusXZ = -Float.MAX_VALUE;
 
@@ -123,11 +122,9 @@ public class Island {
                 relativeCenter.add(modelX, modelY, modelZ);
                 height = Math.max(height, modelY);
                 radiusXZ = Math.max(radiusXZ, (float) Math.sqrt(modelX * modelX + modelZ * modelZ));
-                float newRadius = (float) Math.sqrt(modelX * modelX + modelY * modelY + modelZ * modelZ);
-                if (newRadius > radius) {
-                    radius = newRadius;
-                    farPoint.set(modelX, modelY, modelZ);
-                }
+                farPoint.x = Math.max(farPoint.x,Math.abs(modelX));
+                farPoint.y = Math.max(farPoint.y,Math.abs(modelY));
+                farPoint.z = Math.max(farPoint.z,Math.abs(modelZ));
 
                 verticies[pos + bottemOffset] = x * sizeMultiplier;
                 verticies[pos + 1 + bottemOffset] = getIslandBottem(x * size / (float) vertexCount + position.x, z * size / (float) vertexCount + position.z, x, z);
@@ -139,11 +136,9 @@ public class Island {
                 relativeCenter.add(modelX, modelY, modelZ);
                 height = Math.max(height, modelY);
                 radiusXZ = Math.max(radiusXZ, (float) Math.sqrt(modelX * modelX + modelZ * modelZ));
-                newRadius = (float) Math.sqrt(modelX * modelX + modelY * modelY + modelZ * modelZ);
-                if (newRadius > radius) {
-                    radius = newRadius;
-                    farPoint.set(modelX, modelY, modelZ);
-                }
+                farPoint.x = Math.max(farPoint.x,Math.abs(modelX));
+                farPoint.y = Math.max(farPoint.y,Math.abs(modelY));
+                farPoint.z = Math.max(farPoint.z,Math.abs(modelZ));
 
                 colors[pos] = terrainColor.x;
                 colors[pos + 1] = terrainColor.y;
@@ -221,7 +216,7 @@ public class Island {
             }
         }
         relativeCenter.div(count);
-        radius = farPoint.distance(relativeCenter);
+        float radius = farPoint.distance(relativeCenter);
         Vao vao = new Vao();
         vao.addDataAttributes(0, 4, verticies);
         vao.addDataAttributes(1, 4, colors);

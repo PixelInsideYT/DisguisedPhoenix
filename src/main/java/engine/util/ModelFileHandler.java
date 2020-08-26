@@ -137,7 +137,6 @@ public class ModelFileHandler {
 
             float height = -Float.MAX_VALUE;
             float radiusXZ = -Float.MAX_VALUE;
-            float radius = -Float.MAX_VALUE;
             Vector3f relativeCenter = new Vector3f();
             Vector3f farPoint = new Vector3f();
             for (int i = 0; i < posAndWobble.length / 4; i++) {
@@ -147,15 +146,12 @@ public class ModelFileHandler {
                 relativeCenter.add(x, y, z);
                 height = Math.max(height, y);
                 radiusXZ = Math.max(radiusXZ, (float) Math.sqrt(x * x + z * z));
-                float newRadius = (float) Math.sqrt(x * x + z * z + y * y);
-                if (newRadius > radius) {
-                    radius = newRadius;
-                    farPoint.set(x, y, z);
-                }
-
+                farPoint.x = Math.max(farPoint.x,Math.abs(x));
+                farPoint.y = Math.max(farPoint.y,Math.abs(y));
+                farPoint.z = Math.max(farPoint.z,Math.abs(z));
             }
             relativeCenter.div(posAndWobble.length / 4f);
-            radius = farPoint.distance(relativeCenter);
+            float radius = farPoint.distance(relativeCenter);
             Vao meshVao = new Vao();
             meshVao.addDataAttributes(0, 4, posAndWobble);
             meshVao.addDataAttributes(1, 4, colorAndShininess);

@@ -25,6 +25,5 @@ public class Model {
     public Model(Vao mesh,Vector3f relativeCenter, float height, float radiusXZ, float radius, Collider collider) {
         this(mesh,relativeCenter, height, radiusXZ, radius);
         this.collider = collider;
-
     }
 }
