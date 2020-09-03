@@ -19,9 +19,9 @@ public class Vbo {
         bind();
     }
 
-    public Vbo(int floatCount, int target, int usage) {
+    public Vbo(int dataCount, int target, int usage) {
         this(target);
-        GL15.glBufferData(target, floatCount * 4, usage);
+        GL15.glBufferData(target, dataCount * 4, usage);
         allVbos.add(this);
     }
 
@@ -41,6 +41,12 @@ public class Vbo {
 
     public void updateVbo(FloatBuffer data) {
         bind();
+        GL15.glBufferSubData(target, 0, data);
+        unbind();
+    }
+
+    public void updateVbo(int[] data){
+         bind();
         GL15.glBufferSubData(target, 0, data);
         unbind();
     }

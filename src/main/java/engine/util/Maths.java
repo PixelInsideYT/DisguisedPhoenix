@@ -1,5 +1,6 @@
 package engine.util;
 
+import disuguisedPhoenix.Entity;
 import org.joml.FrustumIntersection;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -23,6 +24,10 @@ public class Maths {
     public static boolean isInsideFrustum(FrustumIntersection cullingHelper,Vector3f pos, Vector3f ralativeCenter, float scale, float radius) {
         tempVec.set(pos).add(scale*ralativeCenter.x,scale*ralativeCenter.y,scale*ralativeCenter.z);
         return cullingHelper.testSphere(tempVec, radius * scale);
+    }
+
+    public static boolean isInsideFrustum(FrustumIntersection cullingHelper, Entity e){
+        return isInsideFrustum(cullingHelper,e.position,e.getModel().relativeCenter,e.scale,e.getModel().radius);
     }
 
 

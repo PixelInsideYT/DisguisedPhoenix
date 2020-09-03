@@ -3,9 +3,11 @@ package graphics.renderer;
 import disuguisedPhoenix.Entity;
 import disuguisedPhoenix.Main;
 import graphics.objects.Shader;
+import graphics.objects.Vao;
 import graphics.world.Model;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL40;
 
 import java.util.List;
 import java.util.Map;
@@ -26,28 +28,29 @@ public class TestRenderer {
     }
 
     public void render(Model model, Matrix4f... modelMatrixArray) {
-        model.mesh.bind();
-        int indiciesLength = model.mesh.getIndiciesLength();
+        model.renderInfo.actualVao.bind();
+        int indiciesLength = model.renderInfo.actualVao.getIndiciesLength();
         for (Matrix4f modelMatrix : modelMatrixArray) {
             shader.loadMatrix("transformationMatrix", modelMatrix);
-            GL11.glDrawElements(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, 0);
+            GL40.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, model.renderInfo.indexOffset*4, model.renderInfo.vertexOffset);
             Main.drawCalls++;
             Main.facesDrawn += indiciesLength / 3;
         }
-        model.mesh.unbind();
+        model.renderInfo.actualVao.unbind();
     }
 
     public void render(Map<Model, List<Entity>> toRender) {
         for (Model model : toRender.keySet()) {
-            model.mesh.bind();
-            int indiciesLength = model.mesh.getIndiciesLength();
+            Vao mesh = model.renderInfo.actualVao;
+            mesh.bind();
+            int indiciesLength = mesh.getIndiciesLength();
             for (Entity e : toRender.get(model)) {
                 shader.loadMatrix("transformationMatrix", e.getTransformationMatrix());
-                GL11.glDrawElements(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, 0);
+                GL40.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, model.renderInfo.indexOffset*4, model.renderInfo.vertexOffset);
                 Main.drawCalls++;
                 Main.facesDrawn += indiciesLength / 3;
             }
-            model.mesh.unbind();
+            mesh.unbind();
         }
     }
 

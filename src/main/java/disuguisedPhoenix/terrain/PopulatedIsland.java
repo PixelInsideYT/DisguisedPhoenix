@@ -63,4 +63,8 @@ public class PopulatedIsland {
         return size>distance*NEEDED_SIZE_PER_LENGTH_UNIT;
     }
 
+    public boolean couldHeightCollide(Vector3f pos){
+        return pos.x>=island.position.x&&pos.z>=island.position.z&&pos.x<=island.position.x+island.getSize()&&pos.z<=island.position.z+island.getSize();
+    }
+
 }

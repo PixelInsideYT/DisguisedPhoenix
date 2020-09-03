@@ -51,7 +51,7 @@ public class AssimpWrapper {
             min.min(cs.getMin());
             c.addCollisionShape(cs);
         }
-        c.setBoundingBox(new Box(min, max), loadToVao);
+        c.setBoundingBox(new Box(min, max));
         return c;
     }
 
@@ -63,7 +63,7 @@ public class AssimpWrapper {
         PointerBuffer meshPointer = scene.mMeshes();
         int numMeshes = scene.mNumMeshes();
         int slashIndex = name.lastIndexOf("/");
-        String base = "models/" + name.substring(0, slashIndex < 0 ? 0 : slashIndex);
+        String base = "models/" + name.substring(0, Math.max(slashIndex, 0));
         PointerBuffer materialPointer = scene.mMaterials();
         MeshInformation[] rt = new MeshInformation[numMeshes];
         for (int i = 0; i < numMeshes; i++) {
@@ -77,7 +77,7 @@ public class AssimpWrapper {
 
 
     private static Vao getVaoFromMeshInfo(MeshInformation mi) {
-        Vao vao = new Vao();
+        Vao vao = new Vao("model "+mi.meshName);
         vao.addDataAttributes(0, 3, mi.vertexPositions);
         vao.addDataAttributes(1, 3, mi.colors);
         vao.addIndicies(mi.indicies);

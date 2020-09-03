@@ -2,8 +2,6 @@ package disuguisedPhoenix;
 
 import disuguisedPhoenix.terrain.Island;
 import disuguisedPhoenix.terrain.World;
-import engine.collision.Collider;
-import engine.collision.ConvexShape;
 import engine.input.InputManager;
 import engine.input.KeyboardInputMap;
 import engine.input.MouseInputMap;
@@ -12,49 +10,53 @@ import engine.util.Zeitgeist;
 import graphics.camera.Camera;
 import graphics.camera.FreeFlightCamera;
 import graphics.context.Display;
-import graphics.loader.AssimpWrapper;
 import graphics.loader.TextureLoader;
+import graphics.objects.OpenGLState;
 import graphics.objects.Shader;
 import graphics.objects.Vao;
 import graphics.particles.ParticleManager;
+import graphics.renderer.MultiIndirectRenderer;
 import graphics.renderer.TestRenderer;
 import graphics.world.Model;
-import org.joml.FrustumIntersection;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
 import java.awt.*;
 import java.text.DecimalFormat;
-import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.*;
+import java.util.Map;
+import java.util.Random;
 
 public class Main {
 
-    private static Matrix4f projViewMatrix = new Matrix4f();
-
-    public static int drawCalls=0;
-    public static int facesDrawn=0;
+    public static int drawCalls = 0;
+    public static int facesDrawn = 0;
 
     public static void main(String[] args) {
         long startUpTime = System.currentTimeMillis();
-        Display display = new Display(2560, 1440);
+        Display display = new Display("Disguised Phoenix", 640, 480);
         display.setClearColor(new Color(59, 168, 198));
         // display.setClearColor(new Color(450/3, 450/3, 450/3));
         MouseInputMap mim = new MouseInputMap();
         ParticleManager pm = new ParticleManager();
-
+        MultiIndirectRenderer multiRenderer = new MultiIndirectRenderer();
+        ModelFileHandler.loadModelsForMultiDraw(multiRenderer.matrixVbo, "plants/flowerTest1.modelFile", "lowPolyTree/vc.modelFile", "lowPolyTree/ballTree.modelFile", "lowPolyTree/bendyTree.modelFile", "lowPolyTree/tree2.modelFile", "misc/rock.modelFile", "plants/grass.modelFile", "plants/mushroom.modelFile", "misc/tutorialCrystal.modelFile", "plants/glockenblume.modelFile");
         World world = new World(pm);
-        for(int i=0;i<50;i++)world.addIsland(100000);
+        for (int i = 0; i < 50; i++) world.addIsland(20000);
         Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(0, 0, 0), mim);
         Shader shader = new Shader(Shader.loadShaderCode("testVS.glsl"), Shader.loadShaderCode("testFS.glsl")).combine("pos", "vertexColor");
         shader.loadUniforms("projMatrix", "noiseMap", "time", "viewMatrix", "viewMatrix3x3T", "transformationMatrix");
         shader.connectSampler("noiseMap", 0);
+        Shader multiDrawShader = new Shader(Shader.loadShaderCode("testVSMultiDraw.glsl"), Shader.loadShaderCode("testFS.glsl")).combine("pos", "vertexColor","transformationMatrix");
+        multiDrawShader.loadUniforms("projMatrix", "noiseMap", "time", "viewMatrix", "viewMatrix3x3T");
+        multiDrawShader.connectSampler("noiseMap", 0);
         int noiseTexture = TextureLoader.loadTexture("misc/noiseMap.png", GL30.GL_REPEAT, GL30.GL_LINEAR);
         TestRenderer renderer = new TestRenderer(shader);
         Matrix4f projMatrix = new Matrix4f();
@@ -67,11 +69,9 @@ public class Main {
         input.addInputMapping(mim);
         FreeFlightCamera flightCamera = new FreeFlightCamera(mim, freeFlightCam);
         player.movement = kim;
-        GL11.glEnable(GL11.GL_DEPTH_TEST);
-        GL11.glEnable(GL12.GL_BLEND);
-        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        GL11.glCullFace(GL12.GL_BACK);
-        GL11.glEnable(GL11.GL_CULL_FACE);
+        OpenGLState.enableDepthTest();
+        OpenGLState.setAlphaBlending(GL20.GL_ONE_MINUS_SRC_ALPHA);
+        OpenGLState.enableBackFaceCulling();
         System.err.println("STARTUP TIME: " + (System.currentTimeMillis() - startUpTime) / 1000f);
         //  display.activateWireframe();
         Zeitgeist zeitgeist = new Zeitgeist();
@@ -91,9 +91,9 @@ public class Main {
             time += dt;
             display.pollEvents();
             if (input.isKeyDown(GLFW.GLFW_KEY_O) && System.currentTimeMillis() - lastSwitchWireframe > 100) {
-                 wireframe = !wireframe;
+           //     wireframe = !wireframe;
                 lastSwitchWireframe = System.currentTimeMillis();
-               // adder.generateNextEntities(player.position, flyingIslands);
+                world.addNextEntities(player.position);
             }
             if (input.isKeyDown(GLFW.GLFW_KEY_L) && System.currentTimeMillis() - lastSwitchCollision > 100) {
                 collisionBoxes = !collisionBoxes;
@@ -106,19 +106,20 @@ public class Main {
                 lastSwitchCam = System.currentTimeMillis();
             }
             if (wireframe) {
-                display.activateWireframe();
+                OpenGLState.enableWireframe();
             } else {
-                display.deactivateWireframe();
+                OpenGLState.disableWireframe();
             }
             display.clear();
             pm.update(dt);
             Camera ffc = player.cam;
             if (!freeFlightCamActivated) {
-                player.move(world.islands.get(0).island, dt, world.getPossibleCollisions(player));
+                player.move(world.getPossibleTerrainCollisions(player), dt, world.getPossibleCollisions(player));
                 flightCamera.position.set(player.cam.position);
             } else {
                 ffc = flightCamera;
             }
+            world.update(dt);
             ffc.update(dt);
             input.updateInputMaps();
             Matrix4f viewMatrix = ffc.getViewMatrix();
@@ -126,26 +127,26 @@ public class Main {
             Matrix3f viewMatrix3x3Transposed = ffc.getViewMatrix().transpose3x3(new Matrix3f());
             shader.loadFloat("time", time);
             shader.loadMatrix("viewMatrix3x3T", viewMatrix3x3Transposed);
-            world.render(renderer,projMatrix,viewMatrix,ffc.position);
             renderer.render(player.getModel(), player.getTransformationMatrix());
+            world.render(renderer, projMatrix, viewMatrix, ffc.position);
+            multiDrawShader.bind();
+            multiDrawShader.loadFloat("time", time);
+            multiDrawShader.loadMatrix("viewMatrix3x3T", viewMatrix3x3Transposed);
+            multiDrawShader.loadMatrix("projMatrix", projMatrix);
+            multiDrawShader.loadMatrix("viewMatrix", viewMatrix);
+            multiRenderer.render(world.getVisibleEntities(projMatrix,viewMatrix,ffc.position));
+            multiDrawShader.unbind();
             pm.render(projMatrix, ffc.getViewMatrix());
-            display.setFrameTitle("Disguised Phoenix: " + zeitgeist.getFPS() + " FPS "+" "+drawCalls+" draw calls "+df.format(facesDrawn)+" faces" );
+            display.setFrameTitle("Disguised Phoenix: " + zeitgeist.getFPS() + " FPS " + " " + drawCalls + " draw calls " + df.format(facesDrawn) + " faces");
             display.flipBuffers();
-            drawCalls=0;
-            facesDrawn=0;
+            drawCalls = 0;
+            facesDrawn = 0;
             zeitgeist.sleep();
         }
         TextureLoader.cleanUpAllTextures();
         Vao.cleanUpAllVaos();
         Shader.cleanUpAllShaders();
         display.destroy();
-    }
-
-    private static void addEntity(Entity entity, Map<Model, List<Entity>> modelMap, List<Entity> staticEntities) {
-        Model m = entity.getModel();
-        modelMap.computeIfAbsent(m, k -> new ArrayList<>());
-        modelMap.get(m).add(entity);
-        staticEntities.add(entity);
     }
 
     private static Entity generateActivationSwitch(Island terrain) {

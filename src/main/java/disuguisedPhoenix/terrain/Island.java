@@ -3,6 +3,7 @@ package disuguisedPhoenix.terrain;
 import engine.util.Maths;
 import graphics.objects.Vao;
 import graphics.world.Model;
+import graphics.world.RenderInfo;
 import org.joml.Matrix4f;
 import org.joml.SimplexNoise;
 import org.joml.Vector2f;
@@ -94,6 +95,7 @@ public class Island {
 
     private Model createTerrain() {
         heights = new float[vertexCount][vertexCount];
+        bottems = new float[vertexCount][vertexCount];
         int count = vertexCount * vertexCount * 2;
         int botBeginn = vertexCount * vertexCount;
         int bottemOffset = botBeginn * 4;
@@ -122,13 +124,13 @@ public class Island {
                 relativeCenter.add(modelX, modelY, modelZ);
                 height = Math.max(height, modelY);
                 radiusXZ = Math.max(radiusXZ, (float) Math.sqrt(modelX * modelX + modelZ * modelZ));
-                farPoint.x = Math.max(farPoint.x,Math.abs(modelX));
-                farPoint.y = Math.max(farPoint.y,Math.abs(modelY));
-                farPoint.z = Math.max(farPoint.z,Math.abs(modelZ));
+                farPoint.x = Math.max(farPoint.x, Math.abs(modelX));
+                farPoint.y = Math.max(farPoint.y, Math.abs(modelY));
+                farPoint.z = Math.max(farPoint.z, Math.abs(modelZ));
 
                 verticies[pos + bottemOffset] = x * sizeMultiplier;
-                verticies[pos + 1 + bottemOffset] = getIslandBottem(x * size / (float) vertexCount + position.x, z * size / (float) vertexCount + position.z, x, z);
-                verticies[pos + 2 + bottemOffset] = z * sizeMultiplier;
+                verticies[pos + 1 + bottemOffset] = bottems[x][z]= getIslandBottem(x * size / (float) vertexCount + position.x, z * size / (float) vertexCount + position.z, x, z);
+                verticies[pos + 2 + bottemOffset]  = z * sizeMultiplier;
                 verticies[pos + 3 + bottemOffset] = 0f;
                 modelX = verticies[pos + bottemOffset];
                 modelY = verticies[pos + 1] + bottemOffset;
@@ -136,9 +138,9 @@ public class Island {
                 relativeCenter.add(modelX, modelY, modelZ);
                 height = Math.max(height, modelY);
                 radiusXZ = Math.max(radiusXZ, (float) Math.sqrt(modelX * modelX + modelZ * modelZ));
-                farPoint.x = Math.max(farPoint.x,Math.abs(modelX));
-                farPoint.y = Math.max(farPoint.y,Math.abs(modelY));
-                farPoint.z = Math.max(farPoint.z,Math.abs(modelZ));
+                farPoint.x = Math.max(farPoint.x, Math.abs(modelX));
+                farPoint.y = Math.max(farPoint.y, Math.abs(modelY));
+                farPoint.z = Math.max(farPoint.z, Math.abs(modelZ));
 
                 colors[pos] = terrainColor.x;
                 colors[pos + 1] = terrainColor.y;
@@ -217,12 +219,12 @@ public class Island {
         }
         relativeCenter.div(count);
         float radius = farPoint.distance(relativeCenter);
-        Vao vao = new Vao();
+        Vao vao = new Vao("terrain ");
         vao.addDataAttributes(0, 4, verticies);
         vao.addDataAttributes(1, 4, colors);
         vao.addIndicies(indicies);
         vao.unbind();
-        return new Model(vao, relativeCenter, height, radiusXZ, radius);
+        return new Model(new RenderInfo(vao), relativeCenter, height, radiusXZ, radius);
     }
 
     private float getIslandBottem(float x, float z, int gridX, int gridZ) {

@@ -16,10 +16,12 @@ public class Vao {
     int vaoId, indiciesLength;
     List<Integer> attribNumbers = new ArrayList<>();
 
-    public Vao() {
+    String name ;
+    public Vao(String name) {
         vaoId = GL30.glGenVertexArrays();
         GL30.glBindVertexArray(vaoId);
         allVaos.add(this);
+        this.name=name;
     }
 
     public static void cleanUpAllVaos() {
@@ -47,6 +49,7 @@ public class Vao {
 
     public Vao addDataAttributes(int attributeNumber, int coordinateSize, float[] data) {
         Vbo vbo = new Vbo(data, GL15.GL_ARRAY_BUFFER, GL20.GL_STATIC_DRAW);
+        System.err.println("vbo: "+name);
         GL20.glVertexAttribPointer(attributeNumber, coordinateSize, GL11.GL_FLOAT, false, 0, 0);
         vbo.unbind();
         attribNumbers.add(attributeNumber);

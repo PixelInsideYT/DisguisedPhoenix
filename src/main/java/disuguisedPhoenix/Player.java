@@ -39,7 +39,7 @@ public class Player extends Entity {
         currentTurnDirection = new Vector3i();
     }
 
-    public void move(Island terrain, float dt, List<Entity> possibleCollisions) {
+    public void move(List<Island> terrain, float dt, List<Entity> possibleCollisions) {
         checkInputs();
         if (Math.abs(currentTurnSpeed.y) <= TURN_SPEED_ACCEL * dt && currentTurnDirection.y == 0)
             currentTurnSpeed.y = 0;
@@ -66,11 +66,27 @@ public class Player extends Entity {
         currentFlySpeed = Math.max(currentFlySpeed, 400);
         velocity.set(new Vector3f(forward).mul(currentFlySpeed));
         super.update(dt, possibleCollisions);
-        this.position.y = Math.max(position.y, terrain.getHeightOfTerrain(position.x, position.y, position.z));
+        for (Island land : terrain) {
+            float terrainTop = land.getHeightOfTerrain(position.x, position.y, position.z);
+            float terrainBot = land.getBottemOfTerrain(position.x, position.y, position.z);
+            if (Math.abs(position.y - terrainTop)<Math.abs(position.y-terrainBot)) {
+                this.position.y = Math.max(position.y, terrainTop);
+            } else {
+                position.y = Math.min(position.y, terrainBot);
+            }
+        }
         rotZ = Maths.map(-currentTurnSpeed.y, -MAX_TURN_SPEED, MAX_TURN_SPEED, -(float) Math.PI / 4f, (float) Math.PI / 4f);
         lookAtPosition.set(new Vector3f(forward).normalize().mul(30).add(position));
         cam.position.set(new Vector3f(position).add(forward.mul(-5f)).add(0, 1, 0));
-        cam.position.y = Math.max(cam.position.y, terrain.getHeightOfTerrain(cam.position.x, cam.position.y, cam.position.z));
+        for (Island land : terrain) {
+            float terrainTop = land.getHeightOfTerrain(cam.position.x, cam.position.y, cam.position.z);
+            float terrainBot = land.getBottemOfTerrain(cam.position.x, cam.position.y, cam.position.z);
+            if (Math.abs(cam.position.y - terrainTop)<Math.abs(cam.position.y-terrainBot)) {
+                cam.position.y = Math.max(cam.position.y, terrainTop);
+            } else {
+                cam.position.y = Math.min(cam.position.y, terrainBot);
+            }
+        }
     }
 
 

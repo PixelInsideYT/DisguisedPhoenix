@@ -6,7 +6,9 @@ import engine.collision.ConvexShape;
 import graphics.loader.AssimpWrapper;
 import graphics.loader.MeshInformation;
 import graphics.objects.Vao;
+import graphics.objects.Vbo;
 import graphics.world.Model;
+import graphics.world.RenderInfo;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 
@@ -58,8 +60,42 @@ public class ModelFileHandler {
         return rt;
     }
 
+    public static void loadModelsForMultiDraw(Vbo matrixVbo, String... names) {
+        int posWobbleANDColorShininessSize=0;//both have equal size
+        int indiciesSize=0;
+        List<MeshInformation> meshes = new ArrayList<>();
+        for (String name : names) {
+            MeshInformation info = loadModelToMeshInfo(name);
+            posWobbleANDColorShininessSize+=info.vertexPositions.length;
+            indiciesSize+=info.indicies.length;
+            meshes.add(info);
+        }
+        float[] combinedPosAndWobble=new float[posWobbleANDColorShininessSize];
+        float[] combinedColorAndShininess=new float[posWobbleANDColorShininessSize];
+        int[] combinedIndicies = new int[indiciesSize];
+        Vao finishedVao = new Vao("multidraw vao");
+        int indexOffset =0;
+        int vertexOffset=0;
+        for(MeshInformation info:meshes){
+            System.arraycopy(info.vertexPositions,0,combinedPosAndWobble,vertexOffset*4,info.vertexPositions.length);
+            System.arraycopy(info.colors,0,combinedColorAndShininess,vertexOffset*4,info.colors.length);
+            System.arraycopy(info.indicies,0,combinedIndicies,indexOffset,info.indicies.length);
+            Model model = new Model(new RenderInfo(finishedVao,info.indicies.length,indexOffset,vertexOffset),info);
+            alreadyLoadedModels.put(info.meshName,model);
+            indexOffset+=info.indicies.length;
+            vertexOffset+=info.vertexPositions.length/4;
+        }
+        finishedVao.addDataAttributes(0,4,combinedPosAndWobble);
+        finishedVao.addDataAttributes(1,4,combinedColorAndShininess);
+        finishedVao.addInstancedAttribute(matrixVbo,2,4,16,0);
+        finishedVao.addInstancedAttribute(matrixVbo,3,4,16,4);
+        finishedVao.addInstancedAttribute(matrixVbo,4,4,16,8);
+        finishedVao.addInstancedAttribute(matrixVbo,5,4,16,12);
+        finishedVao.addIndicies(combinedIndicies);
+        finishedVao.unbind();
+    }
 
-    private static Model loadModelFile(String name) {
+    private static MeshInformation loadModelToMeshInfo(String name) {
         InputStream stream = ModelFileHandler.class.getClassLoader().getResourceAsStream("models/" + name);
         ByteBuffer buffer;
         Model rt = null;
@@ -95,16 +131,10 @@ public class ModelFileHandler {
                     Vector3f[] edgePointsArray = new Vector3f[egdePointsCount];
                     int axesCount = edgeAndAxeCount[c * 2 + 1];
                     Vector3f[] axesArray = new Vector3f[axesCount];
-                    float[] array = new float[egdePointsCount * 4];
                     for (int e = 0; e < egdePointsCount; e++) {
                         float x = buffer.getFloat();
                         float y = buffer.getFloat();
                         float z = buffer.getFloat();
-                        array[e * 4] = x;
-                        array[e * 4 + 1] = y;
-                        array[e * 4 + 2] = z;
-                        array[e * 4 + 3] = 0;
-
                         edgePointsArray[e] = new Vector3f(x, y, z);
                     }
                     for (int e = 0; e < axesCount; e++) {
@@ -113,22 +143,10 @@ public class ModelFileHandler {
                         float z = buffer.getFloat();
                         axesArray[e] = new Vector3f(x, y, z);
                     }
-                    int[] indiciesCollisionShape = new int[egdePointsCount * egdePointsCount * 2];
-                    int counter = 0;
-                    for (int i = 0; i < egdePointsCount; i++)
-                        for (int j = i; j < egdePointsCount; j++) {
-                            indiciesCollisionShape[counter++] = i;
-                            indiciesCollisionShape[counter++] = j;
-                        }
-                    Vao renderAble = new Vao();
-                    renderAble.addDataAttributes(0, 4, array);
-                    renderAble.addDataAttributes(1, 3, new float[array.length]);
-                    renderAble.addIndicies(indiciesCollisionShape);
-                    renderAble.unbind();
-                    ConvexShape shape = new ConvexShape(edgePointsArray, axesArray, renderAble);
+                    ConvexShape shape = new ConvexShape(edgePointsArray, axesArray, null);
                     if (c == 0) {
                         collider.boundingBox = shape;
-                        collider.boundingBoxModel = renderAble;
+                        collider.boundingBoxModel = null;
                     } else {
                         collider.addCollisionShape(shape);
                     }
@@ -146,22 +164,35 @@ public class ModelFileHandler {
                 relativeCenter.add(x, y, z);
                 height = Math.max(height, y);
                 radiusXZ = Math.max(radiusXZ, (float) Math.sqrt(x * x + z * z));
-                farPoint.x = Math.max(farPoint.x,Math.abs(x));
-                farPoint.y = Math.max(farPoint.y,Math.abs(y));
-                farPoint.z = Math.max(farPoint.z,Math.abs(z));
+                farPoint.x = Math.max(farPoint.x, Math.abs(x));
+                farPoint.y = Math.max(farPoint.y, Math.abs(y));
+                farPoint.z = Math.max(farPoint.z, Math.abs(z));
             }
             relativeCenter.div(posAndWobble.length / 4f);
+            //TODO calculate radius better
             float radius = farPoint.distance(relativeCenter);
-            Vao meshVao = new Vao();
-            meshVao.addDataAttributes(0, 4, posAndWobble);
-            meshVao.addDataAttributes(1, 4, colorAndShininess);
-            meshVao.addIndicies(indicies);
-            meshVao.unbind();
-            rt = new Model(meshVao, relativeCenter, height, radiusXZ, radius, collider);
+            MeshInformation meshInformation = new MeshInformation(name, null, posAndWobble, colorAndShininess, indicies);
+            meshInformation.height = height;
+            meshInformation.radiusXZPlane = radiusXZ;
+            meshInformation.radius = radius;
+            meshInformation.centerPoint = relativeCenter;
+            meshInformation.collider = collider;
+            return meshInformation;
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return rt;
+        return null;
+    }
+
+
+    private static Model loadModelFile(String name) {
+        MeshInformation meshInformation = loadModelToMeshInfo(name);
+        Vao vao = new Vao("model file "+name);
+        vao.addDataAttributes(0, 4, meshInformation.vertexPositions);
+        vao.addDataAttributes(1, 4, meshInformation.colors);
+        vao.addIndicies(meshInformation.indicies);
+        vao.unbind();
+        return new Model(new RenderInfo(vao), meshInformation);
     }
 
 

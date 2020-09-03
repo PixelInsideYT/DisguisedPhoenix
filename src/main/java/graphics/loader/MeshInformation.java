@@ -1,12 +1,17 @@
 package graphics.loader;
 
+import engine.collision.Collider;
 import graphics.world.Material;
 import org.joml.Vector3f;
 
 public class MeshInformation {
 
+    //TODO cleanup meshinfo, allow for DP intern format and ASSIMP format
+
     public String meshName;
     public Material meshMaterial;
+
+    public Collider collider;
 
     public float[] vertexPositions;
     public float[] colors;
@@ -14,6 +19,8 @@ public class MeshInformation {
 
     public float radiusXZPlane;
     public float height;
+    public Vector3f centerPoint;
+    public float radius;
 
     public MeshInformation(String meshName, Material material, float[] vertexPositions, float[] colors, int[] indicies) {
         this.meshName = meshName;

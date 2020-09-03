@@ -112,7 +112,7 @@ public class Shader {
 
     public Shader connectSampler(String samplerName, int unit) {
         bind();
-        GL20.glUniform1i(uniforms.get(samplerName), GL13.GL_TEXTURE0 + unit);
+        GL20.glUniform1i(uniforms.get(samplerName), unit);
         unbind();
         return this;
     }

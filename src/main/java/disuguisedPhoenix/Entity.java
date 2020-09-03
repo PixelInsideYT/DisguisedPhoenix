@@ -11,11 +11,11 @@ import java.util.List;
 
 public class Entity {
 
-    protected Vector3f position;
+    public Vector3f position;
     protected Vector3f velocity;
     protected Vector3f acceleration;
     protected float rotX, rotY, rotZ;
-    protected float scale;
+    public float scale;
     protected Matrix4f modelMatrix;
     private Model model;
     private boolean changedPosition = true;

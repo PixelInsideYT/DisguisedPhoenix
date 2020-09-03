@@ -20,11 +20,11 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 public class Display {
     private long window;
 
-    public Display(int width, int height) {
-        create(width, height);
+    public Display(String title,int width, int height) {
+        create(title,width, height);
     }
 
-    public void create(int width, int height) {
+    public void create(String title,int width, int height) {
         // Setup an error callback. The default implementation
         // will print the error message in System.err.
         GLFWErrorCallback.createPrint(System.err).set();
@@ -44,7 +44,7 @@ public class Display {
         glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
         glfwWindowHint(GLFW_SAMPLES, 4);
         // Create the window
-        window = glfwCreateWindow(width, height, "Disguised Phoneix", NULL, NULL);
+        window = glfwCreateWindow(width, height, title, NULL, NULL);
         if (window == NULL)
             throw new RuntimeException("Failed to create the GLFW window");
 
@@ -116,11 +116,4 @@ public class Display {
         return window;
     }
 
-    public void activateWireframe() {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    }
-
-    public void deactivateWireframe() {
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    }
 }

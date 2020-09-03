@@ -1,18 +1,20 @@
-package disuguisedPhoenix;
+package disuguisedPhoenix.adder;
 
+import disuguisedPhoenix.Entity;
+import disuguisedPhoenix.Main;
 import disuguisedPhoenix.terrain.Island;
 import disuguisedPhoenix.terrain.PopulatedIsland;
-import engine.util.BiMap;
+import disuguisedPhoenix.terrain.World;
+import engine.util.Maths;
 import engine.util.ModelFileHandler;
 import graphics.objects.Shader;
-import graphics.particles.ParticleEmitter;
 import graphics.particles.ParticleManager;
-import graphics.particles.PointSeekingEmitter;
-import graphics.particles.UpwardsParticles;
 import graphics.world.Model;
+import org.joml.FrustumIntersection;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL40;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -27,10 +29,8 @@ public class EntityAdder {
 
     private int activated = 0;
 
-    private Map<Entity, Float> entityBuiltProgress = new HashMap<>();
     private ParticleManager pm;
-    private BiMap<Entity, ParticleEmitter> toReachEntities = new BiMap<>();
-    private BiMap<Entity, UpwardsParticles> reachedEntities = new BiMap<>();
+    private List<GrowState> toAddEntities = new ArrayList<>();
 
     public EntityAdder(ParticleManager pm) {
         creationShader = new Shader(Shader.loadShaderCode("creationVS.glsl"), Shader.loadShaderCode("creationGS.glsl"), Shader.loadShaderCode("creationFS.glsl")).combine("pos", "color");
@@ -38,84 +38,56 @@ public class EntityAdder {
         this.pm = pm;
     }
 
-    private static void addEntity(Entity entity, Map<Model, List<Entity>> modelMap) {
-        Model m = entity.getModel();
-        modelMap.computeIfAbsent(m, k -> new ArrayList<>());
-        modelMap.get(m).add(entity);
-    }
 
     public void update(float dt) {
-        for (Entity e : entityBuiltProgress.keySet()) {
-            if (toReachEntities.get(e).toRemove()) {
-                if (reachedEntities.get(e) == null) {
-                    float emitTime = 1f / builtSpeed;
-                    float particleHeight = e.scale * e.getModel().height;
-                    float radius = e.scale * e.getModel().radiusXZ;
-                    reachedEntities.put(e, new UpwardsParticles(new Vector3f(e.getPosition()), radius, 500, 3.14f * radius * radius * particlesPerSecondPerAreaUnit, emitTime));
-                    pm.addParticleEmitter(reachedEntities.get(e));
-                } else {
-                    reachedEntities.get(e).center.y += dt * builtSpeed * e.getModel().height * e.scale;
-                }
-                float newBuiltProgress = entityBuiltProgress.get(e) + dt * builtSpeed;
-                entityBuiltProgress.put(e, newBuiltProgress);
+        Iterator<GrowState> itr = toAddEntities.iterator();
+        while (itr.hasNext()) {
+            GrowState gs = itr.next();
+            gs.update(dt, builtSpeed, particlesPerSecondPerAreaUnit, pm);
+            if (gs.isFullyGrown()) {
+                gs.addToIsland();
+                itr.remove();
             }
         }
     }
 
-    public void render(Matrix4f camMatrix, Matrix4f projMatrix) {
-        if (entityBuiltProgress.keySet().size() > 0) {
+    public void render(Matrix4f camMatrix, Matrix4f projMatrix,FrustumIntersection fi) {
+        if (toAddEntities.size() > 0) {
             creationShader.bind();
             creationShader.loadMatrix("projMatrix", projMatrix);
             creationShader.loadMatrix("viewMatrix", camMatrix);
-            Map<Model, List<Entity>> renderMap = new HashMap<>();
-            entityBuiltProgress.keySet().forEach(e -> addEntity(e, renderMap));
+            Map<Model, List<GrowState>> renderMap = new HashMap<>();
+            toAddEntities.forEach(e -> addGrowStateToRenderMap(e, renderMap,fi));
             for (Model m : renderMap.keySet()) {
-                render(m, renderMap.get(m).toArray(new Entity[0]));
+                render(m, renderMap.get(m));
             }
             creationShader.unbind();
         }
     }
 
-    private void render(Model model, Entity... toRenderEntities) {
-        model.mesh.bind();
-        int indiciesLength = model.mesh.getIndiciesLength();
+    private void render(Model model, List<GrowState> toRenderEntities) {
+        model.renderInfo.actualVao.bind();
+        int indiciesLength = model.renderInfo.indiciesCount;
         creationShader.loadFloat("modelHeight", model.height);
-        for (Entity e : toRenderEntities) {
-            creationShader.loadMatrix("transformationMatrix", e.getTransformationMatrix());
-            creationShader.loadFloat("builtProgress", entityBuiltProgress.get(e));
-            GL11.glDrawElements(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, 0);
+        for (GrowState e : toRenderEntities) {
+            creationShader.loadMatrix("transformationMatrix", e.growingEntity.getTransformationMatrix());
+            creationShader.loadFloat("builtProgress", e.buildProgress);
+            GL40.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, model.renderInfo.indexOffset * 4, model.renderInfo.vertexOffset);
+            Main.drawCalls++;
+            Main.facesDrawn += indiciesLength / 3;
         }
-        model.mesh.unbind();
-
+        model.renderInfo.actualVao.unbind();
     }
 
-    public List<Entity> getAddedEntities() {
-        List<Entity> toReturn = new ArrayList<>();
-        for (Entity e : entityBuiltProgress.keySet()) {
-            if (entityBuiltProgress.get(e) >= 1) {
-                toReturn.add(e);
+
+    public void generateNextEntities(Vector3f playerPos, World world, List<PopulatedIsland> islands) {
+        for (PopulatedIsland island : islands) {
+            List<Entity> spawningEntities = generateEntitiesFor(island.island);
+            for (Entity e : spawningEntities) {
+                toAddEntities.add(new GrowState(world,island, 100, playerPos, e, pm));
             }
         }
-        toReturn.forEach(e -> {
-            entityBuiltProgress.remove(e);
-            toReachEntities.removeKey(e);
-            reachedEntities.removeKey(e);
-        });
-        return toReturn;
-    }
-
-    public void generateNextEntities(Vector3f playerPos, List<Island> islands) {
-        List<Entity> newEntities = new ArrayList<>();
-        islands.forEach(i -> newEntities.addAll(generateEntitiesFor(i)));
         activated++;
-        float particleLifeTime = 0.3f;
-        int particlesCount = 100;
-        newEntities.forEach(e -> {
-            entityBuiltProgress.put(e, -0.01f);
-            ParticleEmitter pe = new PointSeekingEmitter(playerPos, e.position, 700f, particlesCount, islands.get(0));
-            pm.addParticleEmitter(pe);
-            toReachEntities.put(e, pe);
-        });
     }
 
     private List<Entity> generateEntitiesFor(Island terrain) {
@@ -195,11 +167,19 @@ public class EntityAdder {
 
     public List<Entity> getAllEntities(PopulatedIsland flyingIslands) {
         List<Entity> rt = new ArrayList<>();
-        activated=0;
+        activated = 0;
         for (int i = 0; i < 10; i++) {
             rt.addAll(generateEntitiesFor(flyingIslands.island));
             activated++;
         }
         return rt;
+    }
+
+    private static void addGrowStateToRenderMap(GrowState entity, Map<Model, List<GrowState>> modelMap, FrustumIntersection fi) {
+        if (entity.isReachedBySeeker()&& Maths.isInsideFrustum(fi,entity.growingEntity)) {
+            Model m = entity.growingEntity.getModel();
+            modelMap.computeIfAbsent(m, k -> new ArrayList<>());
+            modelMap.get(m).add(entity);
+        }
     }
 }
