@@ -11,27 +11,25 @@ import graphics.camera.Camera;
 import graphics.camera.FreeFlightCamera;
 import graphics.context.Display;
 import graphics.loader.TextureLoader;
+import graphics.objects.FrameBufferObject;
 import graphics.objects.OpenGLState;
 import graphics.objects.Shader;
 import graphics.objects.Vao;
 import graphics.particles.ParticleManager;
+import graphics.postProcessing.QuadRenderer;
 import graphics.renderer.MultiIndirectRenderer;
 import graphics.renderer.TestRenderer;
-import graphics.world.Model;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL40;
 
 import java.awt.*;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 public class Main {
@@ -54,7 +52,7 @@ public class Main {
         Shader shader = new Shader(Shader.loadShaderCode("testVS.glsl"), Shader.loadShaderCode("testFS.glsl")).combine("pos", "vertexColor");
         shader.loadUniforms("projMatrix", "noiseMap", "time", "viewMatrix", "viewMatrix3x3T", "transformationMatrix");
         shader.connectSampler("noiseMap", 0);
-        Shader multiDrawShader = new Shader(Shader.loadShaderCode("testVSMultiDraw.glsl"), Shader.loadShaderCode("testFS.glsl")).combine("pos", "vertexColor","transformationMatrix");
+        Shader multiDrawShader = new Shader(Shader.loadShaderCode("testVSMultiDraw.glsl"), Shader.loadShaderCode("testFS.glsl")).combine("pos", "vertexColor", "transformationMatrix");
         multiDrawShader.loadUniforms("projMatrix", "noiseMap", "time", "viewMatrix", "viewMatrix3x3T");
         multiDrawShader.connectSampler("noiseMap", 0);
         int noiseTexture = TextureLoader.loadTexture("misc/noiseMap.png", GL30.GL_REPEAT, GL30.GL_LINEAR);
@@ -74,6 +72,7 @@ public class Main {
         OpenGLState.enableBackFaceCulling();
         System.err.println("STARTUP TIME: " + (System.currentTimeMillis() - startUpTime) / 1000f);
         //  display.activateWireframe();
+        world.addAllEntities();
         Zeitgeist zeitgeist = new Zeitgeist();
         boolean wireframe = false;
         boolean collisionBoxes = false;
@@ -86,6 +85,16 @@ public class Main {
         float time = 0f;
         input.hideMouseCursor();
         DecimalFormat df = new DecimalFormat("###,###,###");
+        FrameBufferObject fbo = new FrameBufferObject(1920, 1080, 3)
+                //positions
+                .addTextureAttachment(GL40.GL_RGBA16F, GL11.GL_FLOAT, 0)
+                //normals
+                .addTextureAttachment(GL40.GL_RGBA16F, GL11.GL_FLOAT, 1)
+                //color and specular
+                .addTextureAttachment(2)
+                //depth
+                .addDepthBuffer();
+        QuadRenderer quadRenderer = new QuadRenderer();
         while (!display.shouldClose()) {
             float dt = zeitgeist.getDelta();
             time += dt;
@@ -110,7 +119,6 @@ public class Main {
             } else {
                 OpenGLState.disableWireframe();
             }
-            display.clear();
             pm.update(dt);
             Camera ffc = player.cam;
             if (!freeFlightCamActivated) {
@@ -123,6 +131,13 @@ public class Main {
             ffc.update(dt);
             input.updateInputMaps();
             Matrix4f viewMatrix = ffc.getViewMatrix();
+            OpenGLState.enableDepthTest();
+            OpenGLState.disableAlphaBlending();
+            fbo.bind();
+            GL30.glClearColor(59/255f, 168/225f, 198/255f,0.0f);
+            fbo.clear();
+            GL30.glActiveTexture(GL30.GL_TEXTURE0);
+            GL30.glBindTexture(GL30.GL_TEXTURE_2D, noiseTexture);
             renderer.begin(viewMatrix, projMatrix);
             Matrix3f viewMatrix3x3Transposed = ffc.getViewMatrix().transpose3x3(new Matrix3f());
             shader.loadFloat("time", time);
@@ -134,16 +149,29 @@ public class Main {
             multiDrawShader.loadMatrix("viewMatrix3x3T", viewMatrix3x3Transposed);
             multiDrawShader.loadMatrix("projMatrix", projMatrix);
             multiDrawShader.loadMatrix("viewMatrix", viewMatrix);
-            multiRenderer.render(world.getVisibleEntities(projMatrix,viewMatrix,ffc.position));
+            multiRenderer.render(world.getVisibleEntities(projMatrix, viewMatrix, ffc.position));
             multiDrawShader.unbind();
+            fbo.unbind();
+            OpenGLState.enableAlphaBlending();
             pm.render(projMatrix, ffc.getViewMatrix());
-            display.setFrameTitle("Disguised Phoenix: " + zeitgeist.getFPS() + " FPS " + " " + drawCalls + " draw calls " + df.format(facesDrawn) + " faces");
+            display.clear();
+            display.setViewport();
+            OpenGLState.disableDepthTest();
+            GL30.glActiveTexture(GL30.GL_TEXTURE0);
+            GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getTextureID(0));
+            GL30.glActiveTexture(GL30.GL_TEXTURE1);
+            GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getTextureID(1));
+            GL30.glActiveTexture(GL30.GL_TEXTURE2);
+            GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getTextureID(2));
+            quadRenderer.render(ffc.position);
             display.flipBuffers();
+            display.setFrameTitle("Disguised Phoenix: " + zeitgeist.getFPS() + " FPS " + " " + drawCalls + " draw calls " + df.format(facesDrawn) + " faces");
             drawCalls = 0;
             facesDrawn = 0;
             zeitgeist.sleep();
         }
         TextureLoader.cleanUpAllTextures();
+        FrameBufferObject.cleanUpAllFbos();
         Vao.cleanUpAllVaos();
         Shader.cleanUpAllShaders();
         display.destroy();

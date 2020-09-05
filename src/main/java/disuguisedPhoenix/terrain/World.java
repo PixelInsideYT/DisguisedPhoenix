@@ -52,6 +52,10 @@ public class World {
         adder.generateNextEntities(playerPos,this,islands);
     }
 
+    public void addAllEntities(){
+        islands.forEach(i->i.addEntities(adder.getAllEntities(i)));
+    }
+
     public List<Entity> getVisibleEntities(Matrix4f projMatrix, Matrix4f viewMatrix, Vector3f camPos) {
         cullingHelper.set(cullingMatrix.set(projMatrix).mul(viewMatrix));
         return islands.parallelStream()

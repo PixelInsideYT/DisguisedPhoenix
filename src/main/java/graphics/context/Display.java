@@ -19,8 +19,10 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Display {
     private long window;
+    private int[] size;
 
     public Display(String title,int width, int height) {
+        size=new int[]{width,height};
         create(title,width, height);
     }
 
@@ -42,7 +44,7 @@ public class Display {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
         glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
-        glfwWindowHint(GLFW_SAMPLES, 4);
+        glfwWindowHint(GLFW_SAMPLES, 0);
         // Create the window
         window = glfwCreateWindow(width, height, title, NULL, NULL);
         if (window == NULL)
@@ -73,6 +75,8 @@ public class Display {
             public void invoke(long window, int w, int h) {
                 if (w > 0 && h > 0) {
                     GL11.glViewport(0, 0, w, h);
+                    size[0]=w;
+                    size[1]=h;
                 }
                 System.out.println("Window is resized, aspect ratio: " + (w / (float) h));
             }
@@ -116,4 +120,8 @@ public class Display {
         return window;
     }
 
+    public void setViewport() {
+        GL11.glViewport(0, 0, size[0], size[1]);
+
+    }
 }
