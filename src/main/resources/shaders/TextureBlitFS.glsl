@@ -4,29 +4,28 @@ uniform sampler2D positionTexture;
 uniform sampler2D normalTexture;
 uniform sampler2D colorAndSpecularTexture;
 
-uniform vec3 cameraPos;
-
 in vec2 uv;
 out vec4 FragColor;
 
-const vec3 lightPos = vec3(0, 10000, 1000);
+uniform vec3 lightPos;
+
 const vec3 lightColor = vec3(1, 1, 1);
 const float gamma=1;
 
 
 void main() {
 
-    vec3 worldPos = texture(positionTexture, uv).xyz;
+    vec3 viewPos = texture(positionTexture, uv).xyz;
     vec4 normalAndShininess = texture(normalTexture, uv);
     vec4 colorAndGeometryCheck = texture(colorAndSpecularTexture, uv);
 
-    vec3 toCamera = cameraPos - worldPos;
+    vec3 toCamera = -viewPos;
 
 
     float shininess = normalAndShininess.w;
     vec3 norm = normalize(normalAndShininess.xyz);
     vec3 diffuse = colorAndGeometryCheck.rgb;
-    vec3 lightDir = normalize(lightPos - worldPos);
+    vec3 lightDir = normalize(lightPos - viewPos);
     float isGeometry=colorAndGeometryCheck.w;
 
     float brightness = max((dot(norm, lightDir)+1)/2, 0.0);

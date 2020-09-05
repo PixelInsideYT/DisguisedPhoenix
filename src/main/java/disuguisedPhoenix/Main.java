@@ -50,10 +50,10 @@ public class Main {
         for (int i = 0; i < 50; i++) world.addIsland(20000);
         Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(0, 0, 0), mim);
         Shader shader = new Shader(Shader.loadShaderCode("testVS.glsl"), Shader.loadShaderCode("testFS.glsl")).combine("pos", "vertexColor");
-        shader.loadUniforms("projMatrix", "noiseMap", "time", "viewMatrix", "viewMatrix3x3T", "transformationMatrix");
+        shader.loadUniforms("projMatrix", "noiseMap", "time", "viewMatrix", "transformationMatrix");
         shader.connectSampler("noiseMap", 0);
         Shader multiDrawShader = new Shader(Shader.loadShaderCode("testVSMultiDraw.glsl"), Shader.loadShaderCode("testFS.glsl")).combine("pos", "vertexColor", "transformationMatrix");
-        multiDrawShader.loadUniforms("projMatrix", "noiseMap", "time", "viewMatrix", "viewMatrix3x3T");
+        multiDrawShader.loadUniforms("projMatrix", "noiseMap", "time", "viewMatrix");
         multiDrawShader.connectSampler("noiseMap", 0);
         int noiseTexture = TextureLoader.loadTexture("misc/noiseMap.png", GL30.GL_REPEAT, GL30.GL_LINEAR);
         TestRenderer renderer = new TestRenderer(shader);
@@ -139,14 +139,11 @@ public class Main {
             GL30.glActiveTexture(GL30.GL_TEXTURE0);
             GL30.glBindTexture(GL30.GL_TEXTURE_2D, noiseTexture);
             renderer.begin(viewMatrix, projMatrix);
-            Matrix3f viewMatrix3x3Transposed = ffc.getViewMatrix().transpose3x3(new Matrix3f());
             shader.loadFloat("time", time);
-            shader.loadMatrix("viewMatrix3x3T", viewMatrix3x3Transposed);
             renderer.render(player.getModel(), player.getTransformationMatrix());
             world.render(renderer, projMatrix, viewMatrix, ffc.position);
             multiDrawShader.bind();
             multiDrawShader.loadFloat("time", time);
-            multiDrawShader.loadMatrix("viewMatrix3x3T", viewMatrix3x3Transposed);
             multiDrawShader.loadMatrix("projMatrix", projMatrix);
             multiDrawShader.loadMatrix("viewMatrix", viewMatrix);
             multiRenderer.render(world.getVisibleEntities(projMatrix, viewMatrix, ffc.position));
@@ -163,7 +160,7 @@ public class Main {
             GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getTextureID(1));
             GL30.glActiveTexture(GL30.GL_TEXTURE2);
             GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getTextureID(2));
-            quadRenderer.render(ffc.position);
+            quadRenderer.render(ffc.getViewMatrix());
             display.flipBuffers();
             display.setFrameTitle("Disguised Phoenix: " + zeitgeist.getFPS() + " FPS " + " " + drawCalls + " draw calls " + df.format(facesDrawn) + " faces");
             drawCalls = 0;

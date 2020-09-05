@@ -2,6 +2,7 @@ package graphics.postProcessing;
 
 import graphics.objects.Shader;
 import graphics.objects.Vao;
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 
@@ -21,7 +22,7 @@ public class QuadRenderer {
         });
         quad.unbind();
         shader = new Shader(Shader.loadShaderCode("TextureBlitVS.glsl"),Shader.loadShaderCode("TextureBlitFS.glsl")).combine("pos");
-        shader.loadUniforms("positionTexture","normalTexture","colorAndSpecularTexture","cameraPos");
+        shader.loadUniforms("positionTexture","normalTexture","colorAndSpecularTexture","lightPos");
         shader.connectSampler("positionTexture",0);
         shader.connectSampler("normalTexture",1);
         shader.connectSampler("colorAndSpecularTexture",2);
@@ -29,9 +30,10 @@ public class QuadRenderer {
     }
 
 
-    public void render(Vector3f camPos){
+    public void render(Matrix4f viewMatrix){
         shader.bind();
-        shader.load3DVector("cameraPos",camPos);
+        Vector3f lightPos = new Vector3f(0, 10000, 1000);
+        shader.load3DVector("lightPos",viewMatrix.transformPosition(lightPos));
         quad.bind();
         GL11.glDrawArrays(GL11.GL_TRIANGLES,0,6);
         quad.unbind();
