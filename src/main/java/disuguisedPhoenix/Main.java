@@ -16,17 +16,16 @@ import graphics.objects.OpenGLState;
 import graphics.objects.Shader;
 import graphics.objects.Vao;
 import graphics.particles.ParticleManager;
+import graphics.postProcessing.GaussianBlur;
 import graphics.postProcessing.QuadRenderer;
+import graphics.postProcessing.SSAO.SSAOEffect;
 import graphics.renderer.MultiIndirectRenderer;
 import graphics.renderer.TestRenderer;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL40;
+import org.lwjgl.opengl.*;
 
 import java.awt.*;
 import java.text.DecimalFormat;
@@ -39,8 +38,9 @@ public class Main {
 
     public static void main(String[] args) {
         long startUpTime = System.currentTimeMillis();
-        Display display = new Display("Disguised Phoenix", 640, 480);
+        Display display = new Display("Disguised Phoenix", 1920, 1080);
         display.setClearColor(new Color(59, 168, 198));
+       // GLUtil.setupDebugMessageCallback();
         // display.setClearColor(new Color(450/3, 450/3, 450/3));
         MouseInputMap mim = new MouseInputMap();
         ParticleManager pm = new ParticleManager();
@@ -87,22 +87,29 @@ public class Main {
         DecimalFormat df = new DecimalFormat("###,###,###");
         FrameBufferObject fbo = new FrameBufferObject(1920, 1080, 3)
                 //positions
-                .addTextureAttachment(GL40.GL_RGBA16F, GL11.GL_FLOAT, 0)
+                .addTextureAttachment(GL40.GL_RGBA32F, GL11.GL_FLOAT, GL40.GL_RGBA, 0)
                 //normals
-                .addTextureAttachment(GL40.GL_RGBA16F, GL11.GL_FLOAT, 1)
+                .addTextureAttachment(GL40.GL_RGBA16F, GL11.GL_FLOAT, GL40.GL_RGBA,1)
                 //color and specular
                 .addTextureAttachment(2)
                 //depth
                 .addDepthBuffer();
+        FrameBufferObject blurFbo = new FrameBufferObject(1920,1080,1).addTextureAttachment(0);
+        blurFbo.unbind();
         QuadRenderer quadRenderer = new QuadRenderer();
+        GaussianBlur blurHelper = new GaussianBlur(quadRenderer);
+        SSAOEffect ssao = new SSAOEffect(quadRenderer,blurHelper,1920,1080);
+        int texture=3;
         while (!display.shouldClose()) {
             float dt = zeitgeist.getDelta();
             time += dt;
             display.pollEvents();
             if (input.isKeyDown(GLFW.GLFW_KEY_O) && System.currentTimeMillis() - lastSwitchWireframe > 100) {
-           //     wireframe = !wireframe;
+              //  wireframe = !wireframe;
                 lastSwitchWireframe = System.currentTimeMillis();
                 world.addNextEntities(player.position);
+                texture++;
+                texture=texture%4;
             }
             if (input.isKeyDown(GLFW.GLFW_KEY_L) && System.currentTimeMillis() - lastSwitchCollision > 100) {
                 collisionBoxes = !collisionBoxes;
@@ -152,15 +159,18 @@ public class Main {
             OpenGLState.enableAlphaBlending();
             pm.render(projMatrix, ffc.getViewMatrix());
             display.clear();
-            display.setViewport();
             OpenGLState.disableDepthTest();
+            ssao.renderEffect(projMatrix,fbo);
+            display.setViewport();
             GL30.glActiveTexture(GL30.GL_TEXTURE0);
             GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getTextureID(0));
             GL30.glActiveTexture(GL30.GL_TEXTURE1);
             GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getTextureID(1));
             GL30.glActiveTexture(GL30.GL_TEXTURE2);
             GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getTextureID(2));
-            quadRenderer.render(ffc.getViewMatrix());
+            GL30.glActiveTexture(GL30.GL_TEXTURE3);
+            GL30.glBindTexture(GL30.GL_TEXTURE_2D, ssao.getSSAOTexture());
+            quadRenderer.renderDeferredLightingPass(ffc.getViewMatrix());
             display.flipBuffers();
             display.setFrameTitle("Disguised Phoenix: " + zeitgeist.getFPS() + " FPS " + " " + drawCalls + " draw calls " + df.format(facesDrawn) + " faces");
             drawCalls = 0;

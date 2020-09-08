@@ -28,11 +28,11 @@ public class FrameBufferObject {
     }
 
     public FrameBufferObject addTextureAttachment(int attachment) {
-        return this.addTextureAttachment(GL_RGBA, GL_UNSIGNED_BYTE, attachment);
+        return this.addTextureAttachment(GL_RGBA8, GL_UNSIGNED_BYTE, GL_RGBA, attachment);
     }
 
-    public FrameBufferObject addTextureAttachment(int type,int precision, int attachment) {
-        int newTexture = createTextureAttachment(type,precision, GL30.GL_COLOR_ATTACHMENT0 +attachment);
+    public FrameBufferObject addTextureAttachment(int type, int precision, int format, int attachment) {
+        int newTexture = createTextureAttachment(type, precision, format, GL30.GL_COLOR_ATTACHMENT0 + attachment);
         colorTextures.add(newTexture);
         return this;
     }
@@ -125,10 +125,10 @@ public class FrameBufferObject {
         return frameBuffer;
     }
 
-    private int createTextureAttachment(int type, int precision, int attachment) {
+    private int createTextureAttachment(int type, int precision, int format, int attachment) {
         int colourTexture = GL11.glGenTextures();
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, colourTexture);
-        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, type, width, height, 0, GL11.GL_RGBA, precision, (ByteBuffer) null);
+        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, type, width, height, 0, format, precision, (ByteBuffer) null);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);

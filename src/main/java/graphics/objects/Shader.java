@@ -1,10 +1,10 @@
 package graphics.objects;
 
 
+import engine.util.BiMap;
 import org.joml.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL20;
 
 import java.io.BufferedReader;
@@ -20,6 +20,7 @@ import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL32.GL_GEOMETRY_SHADER;
 
 public class Shader {
+
     private static List<Integer> allShaderProgramms = new ArrayList<>();
     private static FloatBuffer matrixBuffer4f = BufferUtils.createFloatBuffer(16);
     private static FloatBuffer matrixBuffer3f = BufferUtils.createFloatBuffer(9);
@@ -100,13 +101,24 @@ public class Shader {
     }
 
     private void bindAtributs(String... attributes) {
-        for (int i = 0; i < attributes.length; i++) {
-            bindAttribute(i, attributes[i]);
+        if (attributes.length != 0) {
+            for (int i = 0; i < attributes.length; i++) {
+                bindAttribute(i, attributes[i]);
+            }
+        } else {
+            System.err.println("Trying to load configured attributes");
+            nameLocationMap.getSet().forEach(name -> bindAttribute(nameLocationMap.get(name), name));
         }
     }
 
-    public Shader bindAttribute(int attribute, String variableName) {
+    private void bindAttribute(int attribute, String variableName) {
         GL20.glBindAttribLocation(shaderProgram, attribute, variableName);
+    }
+
+    private BiMap<String, Integer> nameLocationMap = new BiMap<>();
+
+    public Shader configureAttribute(int attribute, String variableName) {
+        nameLocationMap.put(variableName, attribute);
         return this;
     }
 
@@ -128,6 +140,12 @@ public class Shader {
         uniforms.put(name, id);
         if (id == -1) {
             System.err.println("Uniform: " + name + " not found!");
+        }
+    }
+
+    public void loadUniformArray(String arrayName,int count){
+        for(int i=0;i<count;i++){
+            loadUniform(arrayName+"["+i+"]");
         }
     }
 
@@ -161,6 +179,16 @@ public class Shader {
         matrixBuffer3f.clear();
         matrix.get(matrixBuffer3f);
         GL20.glUniformMatrix3fv(uniforms.get(name), false, matrixBuffer3f);
+    }
+
+    public void loadFloatArray(String name, float[] array) {
+        GL20.glUniform1fv(uniforms.get(name), array);
+    }
+
+    public void loadVector3fArray(String name, Vector3f[] array) {
+        for(int i=0;i<array.length;i++){
+            this.load3DVector(name+"["+i+"]",array[i]);
+        }
     }
 
     private void deleteShaders() {

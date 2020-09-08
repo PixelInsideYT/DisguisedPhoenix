@@ -74,6 +74,19 @@ public class TextureLoader {
         return textureID;
     }
 
+
+    public static int generateTexture(int width, int height, float[] data,int wrap, int filter,int precision,int type, int format){
+        int textureID = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, type, width, height, 0, format, precision, data);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        return textureID;
+    }
+
     public static void cleanUpAllTextures() {
         nameToIdMap.values().forEach(GL11::glDeleteTextures);
     }
