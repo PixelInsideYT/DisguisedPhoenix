@@ -46,5 +46,4 @@ void main() {
 
     vec3 backGroundColorGammaCorrected = pow(Diffuse,vec3(1/gamma))*(1.0-isGeometry);
     FragColor=vec4(lighting*isGeometry+backGroundColorGammaCorrected, 1);
-   // FragColor=texture(ambientOcclusionTexture, uv);
 }

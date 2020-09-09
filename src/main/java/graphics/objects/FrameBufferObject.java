@@ -52,18 +52,21 @@ public class FrameBufferObject {
     }
 
     public void blitToFbo(FrameBufferObject out) {
-        GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, out.fbo);
-        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, this.fbo);
-        GL30.glBlitFramebuffer(0, 0, width, height, 0, 0, out.getBufferWidth(), out.getBufferHeight(),
-                GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT, GL11.GL_NEAREST);
-        this.unbind();
+        blit(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT, out.fbo, out.getBufferWidth(), out.getBufferHeight());
     }
 
-    public void blitToScreen() {
-        GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, 0);
+    public void blitToScreen(int width, int height) {
+        blit(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT, 0, width, height);
+    }
+
+    public void blitDepth(FrameBufferObject out) {
+        blit(GL_DEPTH_BUFFER_BIT, out.fbo, out.getBufferWidth(), out.getBufferHeight());
+    }
+
+    public void blit(int bit, int output, int outWidth, int outHeight) {
+        GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, output);
         GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, this.fbo);
-        GL30.glBlitFramebuffer(0, 0, width, height, 0, 0, width, height,
-                GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT, GL11.GL_NEAREST);
+        GL30.glBlitFramebuffer(0, 0, width, height, 0, 0, outWidth, outHeight, bit, GL11.GL_NEAREST);
         this.unbind();
     }
 
@@ -102,6 +105,10 @@ public class FrameBufferObject {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
+    public void clear(float r, float g, float b, float a) {
+        glClearColor(r, g, b, a);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
 
     public void unbind() {// call to switch to default frame buffer
         GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
@@ -148,7 +155,7 @@ public class FrameBufferObject {
     private int createDepthTextureAttachment() {
         int texture = GL11.glGenTextures();
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture);
-        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL30.GL_DEPTH_COMPONENT32, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, (ByteBuffer) null);
+        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL30.GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, (ByteBuffer) null);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, texture, 0);
@@ -166,5 +173,6 @@ public class FrameBufferObject {
     public int getBufferWidth() {
         return width;
     }
+
 
 }
