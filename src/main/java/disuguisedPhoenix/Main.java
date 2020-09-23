@@ -16,12 +16,12 @@ import graphics.objects.OpenGLState;
 import graphics.objects.Shader;
 import graphics.objects.Vao;
 import graphics.particles.ParticleManager;
+import graphics.postProcessing.FXAARenderer;
 import graphics.postProcessing.GaussianBlur;
 import graphics.postProcessing.QuadRenderer;
 import graphics.postProcessing.SSAO.SSAOEffect;
 import graphics.renderer.MultiIndirectRenderer;
 import graphics.renderer.TestRenderer;
-import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFW;
@@ -96,11 +96,12 @@ public class Main {
                 .addTextureAttachment(GL40.GL_RGBA16F, GL11.GL_FLOAT, GL40.GL_RGBA,3)
                 //depth
                 .addDepthTextureAttachment();
-        FrameBufferObject blurFbo = new FrameBufferObject(1920,1080,1).addTextureAttachment(0);
-        blurFbo.unbind();
+        FrameBufferObject finalFbo = new FrameBufferObject(1920,1080,1).addTextureAttachment(0);
+        finalFbo.unbind();
         QuadRenderer quadRenderer = new QuadRenderer();
         GaussianBlur blurHelper = new GaussianBlur(quadRenderer);
         SSAOEffect ssao = new SSAOEffect(quadRenderer,blurHelper,1920,1080,projMatrix);
+        FXAARenderer aaRenderer = new FXAARenderer(quadRenderer,finalFbo.getTextureID(0));
         float lastDT=1f/60f;
         int texture=3;
         while (!display.shouldClose()) {
@@ -165,8 +166,8 @@ public class Main {
             pm.render(projMatrix, viewMatrix);
             display.clear();
             OpenGLState.disableDepthTest();
-            ssao.renderEffect(fbo,viewMatrix,dt);
-            display.setViewport();
+          //  ssao.renderEffect(fbo,viewMatrix,dt);
+            finalFbo.bind();
             GL30.glActiveTexture(GL30.GL_TEXTURE0);
             GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getTextureID(0));
             GL30.glActiveTexture(GL30.GL_TEXTURE1);
@@ -176,6 +177,9 @@ public class Main {
             GL30.glActiveTexture(GL30.GL_TEXTURE3);
             GL30.glBindTexture(GL30.GL_TEXTURE_2D, ssao.getSSAOTexture());
             quadRenderer.renderDeferredLightingPass(ffc.getViewMatrix());
+            finalFbo.unbind();
+            display.setViewport();
+            aaRenderer.renderToScreen();
             display.flipBuffers();
             display.setFrameTitle("Disguised Phoenix: " + zeitgeist.getFPS() + " FPS " + " " + drawCalls + " draw calls " + df.format(facesDrawn) + " faces");
             drawCalls = 0;

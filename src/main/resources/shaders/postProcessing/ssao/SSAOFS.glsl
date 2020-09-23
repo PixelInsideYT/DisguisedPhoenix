@@ -23,7 +23,7 @@ void main(void){
     ivec2 px = ivec2(gl_FragCoord.xy);
     vec4 current = texture(camera_positions, uv);
     //got the sky box
-    // if(current.w==0)discard;
+    if(current.w==0)discard;
     vec3 pos =current.xyz;
     //vec3 normal = normalize(cross(dFdx(pos), dFdy(pos)));
     vec3 normal = normalize(texture(camera_normals, uv).xyz);
