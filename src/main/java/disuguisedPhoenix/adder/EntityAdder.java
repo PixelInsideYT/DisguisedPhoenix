@@ -113,6 +113,8 @@ public class EntityAdder {
                 return IntStream.range(0, (int) (0.000001f * terrainAreaEstimate)).mapToObj(i -> generateEntiy(terrain, "misc/tutorialCrystal.modelFile", 0, 6f, 0, 20)).collect(Collectors.toList());
             case 9:
                 return IntStream.range(0, (int) (0.000001f * terrainAreaEstimate)).mapToObj(i -> generateEntiy(terrain, "plants/glockenblume.modelFile", 0, 6f, 0, 20)).collect(Collectors.toList());
+            case 10:
+                return IntStream.range(0, (int) (0.000001f * terrainAreaEstimate)).mapToObj(i -> generateEntiy(terrain, "misc/fox.modelFile", 0, 6f, 0, 20)).collect(Collectors.toList());
 
         }
         return new ArrayList<>();
@@ -150,7 +152,7 @@ public class EntityAdder {
                 return IntStream.range(0, (int) (0.000001f * terrainAreaEstimate)).mapToObj(i -> generateEntiy(terrain, "misc/tutorialCrystal.modelFile", 0, 6f, 0, 20)).collect(Collectors.toList());
             case 9:
                 activated++;
-                return IntStream.range(0, (int) (0.000001f * terrainAreaEstimate)).mapToObj(i -> generateEntiy(terrain, "plants/glockenblume.modelFile", 0, 6f, 0, 20)).collect(Collectors.toList());
+                return IntStream.range(0, (int) (0.000001f * terrainAreaEstimate)).mapToObj(i -> generateEntiy(terrain, "plants/glockenblume.modelFile", 0, 0f, 0, 20)).collect(Collectors.toList());
 
         }
         return new ArrayList<>();
@@ -168,7 +170,7 @@ public class EntityAdder {
     public List<Entity> getAllEntities(PopulatedIsland flyingIslands) {
         List<Entity> rt = new ArrayList<>();
         activated = 0;
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 11; i++) {
             rt.addAll(generateEntitiesFor(flyingIslands.island));
             activated++;
         }
