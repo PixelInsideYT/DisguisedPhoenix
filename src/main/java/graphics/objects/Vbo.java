@@ -1,7 +1,9 @@
 package graphics.objects;
 
 import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL45;
 
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,18 +19,24 @@ public class Vbo {
         this.target = target;
         vboID = GL15.glGenBuffers();
         bind();
+        allVbos.add(this);
     }
 
     public Vbo(int dataCount, int target, int usage) {
         this(target);
         GL15.glBufferData(target, dataCount * 4, usage);
-        allVbos.add(this);
     }
 
     public Vbo(float[] data, int target, int usage) {
         this(target);
-        bind();
         GL15.glBufferData(target, data, usage);
+    }
+
+
+    public ByteBuffer createPersistantVbo(int floatCount) {
+        int flags = GL45.GL_MAP_PERSISTENT_BIT | GL45.GL_MAP_WRITE_BIT | GL45.GL_MAP_COHERENT_BIT;
+        GL45.glBufferStorage(target, floatCount * 4, flags);
+        return GL45.glMapBufferRange(target, 0, floatCount * 4, flags);
     }
 
     public static void cleanUp() {
@@ -45,8 +53,8 @@ public class Vbo {
         unbind();
     }
 
-    public void updateVbo(int[] data){
-         bind();
+    public void updateVbo(int[] data) {
+        bind();
         GL15.glBufferSubData(target, 0, data);
         unbind();
     }

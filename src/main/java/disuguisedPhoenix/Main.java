@@ -45,7 +45,7 @@ public class Main {
         MouseInputMap mim = new MouseInputMap();
         ParticleManager pm = new ParticleManager();
         MultiIndirectRenderer multiRenderer = new MultiIndirectRenderer();
-        ModelFileHandler.loadModelsForMultiDraw(multiRenderer.matrixVbo, "plants/flowerTest1.modelFile", "lowPolyTree/vc.modelFile", "lowPolyTree/ballTree.modelFile", "lowPolyTree/bendyTree.modelFile", "lowPolyTree/tree2.modelFile", "misc/rock.modelFile", "plants/grass.modelFile", "plants/mushroom.modelFile", "misc/tutorialCrystal.modelFile", "plants/glockenblume.modelFile");
+        ModelFileHandler.loadModelsForMultiDraw(multiRenderer.persistantMatrixVbo, "plants/flowerTest1.modelFile", "lowPolyTree/vc.modelFile", "lowPolyTree/ballTree.modelFile", "lowPolyTree/bendyTree.modelFile", "lowPolyTree/tree2.modelFile", "misc/rock.modelFile", "plants/grass.modelFile", "plants/mushroom.modelFile", "misc/tutorialCrystal.modelFile", "plants/glockenblume.modelFile","misc/fox.modelFile");
         World world = new World(pm);
         for (int i = 0; i < 50; i++) world.addIsland(20000);
         Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(0, 0, 0), mim);
