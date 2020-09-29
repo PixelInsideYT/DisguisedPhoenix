@@ -106,7 +106,6 @@ public class Shader {
                 bindAttribute(i, attributes[i]);
             }
         } else {
-            System.err.println("Trying to load configured attributes");
             nameLocationMap.getSet().forEach(name -> bindAttribute(nameLocationMap.get(name), name));
         }
     }

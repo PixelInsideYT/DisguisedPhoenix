@@ -14,7 +14,7 @@ public class QuadRenderer {
     Shader testShader;
 
     public QuadRenderer() {
-        quad = new Vao("post process quad");
+        quad = new Vao();
         quad.addDataAttributes(0, 3, new float[]{-1.0f, -1.0f, 0.0f,
                 1.0f, -1.0f, 0.0f,
                 1.0f, 1.0f, 0.0f,
@@ -24,10 +24,10 @@ public class QuadRenderer {
         });
         quad.unbind();
         shader = new Shader(Shader.loadShaderCode("postProcessing/quadVS.glsl"), Shader.loadShaderCode("postProcessing/deferred/lightingPassFS.glsl")).combine("pos");
-        shader.loadUniforms("positionTexture", "normalTexture", "colorAndSpecularTexture", "ambientOcclusionTexture", "lightPos");
-        shader.connectSampler("positionTexture", 0);
-        shader.connectSampler("normalTexture", 1);
-        shader.connectSampler("colorAndSpecularTexture", 2);
+        shader.loadUniforms("depthTexture", "normalAndSpecularTexture", "colorAndGeometryCheckTexture","fixAO", "ambientOcclusionTexture","projMatrixInv","lightPos");
+        shader.connectSampler("depthTexture", 0);
+        shader.connectSampler("normalAndSpecularTexture", 1);
+        shader.connectSampler("colorAndGeometryCheckTexture", 2);
         shader.connectSampler("ambientOcclusionTexture", 3);
 
         shader.unbind();
@@ -40,10 +40,12 @@ public class QuadRenderer {
     }
 
 
-    public void renderDeferredLightingPass(Matrix4f viewMatrix) {
+    public void renderDeferredLightingPass(Matrix4f viewMatrix,Matrix4f projMatrix, int ao) {
         shader.bind();
         Vector3f lightPos = new Vector3f(0, 10000, 1000);
         shader.load3DVector("lightPos", viewMatrix.transformPosition(lightPos));
+        shader.loadMatrix("projMatrixInv",new Matrix4f(projMatrix).invert());
+        shader.loadInt("fixAO",ao);
         renderOnlyQuad();
         shader.unbind();
     }

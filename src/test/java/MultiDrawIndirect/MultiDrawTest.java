@@ -11,7 +11,7 @@ public class MultiDrawTest {
     public static void main(String[] args) {
         Display display = new Display("MultiDraw Test", 1920, 1080);
         //setup VAO with multiple models
-        Vao models = new Vao("multidraw test");
+        Vao models = new Vao();
         models.addDataAttributes(0, 3, new float[]{     // a centered triangle
 
                 -0.5f, -0.5f, 0f,

@@ -33,7 +33,7 @@ public class ParticleManager {
     public ParticleManager() {
         shader = new Shader(Shader.loadShaderCode("particleVS.glsl"), Shader.loadShaderCode("particleFS.glsl")).configureAttribute(0, "pos").configureAttribute(1, "transformationMatrix").configureAttribute(5, "color").combine();
         shader.loadUniforms("viewMatrix", "projMatrix");
-        particleVao = new Vao("particle");
+        particleVao = new Vao();
         particleVao.addDataAttributes(0, 3, new float[]{0.5f, -0.5f, 0f, 0.5f, 0.5f, 0f, -0.5f, 0.5f, 0f, -0.5f, 0.5f, 0f, 0.5f, -0.5f, 0f, -0.5f, -0.5f, 0f});
         matrixAndColor = new Vbo(INSTANCES_COUNT * INSTANCE_DATA_LENGTH, GL20.GL_ARRAY_BUFFER, GL15.GL_DYNAMIC_DRAW).unbind();
         particleVao.addInstancedAttribute(matrixAndColor, 1, 4, INSTANCE_DATA_LENGTH, 0);

@@ -77,7 +77,7 @@ public class AssimpWrapper {
 
 
     private static Vao getVaoFromMeshInfo(MeshInformation mi) {
-        Vao vao = new Vao("model "+mi.meshName);
+        Vao vao = new Vao();
         vao.addDataAttributes(0, 3, mi.vertexPositions);
         vao.addDataAttributes(1, 3, mi.colors);
         vao.addIndicies(mi.indicies);

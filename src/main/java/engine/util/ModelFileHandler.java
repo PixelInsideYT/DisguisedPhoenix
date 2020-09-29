@@ -73,7 +73,7 @@ public class ModelFileHandler {
         float[] combinedPosAndWobble=new float[posWobbleANDColorShininessSize];
         float[] combinedColorAndShininess=new float[posWobbleANDColorShininessSize];
         int[] combinedIndicies = new int[indiciesSize];
-        Vao finishedVao = new Vao("multidraw vao");
+        Vao finishedVao = new Vao();
         int indexOffset =0;
         int vertexOffset=0;
         for(MeshInformation info:meshes){
@@ -187,7 +187,7 @@ public class ModelFileHandler {
 
     private static Model loadModelFile(String name) {
         MeshInformation meshInformation = loadModelToMeshInfo(name);
-        Vao vao = new Vao("model file "+name);
+        Vao vao = new Vao();
         vao.addDataAttributes(0, 4, meshInformation.vertexPositions);
         vao.addDataAttributes(1, 4, meshInformation.colors);
         vao.addIndicies(meshInformation.indicies);

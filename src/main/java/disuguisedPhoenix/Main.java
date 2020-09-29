@@ -85,25 +85,24 @@ public class Main {
         float time = 0f;
         input.hideMouseCursor();
         DecimalFormat df = new DecimalFormat("###,###,###");
-        FrameBufferObject fbo = new FrameBufferObject(1920, 1080, 4)
-                //positions
-                .addTextureAttachment(GL40.GL_RGBA32F, GL11.GL_FLOAT, GL40.GL_RGBA, 0)
-                //normals
-                .addTextureAttachment(GL40.GL_RGBA16F, GL11.GL_FLOAT, GL40.GL_RGBA,1)
-                //color and specular
-                .addTextureAttachment(2)
+        FrameBufferObject fbo = new FrameBufferObject(1920, 1080, 3)
+                //normal and specular
+                .addTextureAttachment(GL40.GL_RGB8, GL11.GL_FLOAT, GL40.GL_RGB, 0)
+                //color and geometry info
+                .addTextureAttachment(1)
                 //velocity
-                .addTextureAttachment(GL40.GL_RGBA16F, GL11.GL_FLOAT, GL40.GL_RGBA,3)
+                .addTextureAttachment(GL40.GL_RGBA, GL11.GL_FLOAT, GL40.GL_RGBA,2)
                 //depth
                 .addDepthTextureAttachment();
         FrameBufferObject finalFbo = new FrameBufferObject(1920,1080,1).addTextureAttachment(0);
         finalFbo.unbind();
         QuadRenderer quadRenderer = new QuadRenderer();
         GaussianBlur blurHelper = new GaussianBlur(quadRenderer);
-        SSAOEffect ssao = new SSAOEffect(quadRenderer,blurHelper,1920,1080,projMatrix);
+        SSAOEffect ssao = new SSAOEffect(quadRenderer,1920,1080,projMatrix);
         FXAARenderer aaRenderer = new FXAARenderer(quadRenderer,finalFbo.getTextureID(0));
         float lastDT=1f/60f;
-        int texture=3;
+        int texture=0;
+
         while (!display.shouldClose()) {
             float dt = zeitgeist.getDelta();
             time += dt;
@@ -113,7 +112,7 @@ public class Main {
                 lastSwitchWireframe = System.currentTimeMillis();
                 world.addNextEntities(player.position);
                 texture++;
-                texture=texture%4;
+                texture=texture%3;
             }
             if (input.isKeyDown(GLFW.GLFW_KEY_L) && System.currentTimeMillis() - lastSwitchCollision > 100) {
                 collisionBoxes = !collisionBoxes;
@@ -166,17 +165,17 @@ public class Main {
             pm.render(projMatrix, viewMatrix);
             display.clear();
             OpenGLState.disableDepthTest();
-          //  ssao.renderEffect(fbo,viewMatrix,dt);
+            ssao.renderEffect(fbo,viewMatrix,dt);
             finalFbo.bind();
             GL30.glActiveTexture(GL30.GL_TEXTURE0);
-            GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getTextureID(0));
+            GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getDepthTexture());
             GL30.glActiveTexture(GL30.GL_TEXTURE1);
-            GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getTextureID(1));
+            GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getTextureID(0));
             GL30.glActiveTexture(GL30.GL_TEXTURE2);
-            GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getTextureID(2));
+            GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getTextureID(1));
             GL30.glActiveTexture(GL30.GL_TEXTURE3);
             GL30.glBindTexture(GL30.GL_TEXTURE_2D, ssao.getSSAOTexture());
-            quadRenderer.renderDeferredLightingPass(ffc.getViewMatrix());
+            quadRenderer.renderDeferredLightingPass(ffc.getViewMatrix(),projMatrix,texture);
             finalFbo.unbind();
             display.setViewport();
             aaRenderer.renderToScreen();

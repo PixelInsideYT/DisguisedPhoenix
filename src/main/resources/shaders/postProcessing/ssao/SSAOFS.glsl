@@ -1,66 +1,87 @@
 #version 430 core
-#define FAR_PLANE -1000.f
-
 in vec2 uv;
 out vec4 ao_out;
 
+const float NUM_SPIRAL_TURNS = 11;
+
+const float samples = 15;
+
+const float TWO_PI = 6.28;
+
+const float kontrast = 5;
+const float sigma = 5;
+const float beta = 0.0005;
+const float epsilon = 0.0001;
+
 uniform sampler2D camera_positions;
-uniform sampler2D camera_normals;
 
-uniform int n_samples;
-uniform int turns;
-uniform float ball_radius;
-uniform float sigma;
-uniform float kappa;
-uniform float beta;
-uniform float rnd;
+uniform mat4 projMatrixInv;
+uniform float farPlane = 100000.0;
 
-float when_lower_than(float x, float y) {
-    return max(sign(y - x), 0.0);
+uniform float radius;
+uniform float projScale;
+
+vec3 viewPosFromDepth(vec2 TexCoord,float depth) {
+    float z = depth * 2.0 - 1.0;
+    vec4 clipSpacePosition = vec4(TexCoord * 2.0 - 1.0, z, 1.0);
+    vec4 viewSpacePosition = projMatrixInv * clipSpacePosition;
+    viewSpacePosition /= viewSpacePosition.w;
+    return viewSpacePosition.xyz;
+}
+
+vec3 getPosition(ivec2 pos, int mipLevel, ivec2 size){
+    float depth = texelFetch(camera_positions,pos,mipLevel).r;
+    vec2 uvPos = (vec2(pos)+vec2(0.5))/vec2(size);
+    return viewPosFromDepth(uvPos,depth);
+}
+
+vec2 packKey(float linearDepth) {
+    float key = clamp(linearDepth * (1.0/farPlane),0.0,1.0);
+    // Round to the nearest 1/256.0
+    float temp = floor(key * 256.0);
+    vec2 p;
+    // Integer part
+    p.x = temp * (1.0 / 256.0);
+
+    // Fractional part
+    p.y = key * 256.0 - temp;
+    return p;
 }
 
 void main(void){
     ivec2 px = ivec2(gl_FragCoord.xy);
-    vec4 current = texture(camera_positions, uv);
-    //got the sky box
-    if(current.w==0)discard;
-    vec3 pos =current.xyz;
-    //vec3 normal = normalize(cross(dFdx(pos), dFdy(pos)));
-    vec3 normal = normalize(texture(camera_normals, uv).xyz);
-    // The Alchemy AO hash for random per-pixel offset
-    float phi = (3 * px.x ^ px.y + px.x * px.y) * 10+rnd;
-    const float TAU = 6.2831853071795864;
-    const float ball_radius_sqr = pow(ball_radius, 2);
-    // What's the radius of a 1m object at z = -1m to compute screen_radius properly?
-    // Comments in their code mention we can compute it from the projection mat, or hardcode in like 500
-    // and make the ball radius resolution dependent (as I've done currently)
-    const float screen_radius = -ball_radius * 3500 / pos.z;
-    int max_mip = textureQueryLevels(camera_positions) - 1;
-    float ao_value = 0;
-    for (int i = 0; i < n_samples; ++i){
-        float alpha = 1.f / n_samples * (i + 0.5);
-        float h = screen_radius * alpha;
-        float theta = TAU * alpha * turns + phi;
-        vec2 u = vec2(cos(theta), sin(theta));
-        int m = clamp(findMSB(int(h)) - 4, 0, max_mip);
-        ivec2 mip_pos = clamp((ivec2(h * u) + px) >> m, ivec2(0), textureSize(camera_positions, m) - ivec2(1));
-        vec3 q = texelFetch(camera_positions, mip_pos, m).xyz;
-        vec3 v = q - pos;
-        // The original estimator in the paper, from Alchemy AO
-        // I tried getting their new recommended estimator running but couldn't get it to look nice,
-        // from taking a look at their AO shader it also looks like we compute this value quite differently
-        ao_value += max(0, dot(v, normal)) / (dot(v, v) + 0.01);
-    }
-    // The original method in paper, from Alchemy AO
-    ao_value = max(0, 1.f - 2.f * sigma / n_samples * ao_value);
-    ao_value = pow(ao_value, kappa);
+    vec3 pos = getPosition(px,0,textureSize(camera_positions,0));
+    vec3 normal = normalize(cross(dFdx(pos),dFdy(pos)));
 
-    // Do a little bit of filtering now, respecting depth edges
+    float diskRadius = -projScale * radius / pos.z;
+    float hash = (3 * px.x ^ px.y + px.x * px.y) * 10;
+
+    float occlusion = 0;
+    for(int i=0; i < samples;i++){
+        //calculate sample point distance
+        float alpha = float(i + 0.5)*(1.0/samples);
+        float distance = diskRadius*alpha;
+        // calculate sample point angle
+        float theta = TWO_PI * alpha * NUM_SPIRAL_TURNS + hash;
+        //calculate sample point in abselute texture coord
+        ivec2 sampleTextureCoord = ivec2(vec2(cos(theta),sin(theta))*distance) + px;
+        //calculate mipmap level and mipmap texture coord for chache effiecincy
+        int mipLevel = clamp(findMSB(int(distance))-3, 0, 9);
+        mipLevel = 0;
+        ivec2 size = textureSize(camera_positions,mipLevel);
+        ivec2 mipRespectedSampleCooord = clamp(sampleTextureCoord >> mipLevel, ivec2(0), size-ivec2(1));
+
+        vec3 P = getPosition(mipRespectedSampleCooord,mipLevel,size);
+        vec3 v = P - pos;
+        occlusion += max(0, dot(v,normal) + pos.z * beta)/(dot(v,v)+epsilon);
+    }
+    occlusion = max(0, 1.0 - 2.0 * sigma/samples*occlusion);
+    occlusion = pow(occlusion, kontrast);
     if (abs(dFdx(pos.z)) < 0.02) {
-        ao_value -= dFdx(ao_value) * ((px.x & 1) - 0.5);
+        occlusion -= dFdx(occlusion) * ((px.x & 1) - 0.5);
     }
     if (abs(dFdy(pos.z)) < 0.02) {
-        ao_value -= dFdy(ao_value) * ((px.y & 1) - 0.5);
+        occlusion -= dFdy(occlusion) * ((px.y & 1) - 0.5);
     }
-    ao_out = vec4(ao_value, ao_value,ao_value,1);
+    ao_out = vec4(occlusion,packKey(pos.z),1);
 }

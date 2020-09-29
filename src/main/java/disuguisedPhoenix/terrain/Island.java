@@ -219,7 +219,7 @@ public class Island {
         }
         relativeCenter.div(count);
         float radius = farPoint.distance(relativeCenter);
-        Vao vao = new Vao("terrain ");
+        Vao vao = new Vao();
         vao.addDataAttributes(0, 4, verticies);
         vao.addDataAttributes(1, 4, colors);
         vao.addIndicies(indicies);
