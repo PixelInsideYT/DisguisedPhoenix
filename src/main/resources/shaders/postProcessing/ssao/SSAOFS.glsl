@@ -3,17 +3,17 @@ in vec2 uv;
 out vec4 ao_out;
 
 const float NUM_SPIRAL_TURNS = 11;
-
-const float samples = 15;
-
 const float TWO_PI = 6.28;
 
-const float kontrast = 5;
-const float sigma = 5;
-const float beta = 0.0005;
+uniform sampler2D camera_positions;
+
+uniform float samples = 15;
+
+uniform float kontrast = 5;
+uniform float sigma = 5;
+uniform float beta = 0.0005;
 const float epsilon = 0.0001;
 
-uniform sampler2D camera_positions;
 
 uniform mat4 projMatrixInv;
 uniform float farPlane = 100000.0;
@@ -36,7 +36,7 @@ vec3 getPosition(ivec2 pos, int mipLevel, ivec2 size){
 }
 
 vec2 packKey(float linearDepth) {
-    float key = clamp(linearDepth * (1.0/farPlane),0.0,1.0);
+    float key = clamp(-linearDepth * (1.0/farPlane),0.0,1.0);
     // Round to the nearest 1/256.0
     float temp = floor(key * 256.0);
     vec2 p;
