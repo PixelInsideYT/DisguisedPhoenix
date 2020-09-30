@@ -1,4 +1,4 @@
-#version 150
+#version 130
 
 out vec4 out_colour;
 in vec2 uv;

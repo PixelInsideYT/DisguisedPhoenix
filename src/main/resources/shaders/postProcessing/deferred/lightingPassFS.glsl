@@ -8,7 +8,6 @@ uniform sampler2D ambientOcclusionTexture;
 
 uniform mat4 projMatrixInv;
 uniform float luminanceThreshold = 0.7;
-uniform int fixAO;
 in vec2 uv;
 
 layout (location = 0) out vec4 FragColor;
@@ -47,8 +46,6 @@ void main() {
     vec3 FragPos = viewPosFromDepth(uv, texture(depthTexture,uv).r);
     vec3 normalAndShininess = texture(normalAndSpecularTexture, uv).xyz;
     float ambienOcclusion= texture(ambientOcclusionTexture, uv).r;
-    if(fixAO==1)
-    ambienOcclusion=1;
     float shininess = normalAndShininess.z;
     vec3 Normal = reconstructNormal(normalAndShininess.xy);
     vec3 Diffuse = colorAndGeometryCheck.rgb;
@@ -76,6 +73,5 @@ void main() {
     float luminance = dot(lighting, luminanceDot);
     highLight = vec4(lighting*pow(luminance,7),1);
     FragColor = vec4(lighting, 1);
-    if(fixAO==0)
-    FragColor.rgb = vec3(ambienOcclusion);
+
 }

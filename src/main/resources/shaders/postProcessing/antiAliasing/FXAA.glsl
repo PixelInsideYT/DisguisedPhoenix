@@ -1,4 +1,4 @@
-#version 330 core
+#version 130
 
 #ifndef FXAA_REDUCE_MIN
 #define FXAA_REDUCE_MIN   (1.0/ 128.0)

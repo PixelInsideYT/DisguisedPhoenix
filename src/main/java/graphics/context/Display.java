@@ -7,6 +7,7 @@ import org.lwjgl.glfw.GLFWWindowSizeCallback;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.Platform;
 
 import java.awt.*;
 import java.nio.IntBuffer;
@@ -21,12 +22,12 @@ public class Display {
     private long window;
     private int[] size;
 
-    public Display(String title,int width, int height) {
-        size=new int[]{width,height};
-        create(title,width, height);
+    public Display(String title, int width, int height) {
+        size = new int[]{width, height};
+        create(title, width, height);
     }
 
-    public void create(String title,int width, int height) {
+    public void create(String title, int width, int height) {
         // Setup an error callback. The default implementation
         // will print the error message in System.err.
         GLFWErrorCallback.createPrint(System.err).set();
@@ -39,10 +40,13 @@ public class Display {
         glfwDefaultWindowHints(); // optional, the current window hints are already the default
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE); // the window will stay hidden after creation
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE); // the window will be resizable
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+        if (Platform.get() == Platform.MACOSX) {
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
+        }
         glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
         glfwWindowHint(GLFW_SAMPLES, 0);
         // Create the window
@@ -75,8 +79,8 @@ public class Display {
             public void invoke(long window, int w, int h) {
                 if (w > 0 && h > 0) {
                     GL11.glViewport(0, 0, w, h);
-                    size[0]=w;
-                    size[1]=h;
+                    size[0] = w;
+                    size[1] = h;
                 }
                 System.out.println("Window is resized, aspect ratio: " + (w / (float) h));
             }

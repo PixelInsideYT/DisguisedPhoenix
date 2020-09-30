@@ -1,4 +1,5 @@
-#version 330 core
+#version 150
+#extension GL_ARB_separate_shader_objects : enable
 precision highp float;
 
 in vec4 colorAndShininessPassed;

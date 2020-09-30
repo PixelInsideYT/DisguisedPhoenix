@@ -1,5 +1,4 @@
-#version 150
-#extension GL_EXT_gpu_shader4 : enable
+#version 130
 
 out vec4 out_colour;
 

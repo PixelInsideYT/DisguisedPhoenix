@@ -1,4 +1,6 @@
-#version 430 core
+#version 150
+#extension GL_ARB_gpu_shader5 : enable
+
 in vec2 uv;
 out vec4 ao_out;
 
@@ -21,7 +23,7 @@ uniform float farPlane = 100000.0;
 uniform float radius;
 uniform float projScale;
 
-vec3 viewPosFromDepth(vec2 TexCoord,float depth) {
+vec3 viewPosFromDepth(vec2 TexCoord, float depth) {
     float z = depth * 2.0 - 1.0;
     vec4 clipSpacePosition = vec4(TexCoord * 2.0 - 1.0, z, 1.0);
     vec4 viewSpacePosition = projMatrixInv * clipSpacePosition;
@@ -30,13 +32,13 @@ vec3 viewPosFromDepth(vec2 TexCoord,float depth) {
 }
 
 vec3 getPosition(ivec2 pos, int mipLevel, ivec2 size){
-    float depth = texelFetch(camera_positions,pos,mipLevel).r;
+    float depth = texelFetch(camera_positions, pos, mipLevel).r;
     vec2 uvPos = (vec2(pos)+vec2(0.5))/vec2(size);
-    return viewPosFromDepth(uvPos,depth);
+    return viewPosFromDepth(uvPos, depth);
 }
 
 vec2 packKey(float linearDepth) {
-    float key = clamp(-linearDepth * (1.0/farPlane),0.0,1.0);
+    float key = clamp(-linearDepth * (1.0/farPlane), 0.0, 1.0);
     // Round to the nearest 1/256.0
     float temp = floor(key * 256.0);
     vec2 p;
@@ -50,30 +52,34 @@ vec2 packKey(float linearDepth) {
 
 void main(void){
     ivec2 px = ivec2(gl_FragCoord.xy);
-    vec3 pos = getPosition(px,0,textureSize(camera_positions,0));
-    vec3 normal = normalize(cross(dFdx(pos),dFdy(pos)));
+    vec3 pos = getPosition(px, 0, textureSize(camera_positions, 0));
+    vec3 normal = normalize(cross(dFdx(pos), dFdy(pos)));
 
     float diskRadius = -projScale * radius / pos.z;
     float hash = (3 * px.x ^ px.y + px.x * px.y) * 10;
 
     float occlusion = 0;
-    for(int i=0; i < samples;i++){
+    for (int i=0; i < samples;i++){
         //calculate sample point distance
         float alpha = float(i + 0.5)*(1.0/samples);
         float distance = diskRadius*alpha;
         // calculate sample point angle
         float theta = TWO_PI * alpha * NUM_SPIRAL_TURNS + hash;
         //calculate sample point in abselute texture coord
-        ivec2 sampleTextureCoord = ivec2(vec2(cos(theta),sin(theta))*distance) + px;
+        ivec2 sampleTextureCoord = ivec2(vec2(cos(theta), sin(theta))*distance) + px;
         //calculate mipmap level and mipmap texture coord for chache effiecincy
+        #   ifdef GL_EXT_gpu_shader5
         int mipLevel = clamp(findMSB(int(distance))-3, 0, 9);
+        #   else
+        int mipLevel = clamp(int(floor(log2(distance))) -3, 0, 9);
+        #   endif
         mipLevel = 0;
-        ivec2 size = textureSize(camera_positions,mipLevel);
+        ivec2 size = textureSize(camera_positions, mipLevel);
         ivec2 mipRespectedSampleCooord = clamp(sampleTextureCoord >> mipLevel, ivec2(0), size-ivec2(1));
 
-        vec3 P = getPosition(mipRespectedSampleCooord,mipLevel,size);
+        vec3 P = getPosition(mipRespectedSampleCooord, mipLevel, size);
         vec3 v = P - pos;
-        occlusion += max(0, dot(v,normal) + pos.z * beta)/(dot(v,v)+epsilon);
+        occlusion += max(0, dot(v, normal) + pos.z * beta)/(dot(v, v)+epsilon);
     }
     occlusion = max(0, 1.0 - 2.0 * sigma/samples*occlusion);
     occlusion = pow(occlusion, kontrast);
@@ -83,5 +89,5 @@ void main(void){
     if (abs(dFdy(pos.z)) < 0.02) {
         occlusion -= dFdy(occlusion) * ((px.y & 1) - 0.5);
     }
-    ao_out = vec4(occlusion,packKey(pos.z),1);
+    ao_out = vec4(occlusion, packKey(pos.z), 1);
 }

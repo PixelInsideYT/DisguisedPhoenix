@@ -1,4 +1,4 @@
-#version 140
+#version 130
 precision highp float;
 in vec3 pos;
 in vec3 color;

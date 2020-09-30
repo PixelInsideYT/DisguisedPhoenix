@@ -24,7 +24,7 @@ public class QuadRenderer {
         });
         quad.unbind();
         shader = new Shader(Shader.loadShaderCode("postProcessing/quadVS.glsl"), Shader.loadShaderCode("postProcessing/deferred/lightingPassFS.glsl")).combine("pos");
-        shader.loadUniforms("depthTexture", "normalAndSpecularTexture", "colorAndGeometryCheckTexture","fixAO", "ambientOcclusionTexture","projMatrixInv","lightPos");
+        shader.loadUniforms("depthTexture", "normalAndSpecularTexture", "colorAndGeometryCheckTexture", "ambientOcclusionTexture","projMatrixInv","lightPos");
         shader.connectSampler("depthTexture", 0);
         shader.connectSampler("normalAndSpecularTexture", 1);
         shader.connectSampler("colorAndGeometryCheckTexture", 2);
@@ -40,12 +40,11 @@ public class QuadRenderer {
     }
 
 
-    public void renderDeferredLightingPass(Matrix4f viewMatrix,Matrix4f projMatrix, int ao) {
+    public void renderDeferredLightingPass(Matrix4f viewMatrix,Matrix4f projMatrix) {
         shader.bind();
         Vector3f lightPos = new Vector3f(0, 10000, 1000);
         shader.load3DVector("lightPos", viewMatrix.transformPosition(lightPos));
         shader.loadMatrix("projMatrixInv",new Matrix4f(projMatrix).invert());
-        shader.loadInt("fixAO",ao);
         renderOnlyQuad();
         shader.unbind();
     }

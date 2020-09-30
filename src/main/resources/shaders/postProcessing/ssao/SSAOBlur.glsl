@@ -1,4 +1,4 @@
-#version 330 core
+#version 150
 #define RADIUS 6
 
 // Gaussian filter values from the author's blurring shader

@@ -38,7 +38,13 @@ public class Main {
         long startUpTime = System.currentTimeMillis();
         Display display = new Display("Disguised Phoenix", 1920, 1080);
         display.setClearColor(new Color(59, 168, 198));
-        // GLUtil.setupDebugMessageCallback();
+        GL11.glEnable(GL45.GL_DEBUG_OUTPUT);
+        GLUtil.setupDebugMessageCallback();
+        int flags[] = new int[1];
+        GL11.glGetIntegerv(GL45.GL_CONTEXT_FLAGS, flags);
+        if ((flags[0] & GL45.GL_CONTEXT_FLAG_DEBUG_BIT) != 0) System.out.println("we have a debug context");
+        else
+            System.err.println("we DONT have debug context");
         // display.setClearColor(new Color(450/3, 450/3, 450/3));
         MouseInputMap mim = new MouseInputMap();
         ParticleManager pm = new ParticleManager();
@@ -98,8 +104,8 @@ public class Main {
         SSAOEffect ssao = new SSAOEffect(quadRenderer, 1920, 1080, projMatrix);
         Bloom bloom = new Bloom(deferredResult.getTextureID(1), 1920, 1080, quadRenderer);
         Combine combine = new Combine(quadRenderer);
-        FXAARenderer aaRenderer = new FXAARenderer(quadRenderer, combinedResult.getTextureID(0));
-        int texture = 0;
+        DepthOfField dof = new DepthOfField(quadRenderer, blurHelper, projMatrix);
+        FXAARenderer aaRenderer = new FXAARenderer(quadRenderer, dof.getTexture());
 
         while (!display.shouldClose()) {
             float dt = zeitgeist.getDelta();
@@ -109,8 +115,6 @@ public class Main {
                 //  wireframe = !wireframe;
                 lastSwitchWireframe = System.currentTimeMillis();
                 world.addNextEntities(player.position);
-                texture++;
-                texture = texture % 3;
             }
             if (input.isKeyDown(GLFW.GLFW_KEY_L) && System.currentTimeMillis() - lastSwitchCollision > 100) {
                 collisionBoxes = !collisionBoxes;
@@ -171,12 +175,13 @@ public class Main {
             GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getTextureID(1));
             GL30.glActiveTexture(GL30.GL_TEXTURE3);
             GL30.glBindTexture(GL30.GL_TEXTURE_2D, ssao.getSSAOTexture());
-            quadRenderer.renderDeferredLightingPass(ffc.getViewMatrix(), projMatrix, texture);
+            quadRenderer.renderDeferredLightingPass(ffc.getViewMatrix(), projMatrix);
             deferredResult.unbind();
             bloom.render();
             combinedResult.bind();
             combine.render(deferredResult.getTextureID(0), bloom.getTexture());
             combinedResult.unbind();
+            dof.render(combinedResult.getTextureID(0), fbo.getDepthTexture());
             display.setViewport();
             aaRenderer.renderToScreen();
             display.flipBuffers();
