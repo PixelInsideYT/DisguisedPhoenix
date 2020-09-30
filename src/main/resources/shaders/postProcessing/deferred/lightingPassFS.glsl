@@ -1,4 +1,5 @@
 #version 140
+#extension GL_ARB_separate_shader_objects : enable
 
 uniform sampler2D depthTexture;
 uniform sampler2D normalAndSpecularTexture;
@@ -6,14 +7,18 @@ uniform sampler2D colorAndGeometryCheckTexture;
 uniform sampler2D ambientOcclusionTexture;
 
 uniform mat4 projMatrixInv;
+uniform float luminanceThreshold = 0.7;
 uniform int fixAO;
 in vec2 uv;
-out vec4 FragColor;
+
+layout (location = 0) out vec4 FragColor;
+layout (location = 1) out vec4 highLight;
 
 uniform vec3 lightPos;
 
 const vec3 lightColor = vec3(1, 1, 1);
 const float gamma=1;
+const vec3 luminanceDot = vec3(0.2126, 0.7152, 0.0722);
 
 vec3 reconstructNormal(vec2 enc){
     vec2 fenc = enc*4-2;
@@ -36,6 +41,7 @@ void main() {
     vec4 colorAndGeometryCheck = texture(colorAndGeometryCheckTexture, uv);
     if(colorAndGeometryCheck.w==0){
         FragColor = vec4(pow(colorAndGeometryCheck.rgb, vec3(1/gamma)),1.0);
+        highLight = vec4(0,0,0,1);
         return;
     }
     vec3 FragPos = viewPosFromDepth(uv, texture(depthTexture,uv).r);
@@ -66,7 +72,10 @@ void main() {
     // specular *= attenuation;
     lighting += diffuse;
 
-    FragColor=vec4(lighting, 1);
+    //calculate highlight for bloom post processing
+    float luminance = dot(lighting, luminanceDot);
+    highLight = vec4(lighting*pow(luminance,7),1);
+    FragColor = vec4(lighting, 1);
     if(fixAO==0)
     FragColor.rgb = vec3(ambienOcclusion);
 }

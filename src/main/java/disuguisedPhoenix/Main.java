@@ -16,9 +16,7 @@ import graphics.objects.OpenGLState;
 import graphics.objects.Shader;
 import graphics.objects.Vao;
 import graphics.particles.ParticleManager;
-import graphics.postProcessing.FXAARenderer;
-import graphics.postProcessing.GaussianBlur;
-import graphics.postProcessing.QuadRenderer;
+import graphics.postProcessing.*;
 import graphics.postProcessing.SSAO.SSAOEffect;
 import graphics.renderer.MultiIndirectRenderer;
 import graphics.renderer.TestRenderer;
@@ -40,20 +38,20 @@ public class Main {
         long startUpTime = System.currentTimeMillis();
         Display display = new Display("Disguised Phoenix", 1920, 1080);
         display.setClearColor(new Color(59, 168, 198));
-       // GLUtil.setupDebugMessageCallback();
+        // GLUtil.setupDebugMessageCallback();
         // display.setClearColor(new Color(450/3, 450/3, 450/3));
         MouseInputMap mim = new MouseInputMap();
         ParticleManager pm = new ParticleManager();
         MultiIndirectRenderer multiRenderer = new MultiIndirectRenderer();
-        ModelFileHandler.loadModelsForMultiDraw(multiRenderer.persistantMatrixVbo, "plants/flowerTest1.modelFile", "lowPolyTree/vc.modelFile", "lowPolyTree/ballTree.modelFile", "lowPolyTree/bendyTree.modelFile", "lowPolyTree/tree2.modelFile", "misc/rock.modelFile", "plants/grass.modelFile", "plants/mushroom.modelFile", "misc/tutorialCrystal.modelFile", "plants/glockenblume.modelFile","misc/fox.modelFile");
+        ModelFileHandler.loadModelsForMultiDraw(multiRenderer.persistantMatrixVbo, "plants/flowerTest1.modelFile", "lowPolyTree/vc.modelFile", "lowPolyTree/ballTree.modelFile", "lowPolyTree/bendyTree.modelFile", "lowPolyTree/tree2.modelFile", "misc/rock.modelFile", "plants/grass.modelFile", "plants/mushroom.modelFile", "misc/tutorialCrystal.modelFile", "plants/glockenblume.modelFile", "misc/fox.modelFile");
         World world = new World(pm);
         for (int i = 0; i < 50; i++) world.addIsland(20000);
         Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(0, 0, 0), mim);
         Shader shader = new Shader(Shader.loadShaderCode("testVS.glsl"), Shader.loadShaderCode("testFS.glsl")).combine("pos", "vertexColor");
-        shader.loadUniforms("projMatrix", "noiseMap", "time", "viewMatrix", "transformationMatrix","lastDT");
+        shader.loadUniforms("projMatrix", "noiseMap", "time", "viewMatrix", "transformationMatrix");
         shader.connectSampler("noiseMap", 0);
         Shader multiDrawShader = new Shader(Shader.loadShaderCode("testVSMultiDraw.glsl"), Shader.loadShaderCode("testFS.glsl")).combine("pos", "vertexColor", "transformationMatrix");
-        multiDrawShader.loadUniforms("projMatrix", "noiseMap", "time", "viewMatrix","lastDT");
+        multiDrawShader.loadUniforms("projMatrix", "noiseMap", "time", "viewMatrix");
         multiDrawShader.connectSampler("noiseMap", 0);
         int noiseTexture = TextureLoader.loadTexture("misc/noiseMap.png", GL30.GL_REPEAT, GL30.GL_LINEAR);
         TestRenderer renderer = new TestRenderer(shader);
@@ -85,34 +83,34 @@ public class Main {
         float time = 0f;
         input.hideMouseCursor();
         DecimalFormat df = new DecimalFormat("###,###,###");
-        FrameBufferObject fbo = new FrameBufferObject(1920, 1080, 3)
+        FrameBufferObject fbo = new FrameBufferObject(1920, 1080, 2)
                 //normal and specular
                 .addTextureAttachment(GL40.GL_RGB8, GL11.GL_FLOAT, GL40.GL_RGB, 0)
                 //color and geometry info
                 .addTextureAttachment(1)
-                //velocity
-                .addTextureAttachment(GL40.GL_RGBA, GL11.GL_FLOAT, GL40.GL_RGBA,2)
                 //depth
                 .addDepthTextureAttachment();
-        FrameBufferObject finalFbo = new FrameBufferObject(1920,1080,1).addTextureAttachment(0);
-        finalFbo.unbind();
+        FrameBufferObject deferredResult = new FrameBufferObject(1920, 1080, 2).addTextureAttachment(0).addTextureAttachment(1);
+        deferredResult.unbind();
+        FrameBufferObject combinedResult = new FrameBufferObject(1920, 1080, 1).addTextureAttachment(0).unbind();
         QuadRenderer quadRenderer = new QuadRenderer();
         GaussianBlur blurHelper = new GaussianBlur(quadRenderer);
-        SSAOEffect ssao = new SSAOEffect(quadRenderer,1920,1080,projMatrix);
-        FXAARenderer aaRenderer = new FXAARenderer(quadRenderer,finalFbo.getTextureID(0));
-        float lastDT=1f/60f;
-        int texture=0;
+        SSAOEffect ssao = new SSAOEffect(quadRenderer, 1920, 1080, projMatrix);
+        Bloom bloom = new Bloom(deferredResult.getTextureID(1), 1920, 1080, quadRenderer);
+        Combine combine = new Combine(quadRenderer);
+        FXAARenderer aaRenderer = new FXAARenderer(quadRenderer, combinedResult.getTextureID(0));
+        int texture = 0;
 
         while (!display.shouldClose()) {
             float dt = zeitgeist.getDelta();
             time += dt;
             display.pollEvents();
             if (input.isKeyDown(GLFW.GLFW_KEY_O) && System.currentTimeMillis() - lastSwitchWireframe > 100) {
-              //  wireframe = !wireframe;
+                //  wireframe = !wireframe;
                 lastSwitchWireframe = System.currentTimeMillis();
                 world.addNextEntities(player.position);
                 texture++;
-                texture=texture%3;
+                texture = texture % 3;
             }
             if (input.isKeyDown(GLFW.GLFW_KEY_L) && System.currentTimeMillis() - lastSwitchCollision > 100) {
                 collisionBoxes = !collisionBoxes;
@@ -144,18 +142,16 @@ public class Main {
             OpenGLState.enableDepthTest();
             OpenGLState.disableAlphaBlending();
             fbo.bind();
-            GL30.glClearColor(59/255f, 168/225f, 198/255f,0.0f);
+            GL30.glClearColor(59 / 255f, 168 / 225f, 198 / 255f, 0.0f);
             fbo.clear();
             GL30.glActiveTexture(GL30.GL_TEXTURE0);
             GL30.glBindTexture(GL30.GL_TEXTURE_2D, noiseTexture);
             renderer.begin(viewMatrix, projMatrix);
             shader.loadFloat("time", time);
-            shader.loadFloat("lastDT",lastDT);
             renderer.render(player.getModel(), player.getTransformationMatrix());
             world.render(renderer, projMatrix, viewMatrix, ffc.position);
             multiDrawShader.bind();
             multiDrawShader.loadFloat("time", time);
-            multiDrawShader.loadFloat("lastDT", lastDT);
             multiDrawShader.loadMatrix("projMatrix", projMatrix);
             multiDrawShader.loadMatrix("viewMatrix", viewMatrix);
             multiRenderer.render(world.getVisibleEntities(projMatrix, viewMatrix, ffc.position));
@@ -165,8 +161,8 @@ public class Main {
             pm.render(projMatrix, viewMatrix);
             display.clear();
             OpenGLState.disableDepthTest();
-            ssao.renderEffect(fbo,viewMatrix,dt);
-            finalFbo.bind();
+            ssao.renderEffect(fbo, viewMatrix, dt);
+            deferredResult.bind();
             GL30.glActiveTexture(GL30.GL_TEXTURE0);
             GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getDepthTexture());
             GL30.glActiveTexture(GL30.GL_TEXTURE1);
@@ -175,8 +171,12 @@ public class Main {
             GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getTextureID(1));
             GL30.glActiveTexture(GL30.GL_TEXTURE3);
             GL30.glBindTexture(GL30.GL_TEXTURE_2D, ssao.getSSAOTexture());
-            quadRenderer.renderDeferredLightingPass(ffc.getViewMatrix(),projMatrix,texture);
-            finalFbo.unbind();
+            quadRenderer.renderDeferredLightingPass(ffc.getViewMatrix(), projMatrix, texture);
+            deferredResult.unbind();
+            bloom.render();
+            combinedResult.bind();
+            combine.render(deferredResult.getTextureID(0), bloom.getTexture());
+            combinedResult.unbind();
             display.setViewport();
             aaRenderer.renderToScreen();
             display.flipBuffers();
@@ -184,7 +184,6 @@ public class Main {
             drawCalls = 0;
             facesDrawn = 0;
             zeitgeist.sleep();
-            lastDT=dt;
         }
         TextureLoader.cleanUpAllTextures();
         FrameBufferObject.cleanUpAllFbos();

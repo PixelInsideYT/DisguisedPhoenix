@@ -110,8 +110,9 @@ public class FrameBufferObject {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
-    public void unbind() {// call to switch to default frame buffer
+    public FrameBufferObject unbind() {// call to switch to default frame buffer
         GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+        return this;
     }
 
     private void bindFrameBuffer(int frameBuffer, int width, int height) {
