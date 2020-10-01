@@ -53,10 +53,10 @@ public class Main {
         World world = new World(pm);
         for (int i = 0; i < 50; i++) world.addIsland(20000);
         Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(0, 0, 0), mim);
-        Shader shader = new Shader(Shader.loadShaderCode("testVS.glsl"), Shader.loadShaderCode("testFS.glsl")).combine("pos", "vertexColor");
+        Shader shader = new Shader(Shader.loadShaderCode("testVS.glsl"), Shader.loadShaderCode("testFS.glsl")).combine("posAndWobble", "colorAndShininess");
         shader.loadUniforms("projMatrix", "noiseMap", "time", "viewMatrix", "transformationMatrix");
         shader.connectSampler("noiseMap", 0);
-        Shader multiDrawShader = new Shader(Shader.loadShaderCode("testVSMultiDraw.glsl"), Shader.loadShaderCode("testFS.glsl")).combine("pos", "vertexColor", "transformationMatrix");
+        Shader multiDrawShader = new Shader(Shader.loadShaderCode("testVSMultiDraw.glsl"), Shader.loadShaderCode("testFS.glsl")).combine("posAndWobble", "colorAndShininess", "transformationMatrix");
         multiDrawShader.loadUniforms("projMatrix", "noiseMap", "time", "viewMatrix");
         multiDrawShader.connectSampler("noiseMap", 0);
         int noiseTexture = TextureLoader.loadTexture("misc/noiseMap.png", GL30.GL_REPEAT, GL30.GL_LINEAR);

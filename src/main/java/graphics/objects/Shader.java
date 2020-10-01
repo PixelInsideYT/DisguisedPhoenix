@@ -28,13 +28,16 @@ public class Shader {
     public int shaderProgram;
     private List<Integer> shaders = new ArrayList<>();
     private Map<String, Integer> uniforms = new HashMap<>();
+    private String vsShaderCode;
 
     public Shader(String vertex, String fragment) {
+        this.vsShaderCode=vertex;
         shaders.add(attachShader(GL_VERTEX_SHADER, vertex));
         shaders.add(attachShader(GL_FRAGMENT_SHADER, fragment));
     }
 
     public Shader(String vertex, String geometry, String fragment) {
+        this.vsShaderCode = vertex;
         shaders.add(attachShader(GL_VERTEX_SHADER, vertex));
         shaders.add(attachShader(GL_GEOMETRY_SHADER, geometry));
         shaders.add(attachShader(GL_FRAGMENT_SHADER, fragment));
@@ -111,6 +114,10 @@ public class Shader {
     }
 
     private void bindAttribute(int attribute, String variableName) {
+        if(!vsShaderCode.contains(" "+variableName+";")){
+            System.err.println("Input: "+variableName+"; not found in Shader:\n"+vsShaderCode);
+            System.exit(1);
+        }
         GL20.glBindAttribLocation(shaderProgram, attribute, variableName);
     }
 
