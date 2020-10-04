@@ -1,18 +1,15 @@
 #version 130
-
 in vec2 uv;
-out vec4 out_color;
+out vec4 downSampled;
 
-uniform sampler2D color;
-uniform sampler2D bluredColor;
+uniform sampler2D inputTexture;
 uniform sampler2D depthTexture;
 
+uniform mat4 projMatrixInv;
 uniform float focusPoint;
 uniform float focusRange;
+const float transition = 2000;
 
-uniform mat4 projMatrixInv;
-
-const float transition = 1000;
 
 //TODO: make linear depth conversion faster
 vec3 viewPosFromDepth(vec2 TexCoord,float depth) {
@@ -23,10 +20,18 @@ vec3 viewPosFromDepth(vec2 TexCoord,float depth) {
     return viewSpacePosition.xyz;
 }
 
-void main() {
-
-    float d = texture(depthTexture,uv).r;
+float CoCFromUV(vec2 inUV){
+    float d = texture(depthTexture,inUV).r;
     float distanceFromCam = -viewPosFromDepth(uv,d).z;
-    float f = clamp(abs((distanceFromCam - clamp(distanceFromCam,focusPoint-focusRange,focusPoint+focusRange))/transition),0,1);
-    out_color = mix(texture(color,uv),texture(bluredColor,uv),f);
+    return clamp(((distanceFromCam - clamp(distanceFromCam,focusPoint-focusRange,focusPoint+focusRange))/transition),0,1);
+}
+
+vec4 colorAndCoC(vec2 inUV){
+    vec3 color = texture(inputTexture,inUV).rgb;
+    float CoC = CoCFromUV(inUV);
+    return vec4(color,CoC);
+}
+
+void main() {
+    downSampled = colorAndCoC(uv);
 }

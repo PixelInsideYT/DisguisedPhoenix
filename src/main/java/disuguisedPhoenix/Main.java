@@ -91,7 +91,7 @@ public class Main {
         DecimalFormat df = new DecimalFormat("###,###,###");
         FrameBufferObject fbo = new FrameBufferObject(1920, 1080, 2)
                 //normal and specular
-                .addTextureAttachment(GL40.GL_RGB8, GL11.GL_FLOAT, GL40.GL_RGB, 0)
+                .addTextureAttachment(GL40.GL_RGB16F, GL11.GL_FLOAT, GL40.GL_RGB, 0)
                 //color and geometry info
                 .addTextureAttachment(1)
                 //depth
@@ -104,8 +104,8 @@ public class Main {
         SSAOEffect ssao = new SSAOEffect(quadRenderer, 1920, 1080, projMatrix);
         Bloom bloom = new Bloom(deferredResult.getTextureID(1), 1920, 1080, quadRenderer);
         Combine combine = new Combine(quadRenderer);
-        DepthOfField dof = new DepthOfField(quadRenderer, blurHelper, projMatrix);
-        FXAARenderer aaRenderer = new FXAARenderer(quadRenderer, dof.getTexture());
+        DepthOfField dof = new DepthOfField(quadRenderer, projMatrix,1920,1080);
+        FXAARenderer aaRenderer = new FXAARenderer(quadRenderer, dof.getBrokeh());
 
         while (!display.shouldClose()) {
             float dt = zeitgeist.getDelta();

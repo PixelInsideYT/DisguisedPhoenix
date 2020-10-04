@@ -23,6 +23,10 @@ public class OpenGLState {
         }
     }
 
+    public static boolean getAlphaBlendingState(){
+        return alphaBlending;
+    }
+
     private static int blendingMode = 0;
 
     public static void setAlphaBlending(int mode) {
