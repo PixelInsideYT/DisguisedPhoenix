@@ -24,12 +24,8 @@ import static org.lwjgl.assimp.Assimp.*;
 
 public class AssimpWrapper {
 
-    private static final int loadFlags = Assimp.aiProcess_Triangulate | Assimp.aiProcess_JoinIdenticalVertices | aiProcess_GenSmoothNormals
-            | Assimp.aiProcess_ValidateDataStructure | Assimp.aiProcess_ImproveCacheLocality | Assimp.aiProcess_RemoveRedundantMaterials
-            | Assimp.aiProcess_FindInvalidData | Assimp.aiProcess_FindInstances | Assimp.aiProcess_OptimizeMeshes | Assimp.aiProcess_OptimizeGraph;
-    public static int verticies = 0;
-    public static int faces = 0;
-    private static Map<String, Model> alreadyLoadedModels = new HashMap<>();
+    private static final int loadFlags = Assimp.aiProcess_Triangulate | Assimp.aiProcess_RemoveRedundantMaterials | Assimp.aiProcess_FindInvalidData | Assimp.aiProcess_FindInstances;
+    private static final Map<String, Model> alreadyLoadedModels = new HashMap<>();
 
     public static Collider loadCollider(String name, boolean loadToVao) {
         Collider c = new Collider();
@@ -45,7 +41,6 @@ public class AssimpWrapper {
         PointerBuffer meshPointer = scene.mMeshes();
         for (int i = 0; i < numMeshes; i++) {
             AIMesh mesh = AIMesh.create(meshPointer.get(i));
-            verticies += mesh.mNumVertices();
             ConvexShape cs = meshToCollisionShape(loadToVao, mesh);
             max.max(cs.getMax());
             min.min(cs.getMin());
@@ -69,7 +64,7 @@ public class AssimpWrapper {
         for (int i = 0; i < numMeshes; i++) {
             AIMesh mesh = AIMesh.create(meshPointer.get(i));
             AIMaterial material = AIMaterial.create(materialPointer.get(mesh.mMaterialIndex()));
-            rt[i] = processMesh(mesh, processMaterial(base, material));
+            rt[i] = processMesh(mesh, processMaterial(base, material),false);
         }
         Assimp.aiReleaseImport(scene);
         return rt;
@@ -152,7 +147,7 @@ public class AssimpWrapper {
         return path.dataString();
     }
 
-    private static MeshInformation processMesh(AIMesh mesh, Material material) {
+    private static MeshInformation processMesh(AIMesh mesh, Material material, boolean forCollision) {
         String meshName = mesh.mName().dataString();
         List<Integer> modelIndicies = new ArrayList<>();
         List<Vector3f> modelVerticies = new ArrayList<>();
@@ -160,7 +155,7 @@ public class AssimpWrapper {
         AIVector3D.Buffer verticies = mesh.mVertices();
         int faceCount = mesh.mNumFaces();
         AIColor4D.Buffer colors = mesh.mColors(0);
-        Vector3f alternativeColor = new Vector3f(1, 0, 1);
+        Vector3f alternativeColor = new Vector3f(0, 0, 0);
         if (colors == null) {
             System.err.println("CANT LOAD colors ");
             if (material != null) {
@@ -179,8 +174,8 @@ public class AssimpWrapper {
                 if (colors != null) {
                     AIColor4D vertexColor = colors.get(index);
                     Vector3f sRGB = new Vector3f(vertexColor.r(), vertexColor.g(), vertexColor.b());
-                    Vector3f linearSRGB = new Vector3f((float) Math.pow(sRGB.x, 2.2d), (float) Math.pow(sRGB.y, 2.2d), (float) Math.pow(sRGB.z, 2.2d));
-                    vertexColors.put(pos, linearSRGB);
+                    Vector3f linearRGB = new Vector3f((float) Math.pow(sRGB.x, 2.2d), (float) Math.pow(sRGB.y, 2.2d), (float) Math.pow(sRGB.z, 2.2d));
+                    vertexColors.put(pos, linearRGB);
                 } else {
                     vertexColors.put(pos, alternativeColor);
                 }
@@ -190,6 +185,7 @@ public class AssimpWrapper {
                 System.out.print(".");
             }
         }
+        MeshOptimizer.optimize(modelVerticies,modelIndicies);
         float[] vaoVerticies = new float[modelVerticies.size() * 3];
         float[] vaoColor = new float[modelVerticies.size() * 3];
         int vertexPointer = 0;
@@ -206,6 +202,7 @@ public class AssimpWrapper {
         }
         return new MeshInformation(meshName, material, vaoVerticies, vaoColor, modelIndicies.stream().mapToInt(i -> i).toArray());
     }
+
 
     private static Vector3f getVec(AIVector3D vec) {
         return new Vector3f(vec.x(), vec.y(), vec.z());
@@ -242,7 +239,7 @@ public class AssimpWrapper {
         }
         ConvexShape cs = null;
         if (useVao) {
-            Vao meshVao = getVaoFromMeshInfo(processMesh(mesh, null));
+            Vao meshVao = getVaoFromMeshInfo(processMesh(mesh, null, true));
             cs = new ConvexShape(cornerPoints.toArray(new Vector3f[0]), axes.toArray(new Vector3f[0]), meshVao);
         } else {
             cs = new ConvexShape(cornerPoints.toArray(new Vector3f[0]), axes.toArray(new Vector3f[0]));
@@ -276,5 +273,4 @@ public class AssimpWrapper {
         return Assimp.aiGetMaterialFloatArray(mat, key, Assimp.aiTextureType_NONE, 0, store,
                 inOut) == Assimp.aiReturn_SUCCESS && inOut.get(0) == 1;
     }
-
 }

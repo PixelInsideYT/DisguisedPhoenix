@@ -1,5 +1,6 @@
 #version 140
 #extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_explicit_attrib_location : enable
 
 uniform sampler2D depthTexture;
 uniform sampler2D normalAndSpecularTexture;
@@ -8,6 +9,7 @@ uniform sampler2D ambientOcclusionTexture;
 
 uniform mat4 projMatrixInv;
 uniform float luminanceThreshold = 0.7;
+uniform int ssaoEnabled;
 in vec2 uv;
 
 layout (location = 0) out vec4 FragColor;
@@ -15,8 +17,7 @@ layout (location = 1) out vec4 highLight;
 
 uniform vec3 lightPos;
 
-const vec3 lightColor = vec3(1, 1, 1);
-const float gamma=1;
+const vec3 lightColor = vec3(0.7,0.7,0.7);
 const vec3 luminanceDot = vec3(0.2126, 0.7152, 0.0722);
 
 vec3 reconstructNormal(vec2 enc){
@@ -39,20 +40,22 @@ vec3 viewPosFromDepth(vec2 TexCoord,float depth) {
 void main() {
     vec4 colorAndGeometryCheck = texture(colorAndGeometryCheckTexture, uv);
     if(colorAndGeometryCheck.w==0){
-        FragColor = vec4(pow(colorAndGeometryCheck.rgb, vec3(1/gamma)),1.0);
+        FragColor = vec4(colorAndGeometryCheck.rgb,1.0);
         highLight = vec4(0,0,0,1);
         return;
     }
     vec3 FragPos = viewPosFromDepth(uv, texture(depthTexture,uv).r);
     vec3 normalAndShininess = texture(normalAndSpecularTexture, uv).xyz;
-    float ambienOcclusion= texture(ambientOcclusionTexture, uv).r;
+    float ambienOcclusion = 1;
+    if(ssaoEnabled==1){
+        ambienOcclusion= texture(ambientOcclusionTexture, uv).r;
+    }
     float shininess = normalAndShininess.z;
     vec3 Normal = reconstructNormal(normalAndShininess.xy);
     vec3 Diffuse = colorAndGeometryCheck.rgb;
     float isGeometry=colorAndGeometryCheck.w;
-
     // blinn-phong (in view-space)
-    vec3 ambient = vec3(0.3 * Diffuse * ambienOcclusion);// here we add occlusion factor
+    vec3 ambient = vec3(0.2 * Diffuse * ambienOcclusion);// here we add occlusion factor
     vec3 lighting  = ambient;
     vec3 viewDir  = normalize(-FragPos);// viewpos is (0.0.0) in view-space
     // diffuse
@@ -68,10 +71,9 @@ void main() {
     // diffuse  *= attenuation;
     // specular *= attenuation;
     lighting += diffuse;
-
     //calculate highlight for bloom post processing
     float luminance = dot(lighting, luminanceDot);
-    highLight = vec4(lighting*pow(luminance,7),1);
+    highLight = vec4(lighting*pow(luminance,2),1);
+    //highLight = vec4 (vec3(0.0),1.0);
     FragColor = vec4(lighting, 1);
-
 }

@@ -3,7 +3,7 @@ package MultiDrawIndirect;
 import graphics.context.Display;
 import graphics.objects.Shader;
 import graphics.objects.Vao;
-import graphics.objects.Vbo;
+import graphics.objects.BufferObject;
 import org.lwjgl.opengl.*;
 
 public class MultiDrawTest {
@@ -32,7 +32,7 @@ public class MultiDrawTest {
                 0.5f, -0.5f, 0f
         });
         models.addIndicies(new int[]{0, 1, 2, 0, 1, 2, 1, 2, 3, 0, 1, 2});
-        Vbo matrixVbo = new Vbo(new float[]{  // identity matrix for the triangle
+        BufferObject matrixVbo = new BufferObject(new float[]{  // identity matrix for the triangle
 
                 1f, 0f, 0f, 0f,
                 0f, 1f, 0f, 0f,
@@ -68,7 +68,7 @@ public class MultiDrawTest {
         models.unbind();
 
         //setup command buffer
-        Vbo cmdBuffer = new Vbo(GL43.GL_DRAW_INDIRECT_BUFFER);
+        BufferObject cmdBuffer = new BufferObject(GL43.GL_DRAW_INDIRECT_BUFFER);
         cmdBuffer.bufferData(new int[]{
                 3, 1, 0, 0, 0,
                 6, 3, 3, 3, 1,

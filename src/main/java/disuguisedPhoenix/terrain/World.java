@@ -16,10 +16,10 @@ import java.util.stream.Collectors;
 public class World {
 
     public List<PopulatedIsland> islands = new ArrayList<>();
-    private EntityAdder adder;
+    private final EntityAdder adder;
 
-    private Matrix4f cullingMatrix = new Matrix4f();
-    private FrustumIntersection cullingHelper = new FrustumIntersection();
+    private final Matrix4f cullingMatrix = new Matrix4f();
+    private final FrustumIntersection cullingHelper = new FrustumIntersection();
 
     public World(ParticleManager pm) {
         adder = new EntityAdder(pm);
@@ -37,7 +37,9 @@ public class World {
         PopulatedIsland pi = new PopulatedIsland(generateVec(bounds), (float) Math.random() * 10000f + 1000);
         islands.add(pi);
     }
-
+    public void addIsland(PopulatedIsland i) {
+        islands.add(i);
+    }
     public void render(TestRenderer renderer, Matrix4f projMatrix, Matrix4f viewMatrix, Vector3f camPos) {
         cullingHelper.set(cullingMatrix.set(projMatrix).mul(viewMatrix));
         for (PopulatedIsland island : islands) {
@@ -45,6 +47,9 @@ public class World {
                 renderer.render(island.island.model, island.island.transformation);
             }
         }
+    }
+
+    public void renderAdder( Matrix4f projMatrix, Matrix4f viewMatrix){
         adder.render(viewMatrix,projMatrix,cullingHelper);
     }
 

@@ -14,11 +14,11 @@ public class CollisionTester {
     private static int moveDirY = 0;
     private static int moveDirX = 0;
 
-    private static float moveSpeed = 360;
-    private static float size = 150;
+    private static final float moveSpeed = 360;
+    private static final float size = 150;
     private static boolean seperate = false;
     private static int sleep = 16;
-    private static KeyListener kl = new KeyListener() {
+    private static final KeyListener kl = new KeyListener() {
         @Override
         public void keyTyped(KeyEvent e) {
         }

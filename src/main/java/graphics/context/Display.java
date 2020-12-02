@@ -1,6 +1,7 @@
 package graphics.context;
 
 
+import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.glfw.GLFWWindowSizeCallback;
@@ -20,11 +21,12 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Display {
     private long window;
-    private int[] size;
-
+    private final int[] size;
+    private final Vector3f clearColor;
     public Display(String title, int width, int height) {
         size = new int[]{width, height};
         create(title, width, height);
+        clearColor = new Vector3f(0f);
     }
 
     public void create(String title, int width, int height) {
@@ -40,9 +42,10 @@ public class Display {
         glfwDefaultWindowHints(); // optional, the current window hints are already the default
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE); // the window will stay hidden after creation
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE); // the window will be resizable
-        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+        glfwWindowHint(GLFW_SRGB_CAPABLE,GLFW_TRUE);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         if (Platform.get() == Platform.MACOSX) {
             glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
@@ -72,7 +75,7 @@ public class Display {
         // Make the OpenGL context current
         glfwMakeContextCurrent(window);
         // Enable v-sync
-        glfwSwapInterval(1);
+        glfwSwapInterval(0);
         GL.createCapabilities();
         // Make the window visible
         glfwSetWindowSizeCallback(window, new GLFWWindowSizeCallback() {
@@ -98,11 +101,12 @@ public class Display {
     }
 
     public void clear() {
+        glClearColor(clearColor.x,clearColor.y,clearColor.z,1f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
-    public void setClearColor(Color c) {
-        glClearColor(c.getRed() / 255f, c.getGreen() / 255f, c.getBlue() / 255f, 1f);
+    public void setClearColor(Vector3f c) {
+        this.clearColor.set(c);
     }
 
     public void flipBuffers() {

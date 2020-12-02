@@ -1,5 +1,6 @@
 package graphics.postProcessing;
 
+import disuguisedPhoenix.Main;
 import graphics.objects.Shader;
 import graphics.objects.Vao;
 import org.joml.Matrix4f;
@@ -24,7 +25,7 @@ public class QuadRenderer {
         });
         quad.unbind();
         shader = new Shader(Shader.loadShaderCode("postProcessing/quadVS.glsl"), Shader.loadShaderCode("postProcessing/deferred/lightingPassFS.glsl")).combine("pos");
-        shader.loadUniforms("depthTexture", "normalAndSpecularTexture", "colorAndGeometryCheckTexture", "ambientOcclusionTexture","projMatrixInv","lightPos");
+        shader.loadUniforms("depthTexture", "normalAndSpecularTexture", "colorAndGeometryCheckTexture", "ambientOcclusionTexture","projMatrixInv","lightPos","ssaoEnabled");
         shader.connectSampler("depthTexture", 0);
         shader.connectSampler("normalAndSpecularTexture", 1);
         shader.connectSampler("colorAndGeometryCheckTexture", 2);
@@ -40,10 +41,10 @@ public class QuadRenderer {
     }
 
 
-    public void renderDeferredLightingPass(Matrix4f viewMatrix,Matrix4f projMatrix) {
+    public void renderDeferredLightingPass(Matrix4f viewMatrix,Matrix4f projMatrix,Vector3f lightPos,boolean ssaoIsEnabled) {
         shader.bind();
-        Vector3f lightPos = new Vector3f(0, 10000, 1000);
-        shader.load3DVector("lightPos", viewMatrix.transformPosition(lightPos));
+        shader.loadInt("ssaoEnabled",ssaoIsEnabled?1:0);
+        shader.load3DVector("lightPos", viewMatrix.transformPosition(new Vector3f(lightPos)));
         shader.loadMatrix("projMatrixInv",new Matrix4f(projMatrix).invert());
         renderOnlyQuad();
         shader.unbind();
@@ -60,6 +61,7 @@ public class QuadRenderer {
     public void renderOnlyQuad() {
         quad.bind();
         GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 6);
+        Main.drawCalls++;
         quad.unbind();
     }
 

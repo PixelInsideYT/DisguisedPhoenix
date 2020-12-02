@@ -23,8 +23,8 @@ public class Island {
     public Model model;
     public Matrix4f transformation;
     public Vector3f position;
-    private float size;
-    private int vertexCount;
+    private final float size;
+    private final int vertexCount;
     private float[][] heights;
     private float[][] bottems;
 

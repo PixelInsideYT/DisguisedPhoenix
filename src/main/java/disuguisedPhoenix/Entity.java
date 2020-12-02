@@ -17,11 +17,11 @@ public class Entity {
     protected float rotX, rotY, rotZ;
     public float scale;
     protected Matrix4f modelMatrix;
-    private Model model;
+    private final Model model;
     private boolean changedPosition = true;
     private Collider transformedCollider;
 
-    private int textureIndex = 0;
+    private final int textureIndex = 0;
 
     public Entity(Model model, Vector3f position, float rotX, float rotY, float rotZ, float scale) {
         super();
@@ -40,9 +40,7 @@ public class Entity {
         if(changedPosition){
         modelMatrix.identity();
         modelMatrix.translate(position);
-        modelMatrix.rotate(rotX, 1, 0, 0);
-        modelMatrix.rotate(rotY, 0, 1, 0);
-        modelMatrix.rotate(rotZ, 0, 0, 1);
+        modelMatrix.rotateXYZ(new Vector3f(rotX,rotY,rotZ));
         modelMatrix.scale(scale);
         changedPosition=false;
         }
