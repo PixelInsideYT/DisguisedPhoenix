@@ -21,14 +21,14 @@ import static org.lwjgl.opengl.GL32.GL_GEOMETRY_SHADER;
 
 public class Shader {
 
-    private static List<Integer> allShaderProgramms = new ArrayList<>();
-    private static FloatBuffer matrixBuffer4f = BufferUtils.createFloatBuffer(16);
-    private static FloatBuffer matrixBuffer3f = BufferUtils.createFloatBuffer(9);
+    private static final List<Integer> allShaderProgramms = new ArrayList<>();
+    private static final FloatBuffer matrixBuffer4f = BufferUtils.createFloatBuffer(16);
+    private static final FloatBuffer matrixBuffer3f = BufferUtils.createFloatBuffer(9);
 
     public int shaderProgram;
-    private List<Integer> shaders = new ArrayList<>();
-    private Map<String, Integer> uniforms = new HashMap<>();
-    private String vsShaderCode;
+    private final List<Integer> shaders = new ArrayList<>();
+    private final Map<String, Integer> uniforms = new HashMap<>();
+    private final String vsShaderCode;
 
     public Shader(String vertex, String fragment) {
         this.vsShaderCode=vertex;
@@ -121,7 +121,7 @@ public class Shader {
         GL20.glBindAttribLocation(shaderProgram, attribute, variableName);
     }
 
-    private BiMap<String, Integer> nameLocationMap = new BiMap<>();
+    private final BiMap<String, Integer> nameLocationMap = new BiMap<>();
 
     public Shader configureAttribute(int attribute, String variableName) {
         nameLocationMap.put(variableName, attribute);

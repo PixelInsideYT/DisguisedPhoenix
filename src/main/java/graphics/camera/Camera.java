@@ -21,7 +21,7 @@ public class Camera {
 
     public void lookAt(Vector3f target) {
         Vector3f forward = new Vector3f(position).sub(target).normalize();
-        Vector3f right = new Vector3f(0, 1, 0f).cross(forward).normalize();
+        Vector3f right = new Vector3f(position).normalize().cross(forward).normalize();
         Vector3f up = new Vector3f(forward).cross(right).normalize();
         viewMatrix.identity();
         viewMatrix.setRow(0, new Vector4f(right, -position.dot(right)));

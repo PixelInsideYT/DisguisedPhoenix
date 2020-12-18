@@ -13,7 +13,7 @@ public class PopulatedIsland {
 
     private static final float NEEDED_SIZE_PER_LENGTH_UNIT=0.005f;
 
-    private Vector3f center;
+    private final Vector3f center;
     public Island island;
     public List<Entity> population = new ArrayList<>();
     public float radius;

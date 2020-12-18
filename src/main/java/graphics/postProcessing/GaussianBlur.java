@@ -7,8 +7,8 @@ import org.lwjgl.opengl.GL13;
 
 public class GaussianBlur {
 
-    private QuadRenderer renderer;
-    private Shader shader;
+    private final QuadRenderer renderer;
+    private final Shader shader;
 
     public GaussianBlur(QuadRenderer renderer) {
         this.renderer = renderer;
@@ -29,10 +29,8 @@ public class GaussianBlur {
         GL13.glBindTexture(GL13.GL_TEXTURE_2D, firstTarget.getTextureID(0));
         shader.load2DVector("direction", new Vector2f(0, radius));
         shader.load2DVector("resolution",new Vector2f(firstTarget.getBufferWidth(),firstTarget.getBufferHeight()));
-        if(secondTarget!=null)
         secondTarget.bind();
         renderer.renderOnlyQuad();
-        if(secondTarget!=null)
         secondTarget.unbind();
     }
 

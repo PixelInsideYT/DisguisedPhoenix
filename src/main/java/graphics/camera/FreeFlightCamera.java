@@ -9,20 +9,20 @@ import org.joml.Vector3f;
 public class FreeFlightCamera extends Camera {
 
     Vector3f direction = new Vector3f(0, 0, -1);
-    private MouseInputMap movement;
-    private InputMap otherMovement;
+    private final MouseInputMap movement;
+    private final InputMap otherMovement;
     private float ySpeed;
     private float sideSpeed;
     private float xzSpeed;
 
 
-    private float normalSpeed = 400;
-    private float fastSpeed = 1000;
+    private final float normalSpeed = 400;
+    private final float fastSpeed = 1000;
 
     private float angle = 0f;
 
-    private float turnSpeed = 1.6f / 500f;
-    private float upSpeed = 0.1f / 50f;
+    private final float turnSpeed = 1.6f / 500f;
+    private final float upSpeed = 0.1f / 50f;
 
     public FreeFlightCamera(MouseInputMap mim, InputMap otherMovement) {
         this.movement = mim;

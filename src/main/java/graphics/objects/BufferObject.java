@@ -8,26 +8,26 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Vbo {
+public class BufferObject {
 
-    private static List<Vbo> allVbos = new ArrayList<>();
+    private static final List<BufferObject> allBufferObjects = new ArrayList<>();
 
-    public int vboID;
-    private int target;
+    public int bufferID;
+    private final int target;
 
-    public Vbo(int target) {
+    public BufferObject(int target) {
         this.target = target;
-        vboID = GL15.glGenBuffers();
+        bufferID = GL15.glGenBuffers();
         bind();
-        allVbos.add(this);
+        allBufferObjects.add(this);
     }
 
-    public Vbo(int dataCount, int target, int usage) {
+    public BufferObject(int dataCount, int target, int usage) {
         this(target);
         GL15.glBufferData(target, dataCount * 4, usage);
     }
 
-    public Vbo(float[] data, int target, int usage) {
+    public BufferObject(float[] data, int target, int usage) {
         this(target);
         GL15.glBufferData(target, data, usage);
     }
@@ -40,7 +40,7 @@ public class Vbo {
     }
 
     public static void cleanUp() {
-        allVbos.forEach(vbo -> GL15.glDeleteBuffers(vbo.vboID));
+        allBufferObjects.forEach(vbo -> GL15.glDeleteBuffers(vbo.bufferID));
     }
 
     public void bufferData(int[] data, int usage) {
@@ -60,10 +60,10 @@ public class Vbo {
     }
 
     public void bind() {
-        GL15.glBindBuffer(target, vboID);
+        GL15.glBindBuffer(target, bufferID);
     }
 
-    public Vbo unbind() {
+    public BufferObject unbind() {
         GL15.glBindBuffer(target, 0);
         return this;
     }

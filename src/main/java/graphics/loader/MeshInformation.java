@@ -7,6 +7,7 @@ import org.joml.Vector3f;
 public class MeshInformation {
 
     //TODO cleanup meshinfo, allow for DP intern format and ASSIMP format
+    //TODO: make it more flexible
 
     public String meshName;
     public Material meshMaterial;
@@ -35,7 +36,9 @@ public class MeshInformation {
         return indicies.length / 3;
     }
 
+    @Deprecated
     public int getVertexCount() {
+        //TODO: make relevant again
         return vertexPositions.length / 3;
     }
 

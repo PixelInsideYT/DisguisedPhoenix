@@ -22,11 +22,12 @@ public class InputManager {
                     + (event == GLFW.GLFW_CONNECTED ? "connected" : "disconnected"));
         }
     };
-    private long window;
-    private int[] keyStates = new int[KEYBOARD_SIZE];
-    private boolean[] activeKeys = new boolean[KEYBOARD_SIZE];
-    private List<InputMap> deviceInputs = new ArrayList<>();
-    private List<GLFWKeyCallback> keyCallbacks = new ArrayList<>();
+    private long lastPoll;
+    private final long window;
+    private final int[] keyStates = new int[KEYBOARD_SIZE];
+    private final boolean[] activeKeys = new boolean[KEYBOARD_SIZE];
+    private final List<InputMap> deviceInputs = new ArrayList<>();
+    private final List<GLFWKeyCallback> keyCallbacks = new ArrayList<>();
     protected GLFWKeyCallback keyboard = new GLFWKeyCallback() {
         @Override
         public void invoke(long window, int key, int scancode, int action, int mods) {

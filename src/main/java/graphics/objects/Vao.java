@@ -11,7 +11,7 @@ import java.util.List;
 import static org.lwjgl.opengl.GL33.glVertexAttribDivisor;
 
 public class Vao {
-    private static List<Vao> allVaos = new ArrayList<>();
+    private static final List<Vao> allVaos = new ArrayList<>();
 
     int vaoId, indiciesLength;
     List<Integer> attribNumbers = new ArrayList<>();
@@ -24,7 +24,7 @@ public class Vao {
 
     public static void cleanUpAllVaos() {
         allVaos.forEach(Vao::cleanUp);
-        Vbo.cleanUp();
+        BufferObject.cleanUp();
     }
 
     public int getIndiciesLength() {
@@ -33,12 +33,9 @@ public class Vao {
 
     public void bind() {
         GL30.glBindVertexArray(vaoId);
-        attribNumbers.forEach(GL20::glEnableVertexAttribArray);
-        //TODO: set vertexattrix array state on creation
     }
 
     public void unbind() {
-        attribNumbers.forEach(GL20::glDisableVertexAttribArray);
         GL30.glBindVertexArray(0);
     }
 
@@ -47,8 +44,9 @@ public class Vao {
     }
 
     public Vao addDataAttributes(int attributeNumber, int coordinateSize, float[] data) {
-        Vbo vbo = new Vbo(data, GL15.GL_ARRAY_BUFFER, GL20.GL_STATIC_DRAW);
+        BufferObject vbo = new BufferObject(data, GL15.GL_ARRAY_BUFFER, GL20.GL_STATIC_DRAW);
         GL20.glVertexAttribPointer(attributeNumber, coordinateSize, GL11.GL_FLOAT, false, 0, 0);
+        GL20.glEnableVertexAttribArray(attributeNumber);
         vbo.unbind();
         attribNumbers.add(attributeNumber);
         return this;
@@ -56,16 +54,17 @@ public class Vao {
 
 
     public Vao addIndicies(int[] indicies) {
-        Vbo vbo = new Vbo(GL15.GL_ELEMENT_ARRAY_BUFFER);
+        BufferObject vbo = new BufferObject(GL15.GL_ELEMENT_ARRAY_BUFFER);
         vbo.bufferData(indicies, GL15.GL_STATIC_DRAW);
         indiciesLength = indicies.length;
         return this;
     }
 
-    public void addInstancedAttribute(Vbo vbo, int attributeNumber, int coordinateSize, int instancedDataLength, int offset) {
+    public void addInstancedAttribute(BufferObject vbo, int attributeNumber, int coordinateSize, int instancedDataLength, int offset) {
         vbo.bind();
         GL20.glVertexAttribPointer(attributeNumber, coordinateSize, GL11.GL_FLOAT, false, instancedDataLength * 4, offset * 4);
         glVertexAttribDivisor(attributeNumber, 1);
+        GL20.glEnableVertexAttribArray(attributeNumber);
         vbo.unbind();
         attribNumbers.add(attributeNumber);
     }

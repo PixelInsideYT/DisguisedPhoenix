@@ -14,7 +14,7 @@ import static org.lwjgl.system.MemoryStack.stackPush;
 
 public class TextureLoader {
 
-    private static Map<String, Integer> nameToIdMap = new HashMap<>();
+    private static final Map<String, Integer> nameToIdMap = new HashMap<>();
 
     public static int loadTexture(String resource) {
         Integer id = nameToIdMap.get(resource);

@@ -10,12 +10,13 @@ import static org.lwjgl.opengl.GL11.*;
 
 public class FrameBufferObject {
 
-    private static List<FrameBufferObject> allFbos = new ArrayList<>();
+    private static final List<FrameBufferObject> allFbos = new ArrayList<>();
 
-    private int width, height;
+    private final int width;
+    private final int height;
 
-    private int fbo;
-    private List<Integer> colorTextures = new ArrayList<>();
+    private final int fbo;
+    private final List<Integer> colorTextures = new ArrayList<>();
     private boolean hasDepthAttachment = false;
     private boolean hasDepthTexture = false;
     private int depthPointer;
@@ -29,6 +30,10 @@ public class FrameBufferObject {
 
     public FrameBufferObject addTextureAttachment(int attachment) {
         return this.addTextureAttachment(GL_RGBA8, GL_UNSIGNED_BYTE, GL_RGBA, attachment);
+    }
+
+    public FrameBufferObject addUnclampedTexture(int attachment){
+        return this.addTextureAttachment(GL40.GL_RGBA16F, GL_FLOAT, GL_RGBA, attachment);
     }
 
     public FrameBufferObject addTextureAttachment(int type, int precision, int format, int attachment) {

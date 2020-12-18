@@ -7,8 +7,8 @@ import java.util.List;
 
 public class LockManger {
 
-    private List<LockObject> activeFences = new ArrayList<>();
-    private List<LockObject> toRemove = new ArrayList<>();
+    private final List<LockObject> activeFences = new ArrayList<>();
+    private final List<LockObject> toRemove = new ArrayList<>();
 
     public void waitForFence(int beginIndex, int endIndex) {
         toRemove.clear();

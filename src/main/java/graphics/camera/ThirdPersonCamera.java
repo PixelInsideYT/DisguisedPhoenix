@@ -5,7 +5,7 @@ import org.joml.Vector3f;
 
 public class ThirdPersonCamera extends Camera {
 
-    private Vector3f attachPosition;
+    private final Vector3f attachPosition;
 
     public ThirdPersonCamera(Vector3f attachTo, MouseInputMap mim) {
         super();

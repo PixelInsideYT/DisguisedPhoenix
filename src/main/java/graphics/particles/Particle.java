@@ -7,22 +7,22 @@ import org.joml.Vector4f;
 public class Particle {
 
     protected Vector3f position;
-    private Matrix4f transformationMatrix;
-    private Vector3f velocity;
+    private final Matrix4f transformationMatrix;
+    private final Vector3f velocity;
 
-    private float rotationVelocity;
+    private final float rotationVelocity;
     private float rotation = (float) Math.random() * 6f;
 
     private float scale;
-    private float scaleStart;
-    private float scaleEnd;
+    private final float scaleStart;
+    private final float scaleEnd;
 
-    private Vector4f color;
-    private Vector4f startColor;
-    private Vector4f endColor;
+    private final Vector4f color;
+    private final Vector4f startColor;
+    private final Vector4f endColor;
 
     private float lifePercentage;
-    private float lifeLength;
+    private final float lifeLength;
     private float lived;
 
     public Particle(Vector3f position, Vector3f velocity, float rotationVelocity, float scaleStart, float scaleEnd, Vector4f startColor, Vector4f endColor, float lifeLength) {

@@ -3,7 +3,7 @@ package graphics.particles;
 import disuguisedPhoenix.Main;
 import graphics.objects.Shader;
 import graphics.objects.Vao;
-import graphics.objects.Vbo;
+import graphics.objects.BufferObject;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -21,13 +21,13 @@ public class ParticleManager {
     private static final int INSTANCES_COUNT = 100000;
     private static final int INSTANCE_DATA_LENGTH = 20;
 
-    private Vbo matrixAndColor;
-    private FloatBuffer buffer = BufferUtils.createFloatBuffer(INSTANCES_COUNT * INSTANCE_DATA_LENGTH);
+    private final BufferObject matrixAndColor;
+    private final FloatBuffer buffer = BufferUtils.createFloatBuffer(INSTANCES_COUNT * INSTANCE_DATA_LENGTH);
 
-    private List<ParticleEmitter> emitters = new ArrayList<>();
-    private List<Particle> inGameParticles = new ArrayList<>();
-    private Shader shader;
-    private Vao particleVao;
+    private final List<ParticleEmitter> emitters = new ArrayList<>();
+    private final List<Particle> inGameParticles = new ArrayList<>();
+    private final Shader shader;
+    private final Vao particleVao;
 
 
     public ParticleManager() {
@@ -35,7 +35,7 @@ public class ParticleManager {
         shader.loadUniforms("viewMatrix", "projMatrix");
         particleVao = new Vao();
         particleVao.addDataAttributes(0, 3, new float[]{0.5f, -0.5f, 0f, 0.5f, 0.5f, 0f, -0.5f, 0.5f, 0f, -0.5f, 0.5f, 0f, 0.5f, -0.5f, 0f, -0.5f, -0.5f, 0f});
-        matrixAndColor = new Vbo(INSTANCES_COUNT * INSTANCE_DATA_LENGTH, GL20.GL_ARRAY_BUFFER, GL15.GL_DYNAMIC_DRAW).unbind();
+        matrixAndColor = new BufferObject(INSTANCES_COUNT * INSTANCE_DATA_LENGTH, GL20.GL_ARRAY_BUFFER, GL15.GL_DYNAMIC_DRAW).unbind();
         particleVao.addInstancedAttribute(matrixAndColor, 1, 4, INSTANCE_DATA_LENGTH, 0);
         particleVao.addInstancedAttribute(matrixAndColor, 2, 4, INSTANCE_DATA_LENGTH, 4);
         particleVao.addInstancedAttribute(matrixAndColor, 3, 4, INSTANCE_DATA_LENGTH, 8);
@@ -77,7 +77,8 @@ public class ParticleManager {
             }
             matrixAndColor.updateVbo(buffer);
             GL31.glDrawArraysInstanced(GL11.GL_TRIANGLE_STRIP, 0, 6, instances);
-            Main.drawCalls++;
+            Main.inViewObjects++;
+            Main.inViewVerticies+=6;
             Main.facesDrawn+=2*instances;
             particleOffset += instances;
             toRenderParticles -= instances;

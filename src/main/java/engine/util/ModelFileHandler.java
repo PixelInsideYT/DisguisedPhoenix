@@ -5,8 +5,8 @@ import engine.collision.CollisionShape;
 import engine.collision.ConvexShape;
 import graphics.loader.AssimpWrapper;
 import graphics.loader.MeshInformation;
+import graphics.objects.BufferObject;
 import graphics.objects.Vao;
-import graphics.objects.Vbo;
 import graphics.world.Model;
 import graphics.world.RenderInfo;
 import org.joml.Vector3f;
@@ -16,11 +16,12 @@ import javax.swing.*;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.file.Files;
 import java.util.*;
 
 public class ModelFileHandler {
 
-    private static Map<String, Model> alreadyLoadedModels = new HashMap<>();
+    private static final Map<String, Model> alreadyLoadedModels = new HashMap<>();
 
     //loads a model file
     // joins all the meshes into one
@@ -34,19 +35,69 @@ public class ModelFileHandler {
     // fourth int = number of collision shapes
     // number of collision shapes * 2 = number of egdes and normals
 
+
+    //reads modelbuilder info and builts models from that description
+    // modelPath
+    // possible collision path
+    // name wobbletype map
+
+    private static List<ModelConfig> modelConfigs = new ArrayList<>();
+
     public static void main(String[] args) {
         JFileChooser jfc = new JFileChooser(new File("/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models"));
         int returnValue = jfc.showOpenDialog(null);
         while (returnValue == JFileChooser.APPROVE_OPTION) {
             File selectedFile = jfc.getSelectedFile();
+            if(selectedFile.getAbsolutePath().endsWith(".info")){
+                try {
+                    String content = Files.readString(selectedFile.toPath());
+                    String[] modelConfigsString = content.split(">");
+                    for(String mc:modelConfigsString){
+                        if(mc.length()>0&&mc.split("\n").length>0){
+                            ModelConfig mco = ModelConfig.load(mc);
+                            generateModelFile(mco.relativePath,mco.relativeColliderPath,mco.wobbleInfo);
+                        }
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }else{
             int val = JOptionPane.showConfirmDialog(null, "Should a collision shape be added?");
             String colliderFileName = null;
             if (val == JOptionPane.YES_OPTION) {
                 jfc.showOpenDialog(null);
                 colliderFileName = jfc.getSelectedFile().getAbsolutePath();
             }
-            generateModelFile(selectedFile.getPath(), colliderFileName);
+            generateModelFile(selectedFile.getPath(), colliderFileName, new HashMap<>());
+            }
             returnValue = jfc.showOpenDialog(null);
+        }
+        try {
+            PrintWriter pi = new PrintWriter(new File("/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/ModelBuilder.info"),"UTF-8");
+            for(ModelConfig ci:modelConfigs){
+                ci.writeToFile(pi);
+            }
+            pi.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public static void regenerateModels(String modelInfoFile){
+        try {
+            String content = Files.readString(new File(modelInfoFile).toPath());
+            String[] modelConfigsString = content.split(">");
+            for(String mc:modelConfigsString){
+                if(mc.length()>0&&mc.split("\n").length>0){
+                    ModelConfig mco = ModelConfig.load(mc);
+                    generateModelFile(mco.relativePath,mco.relativeColliderPath,mco.wobbleInfo);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -60,42 +111,42 @@ public class ModelFileHandler {
         return rt;
     }
 
-    public static void loadModelsForMultiDraw(Vbo matrixVbo, String... names) {
-        int posWobbleANDColorShininessSize=0;//both have equal size
-        int indiciesSize=0;
+    public static void loadModelsForMultiDraw(BufferObject matrixVbo, String... names) {
+        int posWobbleANDColorShininessSize = 0;//both have equal size
+        int indiciesSize = 0;
         List<MeshInformation> meshes = new ArrayList<>();
         for (String name : names) {
             MeshInformation info = loadModelToMeshInfo(name);
-            posWobbleANDColorShininessSize+=info.vertexPositions.length;
-            indiciesSize+=info.indicies.length;
+            posWobbleANDColorShininessSize += info.vertexPositions.length;
+            indiciesSize += info.indicies.length;
             meshes.add(info);
         }
-        float[] combinedPosAndWobble=new float[posWobbleANDColorShininessSize];
-        float[] combinedColorAndShininess=new float[posWobbleANDColorShininessSize];
+        float[] combinedPosAndWobble = new float[posWobbleANDColorShininessSize];
+        float[] combinedColorAndShininess = new float[posWobbleANDColorShininessSize];
         int[] combinedIndicies = new int[indiciesSize];
         Vao finishedVao = new Vao();
-        int indexOffset =0;
-        int vertexOffset=0;
-        for(MeshInformation info:meshes){
-            System.arraycopy(info.vertexPositions,0,combinedPosAndWobble,vertexOffset*4,info.vertexPositions.length);
-            System.arraycopy(info.colors,0,combinedColorAndShininess,vertexOffset*4,info.colors.length);
-            System.arraycopy(info.indicies,0,combinedIndicies,indexOffset,info.indicies.length);
-            Model model = new Model(new RenderInfo(finishedVao,info.indicies.length,indexOffset,vertexOffset),info);
-            alreadyLoadedModels.put(info.meshName,model);
-            indexOffset+=info.indicies.length;
-            vertexOffset+=info.vertexPositions.length/4;
+        int indexOffset = 0;
+        int vertexOffset = 0;
+        for (MeshInformation info : meshes) {
+            System.arraycopy(info.vertexPositions, 0, combinedPosAndWobble, vertexOffset * 4, info.vertexPositions.length);
+            System.arraycopy(info.colors, 0, combinedColorAndShininess, vertexOffset * 4, info.colors.length);
+            System.arraycopy(info.indicies, 0, combinedIndicies, indexOffset, info.indicies.length);
+            Model model = new Model(new RenderInfo(finishedVao, info.indicies.length, indexOffset, vertexOffset), info);
+            alreadyLoadedModels.put(info.meshName, model);
+            indexOffset += info.indicies.length;
+            vertexOffset += info.vertexPositions.length / 4;
         }
-        finishedVao.addDataAttributes(0,4,combinedPosAndWobble);
-        finishedVao.addDataAttributes(1,4,combinedColorAndShininess);
-        finishedVao.addInstancedAttribute(matrixVbo,2,4,16,0);
-        finishedVao.addInstancedAttribute(matrixVbo,3,4,16,4);
-        finishedVao.addInstancedAttribute(matrixVbo,4,4,16,8);
-        finishedVao.addInstancedAttribute(matrixVbo,5,4,16,12);
+        finishedVao.addDataAttributes(0, 4, combinedPosAndWobble);
+        finishedVao.addDataAttributes(1, 4, combinedColorAndShininess);
+        finishedVao.addInstancedAttribute(matrixVbo, 2, 4, 16, 0);
+        finishedVao.addInstancedAttribute(matrixVbo, 3, 4, 16, 4);
+        finishedVao.addInstancedAttribute(matrixVbo, 4, 4, 16, 8);
+        finishedVao.addInstancedAttribute(matrixVbo, 5, 4, 16, 12);
         finishedVao.addIndicies(combinedIndicies);
         finishedVao.unbind();
     }
 
-    private static MeshInformation loadModelToMeshInfo(String name) {
+    public static MeshInformation loadModelToMeshInfo(String name) {
         InputStream stream = ModelFileHandler.class.getClassLoader().getResourceAsStream("models/" + name);
         ByteBuffer buffer;
         Model rt = null;
@@ -196,7 +247,7 @@ public class ModelFileHandler {
     }
 
 
-    public static MeshInformation combineMeshesToOne(String modelName) {
+    public static MeshInformation combineMeshesToOne(String modelName, Map<String, String> nameToWobbleInfoMap) {
         //load model
         MeshInformation[] model = AssimpWrapper.loadModelToMeshInfo(modelName);
         int combinedVerticiesCount = 0, combinedIndiciesCount = 0;
@@ -214,7 +265,12 @@ public class ModelFileHandler {
         int vertexArrayOffset = 0;
         float modelHeight = Arrays.stream(model).map(m -> m.height).max(Float::compare).get();
         for (MeshInformation mi : model) {
-            String answer = JOptionPane.showInputDialog("How much should: " + mi.meshName + " be affected by wind?\nFormat [ 0; 3 ]:<wobble>\n0: constant wobble\n1: linear wobble from [0;radiusXZPlane]\n2: linear wobble from [0;height]\n3: linear wobble from [0;height+radiusXZPlane]");
+            String answer = null;
+            if (nameToWobbleInfoMap != null) answer = nameToWobbleInfoMap.get(mi.meshName);
+            if (answer == null) {
+                answer = JOptionPane.showInputDialog("How much should: " + mi.meshName + " be affected by wind?\nFormat [ 0; 3 ]:<wobble>\n0: constant wobble\n1: linear wobble from [0;radiusXZPlane]\n2: linear wobble from [0;height]\n3: linear wobble from [0;height+radiusXZPlane]");
+                nameToWobbleInfoMap.put(mi.meshName,answer);
+            }
             String[] answerSplit = answer.split(":");
             int type = Integer.parseInt(answerSplit[0]);
             float maxWobble = Float.parseFloat(answerSplit[1]);
@@ -238,8 +294,8 @@ public class ModelFileHandler {
         return new MeshInformation(modelName.substring(0, modelName.lastIndexOf(".")), null, vertexPositions, colors, indicies);
     }
 
-    public static void generateModelFile(String name, String colliderFileName) {
-        MeshInformation combined = combineMeshesToOne(name);
+    public static void generateModelFile(String name, String colliderFileName, Map<String, String> nameToWobbleMap) {
+        MeshInformation combined = combineMeshesToOne(name, nameToWobbleMap);
         Collider collider = null;
         if (colliderFileName != null)
             collider = AssimpWrapper.loadCollider(colliderFileName, false);
@@ -278,6 +334,7 @@ public class ModelFileHandler {
         }
         writeColliderToBuffer(collider, buffer);
         saveByteBuffer(buffer, name.substring(0, name.lastIndexOf(".")) + ".modelFile");
+        modelConfigs.add(new ModelConfig(name,colliderFileName,nameToWobbleMap));
     }
 
     private static void saveByteBuffer(ByteBuffer buffer, String name) {
@@ -412,6 +469,46 @@ public class ModelFileHandler {
         }
 
         return result;
+    }
+
+}
+
+class ModelConfig {
+
+    String relativePath;
+    String relativeColliderPath;
+    Map<String, String> wobbleInfo;
+
+    public ModelConfig(String relativePath, String relativeColliderPath, Map<String, String> wobbleInfo) {
+        this.relativePath = relativePath;
+        this.relativeColliderPath = relativeColliderPath;
+        this.wobbleInfo = wobbleInfo;
+    }
+
+    public static ModelConfig load(String s) {
+        int startIndex = s.startsWith("\n")?1:0;
+        String[] components = s.split("\n");
+        System.out.println(Arrays.toString(components));
+        Map<String, String> wobbleInfo = new HashMap<>();
+        for (String i : components[startIndex+2].split("\\|")) {
+            if (i.length() > 0) {
+                String[] wi = i.split("~");
+               wobbleInfo.put(wi[0], wi[1]);
+            }
+        }
+        return new ModelConfig(components[startIndex], components[startIndex+1].equals("null") ? null : components[startIndex+1], wobbleInfo);
+    }
+
+    //a file config is split by '>'
+    public void writeToFile(PrintWriter out) {
+        out.println(relativePath);
+        out.println(relativeColliderPath != null ? relativeColliderPath : "null");
+        Iterator<String> itr= wobbleInfo.keySet().iterator();
+        while(itr.hasNext()){
+            String key = itr.next();
+            out.print(key + "~" + wobbleInfo.get(key) + (itr.hasNext()? "|":""));
+        }
+        out.println(">");
     }
 
 }

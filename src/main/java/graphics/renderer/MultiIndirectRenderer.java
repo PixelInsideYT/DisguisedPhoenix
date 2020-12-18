@@ -4,7 +4,7 @@ import disuguisedPhoenix.Entity;
 import disuguisedPhoenix.Main;
 import graphics.objects.LockManger;
 import graphics.objects.Vao;
-import graphics.objects.Vbo;
+import graphics.objects.BufferObject;
 import graphics.world.RenderInfo;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
@@ -23,21 +23,21 @@ public class MultiIndirectRenderer {
     //etwa 3 mb an grafikkarten speicher
     int floatsPerInstance = 16;
     int maxInstanceCount = 50000;
-    public Vbo persistantMatrixVbo;
-    private int bufferCount = 3;
-    private ByteBuffer matrixBuffer;
+    public BufferObject persistantMatrixVbo;
+    private final int bufferCount = 3;
+    private final ByteBuffer matrixBuffer;
     int maxCommandCount = 50;
-    Vbo cmdBuffer;
+    BufferObject cmdBuffer;
     private int writeHead;
-    private LockManger lockManger;
+    private final LockManger lockManger;
     Map<Vao, Map<RenderInfo, List<Matrix4f>>> toRender;
 
 
     public MultiIndirectRenderer() {
-        persistantMatrixVbo = new Vbo(GL20.GL_ARRAY_BUFFER);
+        persistantMatrixVbo = new BufferObject(GL20.GL_ARRAY_BUFFER);
         matrixBuffer = persistantMatrixVbo.createPersistantVbo(maxInstanceCount * bufferCount * floatsPerInstance);
         persistantMatrixVbo.unbind();
-        cmdBuffer = new Vbo(maxCommandCount * 5, GL40.GL_DRAW_INDIRECT_BUFFER, GL20.GL_STREAM_DRAW);
+        cmdBuffer = new BufferObject(maxCommandCount * 5, GL40.GL_DRAW_INDIRECT_BUFFER, GL20.GL_STREAM_DRAW);
         cmdBuffer.unbind();
         toRender = new HashMap<>();
         lockManger = new LockManger();
@@ -53,7 +53,8 @@ public class MultiIndirectRenderer {
                 Map<RenderInfo, List<Matrix4f>> instanceMap = toRender.computeIfAbsent(entityRenderInfo.actualVao, k -> new HashMap<>());
                 List<Matrix4f> entityTransformation = instanceMap.computeIfAbsent(entityRenderInfo, k -> new ArrayList<>());
                 entityTransformation.add(e.getTransformationMatrix());
-                Main.drawCalls++;
+                Main.inViewObjects++;
+
                 Main.facesDrawn += entityRenderInfo.indiciesCount / 3;
             }
         }
@@ -81,6 +82,7 @@ public class MultiIndirectRenderer {
                 newCommands[index++] = info.indexOffset;
                 newCommands[index++] = info.vertexOffset;
                 newCommands[index++] = writeHead;
+                Main.inViewVerticies+=info.indiciesCount*instances.size();
                 //add matricies to buffer
                 for (Matrix4f m : instances) {
                     // * floatsPerInstance * 4 because its a bytebuffer so offset needs to be in bytes
@@ -95,6 +97,7 @@ public class MultiIndirectRenderer {
             //render
             vao.bind();
             GL43.glMultiDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, commandCount, 0);
+            Main.drawCalls++;
             vao.unbind();
             lockManger.addFence(beginIndex, endIndex);
         }

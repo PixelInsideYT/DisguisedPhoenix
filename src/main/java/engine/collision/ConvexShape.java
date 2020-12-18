@@ -7,7 +7,7 @@ import org.joml.Vector3f;
 public class ConvexShape extends CollisionShape {
 
     private Vao model;
-    private Matrix4f transformation;
+    private final Matrix4f transformation;
 
     public ConvexShape(Vector3f[] cornerPoints, Vector3f[] axes) {
         super(cornerPoints, axes);

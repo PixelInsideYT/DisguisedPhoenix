@@ -15,7 +15,7 @@ import java.util.Map;
 
 public class TestRenderer {
 
-    private Shader shader;
+    private final Shader shader;
 
     public TestRenderer(Shader shader) {
         this.shader = shader;
@@ -31,8 +31,10 @@ public class TestRenderer {
         model.renderInfo.actualVao.bind();
         int indiciesLength = model.renderInfo.actualVao.getIndiciesLength();
         for (Matrix4f modelMatrix : modelMatrixArray) {
-            shader.loadMatrix("transformationMatrix", modelMatrix);
-            GL40.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, model.renderInfo.indexOffset*4, model.renderInfo.vertexOffset);
+            shader.loadMatrix("transformationMatrixUniform", modelMatrix);
+            GL40.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, model.renderInfo.indexOffset * 4, model.renderInfo.vertexOffset);
+            Main.inViewObjects++;
+            Main.inViewVerticies+=indiciesLength;
             Main.drawCalls++;
             Main.facesDrawn += indiciesLength / 3;
         }
@@ -45,17 +47,15 @@ public class TestRenderer {
             mesh.bind();
             int indiciesLength = mesh.getIndiciesLength();
             for (Entity e : toRender.get(model)) {
-                shader.loadMatrix("transformationMatrix", e.getTransformationMatrix());
-                GL40.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, model.renderInfo.indexOffset*4, model.renderInfo.vertexOffset);
+                shader.loadMatrix("transformationMatrixUniform", e.getTransformationMatrix());
+                GL40.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, model.renderInfo.indexOffset * 4, model.renderInfo.vertexOffset);
+                Main.inViewObjects++;
+                Main.inViewVerticies+=indiciesLength;
                 Main.drawCalls++;
                 Main.facesDrawn += indiciesLength / 3;
             }
             mesh.unbind();
         }
-    }
-
-    public void end() {
-        shader.unbind();
     }
 
 }

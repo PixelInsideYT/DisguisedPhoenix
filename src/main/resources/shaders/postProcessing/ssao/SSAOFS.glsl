@@ -1,5 +1,6 @@
 #version 150
 #extension GL_ARB_gpu_shader5 : enable
+#extension GL_ARB_explicit_attrib_location : enable
 
 in vec2 uv;
 out vec4 ao_out;
@@ -9,7 +10,7 @@ const float TWO_PI = 6.28;
 
 uniform sampler2D camera_positions;
 
-uniform float samples = 15;
+uniform float samples = 13;
 
 uniform float kontrast = 5;
 uniform float sigma = 5;
@@ -50,6 +51,10 @@ vec2 packKey(float linearDepth) {
     return p;
 }
 
+float when_lt(float x, float y) {
+    return max(sign(y - x), 0.0);
+}
+
 void main(void){
     ivec2 px = ivec2(gl_FragCoord.xy);
     vec3 pos = getPosition(px, 0, textureSize(camera_positions, 0));
@@ -68,26 +73,19 @@ void main(void){
         //calculate sample point in abselute texture coord
         ivec2 sampleTextureCoord = ivec2(vec2(cos(theta), sin(theta))*distance) + px;
         //calculate mipmap level and mipmap texture coord for chache effiecincy
-        #   ifdef GL_EXT_gpu_shader5
         int mipLevel = clamp(findMSB(int(distance))-3, 0, 9);
-        #   else
-        int mipLevel = clamp(int(floor(log2(distance))) -3, 0, 9);
-        #   endif
-        mipLevel = 0;
         ivec2 size = textureSize(camera_positions, mipLevel);
         ivec2 mipRespectedSampleCooord = clamp(sampleTextureCoord >> mipLevel, ivec2(0), size-ivec2(1));
-
         vec3 P = getPosition(mipRespectedSampleCooord, mipLevel, size);
         vec3 v = P - pos;
         occlusion += max(0, dot(v, normal) + pos.z * beta)/(dot(v, v)+epsilon);
     }
     occlusion = max(0, 1.0 - 2.0 * sigma/samples*occlusion);
     occlusion = pow(occlusion, kontrast);
-    if (abs(dFdx(pos.z)) < 0.02) {
-        occlusion -= dFdx(occlusion) * ((px.x & 1) - 0.5);
-    }
-    if (abs(dFdy(pos.z)) < 0.02) {
-        occlusion -= dFdy(occlusion) * ((px.y & 1) - 0.5);
-    }
+    if (abs(dFdx(pos.z)) < 0.02)
+    occlusion -= dFdx(occlusion) * ((px.x & 1) - 0.5);//* when_lt(abs(dFdx(pos.z)), 0.02);
+    if (abs(dFdy(pos.z)) < 0.02)
+    occlusion -= dFdy(occlusion) * ((px.y & 1) - 0.5);// *  when_lt(abs(dFdy(pos.z)), 0.02);
+
     ao_out = vec4(occlusion, packKey(pos.z), 1);
 }

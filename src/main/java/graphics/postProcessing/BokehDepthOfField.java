@@ -11,20 +11,23 @@ import org.lwjgl.opengl.GL13;
 
 import static org.lwjgl.opengl.GL11.*;
 
-public class DepthOfField {
+public class BokehDepthOfField {
 
-    private QuadRenderer renderer;
-    private Matrix4f projMatrixInv;
+    private final QuadRenderer renderer;
+    private final Matrix4f projMatrixInv;
 
-    private Shader downSampleShader;
-    private Shader vertAndDiagBlurShader;
-    private Shader bokehShader;
+    private final Shader downSampleShader;
+    private final Shader vertAndDiagBlurShader;
+    private final Shader bokehShader;
 
-    private FrameBufferObject downSampledFbo;
-    private FrameBufferObject bokehVertDiagBlurFbo;
-    private FrameBufferObject bokehFbo;
+    private final FrameBufferObject downSampledFbo;
+    private final FrameBufferObject bokehVertDiagBlurFbo;
+    private final FrameBufferObject bokehFbo;
 
-    public DepthOfField(QuadRenderer renderer, Matrix4f projMatrix,float width,float height) {
+    public BokehDepthOfField(float w, float h, Matrix4f projMatrix, QuadRenderer renderer) {
+        float width = w/2f;
+        float height = h/2f;
+
         this.renderer = renderer;
         projMatrixInv = new Matrix4f(projMatrix).invert();
         downSampleShader = new Shader(Shader.loadShaderCode("postProcessing/quadVS.glsl"), Shader.loadShaderCode("postProcessing/DoF/downSample.glsl")).combine("pos");
@@ -48,9 +51,9 @@ public class DepthOfField {
         bokehShader.connectSampler("verticalBlurTexture", 0);
         bokehShader.connectSampler("verticalAndDiagonalBlurTexture", 1);
 
-        downSampledFbo = new FrameBufferObject((int) width, (int) height, 1).addTextureAttachment(0);
-        bokehVertDiagBlurFbo = new FrameBufferObject((int) width, (int) height, 2).addTextureAttachment( 0).addTextureAttachment(1);
-        bokehFbo = new FrameBufferObject((int) width, (int) height, 1).addTextureAttachment(0);
+        downSampledFbo = new FrameBufferObject((int) width, (int) height, 1).addUnclampedTexture(0);
+        bokehVertDiagBlurFbo = new FrameBufferObject((int) width, (int) height, 2).addUnclampedTexture( 0).addUnclampedTexture(1);
+        bokehFbo = new FrameBufferObject((int) w, (int) h, 1).addUnclampedTexture(0);
     }
     public void render(int color, int depth) {
         boolean alphState = OpenGLState.getAlphaBlendingState();
@@ -84,12 +87,12 @@ public class DepthOfField {
         if(alphState)OpenGLState.enableAlphaBlending();
     }
 
-    public int getBrokeh() {
+    public int getResult() {
         return bokehFbo.getTextureID(0);
     }
 
     private float lastFocusPoint = 0;
-    private float lerpSpeed = 0.6f;
+    private final float lerpSpeed = 0.6f;
 
     private void computeCameraParams(int depth) {
         //get depth texture

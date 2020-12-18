@@ -12,20 +12,20 @@ import java.util.Random;
 
 public class PointSeekingEmitter implements ParticleEmitter {
 
-    private Vector3f lastPos;
-    private Vector3f currentPos;
-    private Vector3f endPos;
-    private Vector3f movingDir;
-    private float movementSpeed;
-    private float startSize;
-    private float variation = 0.2f;
-    private float ppSecond;
+    private final Vector3f lastPos;
+    private final Vector3f currentPos;
+    private final Vector3f endPos;
+    private final Vector3f movingDir;
+    private final float movementSpeed;
+    private final float startSize;
+    private final float variation = 0.2f;
+    private final float ppSecond;
     private float emitterTimeCount = 0;
-    private float distance;
+    private final float distance;
 
-    private World heightLookup;
+    private final World heightLookup;
     private float aliveTime;
-    private float terrainDistance = 50f;
+    private final float terrainDistance = 50f;
 
     private Vector3f islandDodgePos = null;
     private Vector3f islandDogeMovementDir = null;
@@ -66,7 +66,6 @@ public class PointSeekingEmitter implements ParticleEmitter {
             if (Math.abs(currentPos.y - terrainTop) < Math.abs(currentPos.y - terrainBot)) {
                 if (currentPos.y < terrainTop + terrainDistance) {
                     currentPos.y = terrainTop + terrainDistance;
-                    System.out.println("terrain top");
                     if (islandDodgePos==null&&new Vector3f(0, -1, 0).dot(new Vector3f(currentVel).normalize()) > angleToDodge) {
                         islandDodgePos = new Vector3f(land.position).sub(0, 2 * terrainDistance, 0);
                         islandDogeMovementDir = new Vector3f(islandDodgePos).sub(currentPos).normalize();
@@ -77,7 +76,6 @@ public class PointSeekingEmitter implements ParticleEmitter {
                 currentPos.y = Math.min(currentPos.y, terrainBot - terrainDistance);
                 if (currentPos.y > terrainBot - terrainDistance) {
                     currentPos.y = terrainBot - terrainDistance;
-                    System.out.println("restricted "+new Vector3f(0, 1, 0).dot(new Vector3f(currentVel).normalize()));
                     if (islandDodgePos==null&&new Vector3f(0, 1, 0).dot(new Vector3f(currentVel).normalize()) > angleToDodge) {
                         islandDodgePos = new Vector3f(land.position).add(0, 2 * terrainDistance, 0);
                         islandDogeMovementDir = new Vector3f(islandDodgePos).sub(currentPos).normalize();

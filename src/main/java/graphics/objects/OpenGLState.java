@@ -66,7 +66,7 @@ public class OpenGLState {
     public static void disableBackFaceCulling() {
         if (backFaceCulling) {
             GL11.glDisable(GL11.GL_CULL_FACE);
-            backFaceCulling = false;
+           backFaceCulling = false;
         }
     }
 
