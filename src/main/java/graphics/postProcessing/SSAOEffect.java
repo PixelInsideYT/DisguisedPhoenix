@@ -20,8 +20,6 @@ public class SSAOEffect {
     private final Shader blurShader;
     private final QuadRenderer renderer;
 
-    public TimerQuery ssaoTimer;
-
     private boolean enabled = false;
 
     public SSAOEffect(QuadRenderer renderer, int width, int height, Matrix4f projMatrix) {
@@ -41,7 +39,7 @@ public class SSAOEffect {
         projScale = projScale * 0.5f + 0.5f;
         projScale *= (width + height) / 2f;
         ssaoShader.loadFloat("projScale", projScale);
-        ssaoShader.loadFloat("radius", 50);
+        ssaoShader.loadFloat("radius", 100);
         ssaoShader.loadFloat("samples", 25);
         ssaoShader.unbind();
         blurShader = new Shader(Shader.loadShaderCode("postProcessing/quadVS.glsl"), Shader.loadShaderCode("postProcessing/ssao/SSAOBlur.glsl")).combine("pos");
@@ -50,7 +48,6 @@ public class SSAOEffect {
         blurShader.bind();
         blurShader.loadInt("filter_scale", 1);
         blurShader.loadFloat("edge_sharpness", 10);
-        ssaoTimer = new TimerQuery("SSAO");
     }
 
     public int getSSAOTexture() {
@@ -59,7 +56,6 @@ public class SSAOEffect {
 
     public void renderEffect(FrameBufferObject gBuffer) {
         if (enabled) {
-            ssaoTimer.startQuery();
             fbo.bind();
             fbo.clear(1, 1, 1, 1);
             GL30.glActiveTexture(GL13.GL_TEXTURE0);
@@ -70,7 +66,6 @@ public class SSAOEffect {
             ssaoShader.unbind();
             fbo.unbind();
             blurSSAO();
-            ssaoTimer.waitOnQuery();
         }
     }
 

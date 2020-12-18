@@ -14,7 +14,10 @@ import graphics.camera.Camera;
 import graphics.camera.FreeFlightCamera;
 import graphics.context.Display;
 import graphics.loader.TextureLoader;
-import graphics.objects.*;
+import graphics.objects.FrameBufferObject;
+import graphics.objects.OpenGLState;
+import graphics.objects.Shader;
+import graphics.objects.Vao;
 import graphics.particles.ParticleManager;
 import graphics.postProcessing.GaussianBlur;
 import graphics.postProcessing.Pipeline;
@@ -43,7 +46,7 @@ public class Main {
 
     private static Model model;
 
-    //private static List<Entity> worldsEntity = new ArrayList<>();
+    private static List<Entity> worldsEntity = new ArrayList<>();
     private static float scale = 10000;
 
     public static void main(String[] args) {
@@ -69,10 +72,10 @@ public class Main {
         ModelFileHandler.loadModelsForMultiDraw(multiRenderer.persistantMatrixVbo, "plants/flowerTest1.modelFile", "lowPolyTree/vc.modelFile", "lowPolyTree/ballTree.modelFile", "lowPolyTree/bendyTree.modelFile", "lowPolyTree/tree2.modelFile", "misc/rock.modelFile", "plants/grass.modelFile", "plants/mushroom.modelFile", "misc/tutorialCrystal.modelFile", "plants/glockenblume.modelFile", "misc/fox.modelFile");
         World world = new World(pm);
         EntityAdder ea = new EntityAdder(null);
-        // worldsEntity.addAll(ea.getAllEntities(new PopulatedIsland(new Vector3f(0),10000)));
-        // worldsEntity.forEach(e->placeEntity(e));
-        for (int i = 0; i < 1; i++) world.addIsland(1000);
-        Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(0, scale + 100, 0), mim);
+        worldsEntity.addAll(ea.getAllEntities(new PopulatedIsland(new Vector3f(0),10000)));
+        worldsEntity.forEach(e->placeEntity(e));
+        //  for (int i = 0; i < 1; i++) world.addIsland(1000);
+        Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(0, scale+100, 0), mim);
         Shader shader = new Shader(Shader.loadShaderCode("testVSMultiDraw.glsl"), Shader.loadShaderCode("testFS.glsl")).combine("posAndWobble", "colorAndShininess");
         shader.loadUniforms("projMatrix", "noiseMap", "time", "viewMatrix", "transformationMatrixUniform", "useInputTransformationMatrix");
         shader.connectSampler("noiseMap", 0);
@@ -112,13 +115,11 @@ public class Main {
                 .addTextureAttachment(1)
                 //depth
                 .addDepthTextureAttachment();
-        FrameBufferObject deferredResult = new FrameBufferObject(1920, 1080, 2).addTextureAttachment(0).addTextureAttachment(1).addDepthBuffer().unbind();
+        FrameBufferObject deferredResult = new FrameBufferObject(1920, 1080, 2).addUnclampedTexture(0).addUnclampedTexture(1).addDepthBuffer().unbind();
         QuadRenderer quadRenderer = new QuadRenderer();
         GaussianBlur blur = new GaussianBlur(quadRenderer);
         SSAOEffect ssao = new SSAOEffect(quadRenderer, 1920, 1080, projMatrix);
         Pipeline postProcessPipeline = new Pipeline(1920, 1080, projMatrix, quadRenderer, blur);
-        TimerQuery deferredTimer = new TimerQuery("Lighting Pass Timer");
-        TimerQuery modelTimer = new TimerQuery("Model Pass Timer");
 
         while (!display.shouldClose()) {
             float dt = zeitgeist.getDelta();
@@ -158,7 +159,6 @@ public class Main {
             ffc.update(dt);
             input.updateInputMaps();
             Matrix4f viewMatrix = ffc.getViewMatrix();
-            modelTimer.startQuery();
             OpenGLState.enableBackFaceCulling();
             OpenGLState.enableDepthTest();
             OpenGLState.disableAlphaBlending();
@@ -171,21 +171,22 @@ public class Main {
             renderer.begin(viewMatrix, projMatrix);
             shader.loadInt("useInputTransformationMatrix", 0);
             shader.loadFloat("time", time);
-            //renderer.render(model, new Matrix4f());
+            renderer.render(model, new Matrix4f());
             renderer.render(player.getModel(), player.getTransformationMatrix());
             world.render(renderer, projMatrix, viewMatrix, ffc.position);
             shader.loadInt("useInputTransformationMatrix", 1);
             multiRenderer.render(world.getVisibleEntities(projMatrix, viewMatrix, ffc.position));
-            //  multiRenderer.render(worldsEntity);
+            multiRenderer.render(worldsEntity);
             fbo.unbind();
             OpenGLState.enableAlphaBlending();
             display.clear();
             OpenGLState.disableWireframe();
             OpenGLState.disableDepthTest();
+           /* computeTimer.startQuery();
+            postProcessPipeline.computeDOFEffect(fbo.getDepthTexture());
+            computeTimer.waitOnQuery();*/
             fbo.blitDepth(deferredResult);
-            modelTimer.waitOnQuery();
             ssao.renderEffect(fbo);
-            deferredTimer.startQuery();
             deferredResult.bind();
             GL30.glActiveTexture(GL30.GL_TEXTURE0);
             GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getDepthTexture());
@@ -202,7 +203,6 @@ public class Main {
             OpenGLState.disableAlphaBlending();
             OpenGLState.disableDepthTest();
             deferredResult.unbind();
-            deferredTimer.waitOnQuery();
             postProcessPipeline.applyPostProcessing(display, viewMatrix, deferredResult, fbo, lightPos);
             // quadRenderer.renderTextureToScreen(ssao.getSSAOTexture());
             display.flipBuffers();
@@ -213,7 +213,6 @@ public class Main {
             drawCalls = 0;
             zeitgeist.sleep();
         }
-        TimerQuery.printAllTimerResults();
         TextureLoader.cleanUpAllTextures();
         FrameBufferObject.cleanUpAllFbos();
         Vao.cleanUpAllVaos();
@@ -233,9 +232,8 @@ public class Main {
         return String.format("%." + decimalPlaces + "f", v);
     }
 
-    private static float noiseScale = 1f / scale;
+   private static  float noiseScale = 1f / scale;
     private static float change = 0.05f;
-
     private static void placeEntity(Entity e) {
         Vector3f pos = e.position;
         Random r = new Random();
@@ -245,12 +243,13 @@ public class Main {
         pos.mul(1 + SimplexNoise.noise(pos.x * noiseScale, pos.y * noiseScale, pos.z * noiseScale) * change);
         Vector3f eulerAngles = new Vector3f();
         Quaternionf qf = new Quaternionf();
-        qf.rotateTo(new Vector3f(0, 1, 0), new Vector3f(pos).normalize());
+        qf.rotateTo(new Vector3f(0,1,0),new Vector3f(pos).normalize());
         qf.getEulerAnglesXYZ(eulerAngles);
-        e.rotX = eulerAngles.x;
-        e.rotY = eulerAngles.y;
-        e.rotZ = eulerAngles.z;
+        e.rotX=eulerAngles.x;
+        e.rotY=eulerAngles.y;
+        e.rotZ=eulerAngles.z;
     }
+
 
 
     private static Model createSphere() {

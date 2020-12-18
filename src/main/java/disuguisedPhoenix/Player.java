@@ -42,7 +42,7 @@ public class Player extends Entity {
 
     public void move(List<Island> terrain, float dt, List<Entity> possibleCollisions) {
         checkInputs();
-       Vector3f up = new Vector3f(position).normalize();
+        Vector3f up = new Vector3f(position).normalize();
         this.acceleration.set(up).mul(-1f*GRAVITY);
         Vector3f right = up.cross(velocity,new Vector3f()).normalize();
         Vector3f forward = right.cross(up, new Vector3f()).normalize();

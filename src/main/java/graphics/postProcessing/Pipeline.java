@@ -44,14 +44,14 @@ public class Pipeline {
     }
 
     public void applyPostProcessing(Display display, Matrix4f viewMatrix, FrameBufferObject deferredResult, FrameBufferObject deferred, Vector3f lightPos) {
-      /*  dof.computeCameraParams(deferred.getDepthTexture());
+      //  dof.computeCameraParams(deferred.getDepthTexture());
         bloom.render(deferredResult.getTextureID(1));
         rays.render(projMatrix, viewMatrix, lightPos, deferred.getTextureID(1));
         combine.render(deferredResult.getTextureID(0), bloom.getTexture(), rays.getTexture());
-        dofTimer.startQuery();
+       /* dofTimer.startQuery();
         dof.render(combine.getCombinedResult(), deferred.getDepthTexture());
         dofTimer.waitOnQuery();*/
         display.setViewport();
-        fxaa.render(deferredResult.getTextureID(0));
+        fxaa.render(combine.getCombinedResult());
     }
 }
