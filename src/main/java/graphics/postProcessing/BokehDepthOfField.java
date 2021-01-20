@@ -1,18 +1,15 @@
 package graphics.postProcessing;
 
-import graphics.loader.TextureLoader;
 import graphics.objects.FrameBufferObject;
 import graphics.objects.OpenGLState;
-import graphics.objects.Shader;
+import graphics.shaders.Shader;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL13;
 
-import static org.lwjgl.opengl.GL11.*;
-
 public class BokehDepthOfField {
-
+/*
     private final QuadRenderer renderer;
     private final Matrix4f projMatrixInv;
 
@@ -119,5 +116,5 @@ public class BokehDepthOfField {
         viewSpacePosition.mul(1f / viewSpacePosition.w);
         return viewSpacePosition.z;
     }
-
+*/
 }

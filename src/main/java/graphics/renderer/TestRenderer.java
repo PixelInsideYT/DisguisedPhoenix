@@ -2,7 +2,7 @@ package graphics.renderer;
 
 import disuguisedPhoenix.Entity;
 import disuguisedPhoenix.Main;
-import graphics.objects.Shader;
+import graphics.shaders.Shader;
 import graphics.objects.Vao;
 import graphics.world.Model;
 import org.joml.Matrix4f;

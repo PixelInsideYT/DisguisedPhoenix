@@ -4,8 +4,9 @@ import engine.util.ModelFileHandler;
 import graphics.loader.MeshInformation;
 import graphics.objects.FrameBufferObject;
 import graphics.objects.OpenGLState;
-import graphics.objects.Shader;
+import graphics.shaders.Shader;
 import graphics.objects.Vao;
+import graphics.shaders.ShaderFactory;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -45,15 +46,11 @@ public class GodRays {
         lightShape.addIndicies(information.indicies);
         lightShape.unbind();
         //setup the light render shader
+        ShaderFactory lightFactory = new ShaderFactory("postProcessing/godRays/lightSourceVS.glsl","postProcessing/godRays/lightSourceFS.glsl").withAttributes("pos");
+        lightShader = lightFactory.withUniforms("geometryCheckTexture", "color", "matrix").configureSampler("geometryCheckTexture", 0).built();
 
-        lightShader = new Shader(Shader.loadShaderCode("postProcessing/godRays/lightSourceVS.glsl"), Shader.loadShaderCode("postProcessing/godRays/lightSourceFS.glsl")).combine("pos");
-        lightShader.loadUniforms("geometryCheckTexture", "color", "matrix");
-        lightShader.connectSampler("geometryCheckTexture", 0);
-        lightShader.unbind();
-
-        radialBlur = new Shader(Shader.loadShaderCode("postProcessing/quadVS.glsl"), Shader.loadShaderCode("postProcessing/godRays/radialBlurFS.glsl")).combine("pos");
-        radialBlur.loadUniforms("blurCenter", "image");
-
+        radialBlur = new ShaderFactory("postProcessing/quadVS.glsl","postProcessing/godRays/radialBlurFS.glsl").withAttributes("pos")
+                .withUniforms("blurCenter", "image").configureSampler("image",0).built();
     }
 
     public int getTexture(){

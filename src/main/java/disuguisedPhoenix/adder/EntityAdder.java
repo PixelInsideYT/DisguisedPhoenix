@@ -7,8 +7,9 @@ import disuguisedPhoenix.terrain.PopulatedIsland;
 import disuguisedPhoenix.terrain.World;
 import engine.util.Maths;
 import engine.util.ModelFileHandler;
-import graphics.objects.Shader;
+import graphics.shaders.Shader;
 import graphics.particles.ParticleManager;
+import graphics.shaders.ShaderFactory;
 import graphics.world.Model;
 import org.joml.FrustumIntersection;
 import org.joml.Matrix4f;
@@ -33,8 +34,10 @@ public class EntityAdder {
     private List<GrowState> toAddEntities = new ArrayList<>();
 
     public EntityAdder(ParticleManager pm) {
-        creationShader = new Shader(Shader.loadShaderCode("creationVS.glsl"), Shader.loadShaderCode("creationGS.glsl"), Shader.loadShaderCode("creationFS.glsl")).combine("pos", "color");
-        creationShader.loadUniforms("projMatrix", "viewMatrix", "transformationMatrix", "builtProgress", "modelHeight");
+        ShaderFactory creationFactory = new ShaderFactory("creationVS.glsl", "creationFS.glsl");
+        creationFactory.addShaderStage(ShaderFactory.GEOMETRY_SHADER, "creationGS.glsl");
+        creationFactory.withUniforms("projMatrix", "viewMatrix", "transformationMatrix", "builtProgress", "modelHeight");
+        creationShader = creationFactory.withAttributes("pos", "color").built();
         this.pm = pm;
     }
 
@@ -51,13 +54,13 @@ public class EntityAdder {
         }
     }
 
-    public void render(Matrix4f camMatrix, Matrix4f projMatrix,FrustumIntersection fi) {
+    public void render(Matrix4f camMatrix, Matrix4f projMatrix, FrustumIntersection fi) {
         if (toAddEntities.size() > 0) {
             creationShader.bind();
             creationShader.loadMatrix("projMatrix", projMatrix);
             creationShader.loadMatrix("viewMatrix", camMatrix);
             Map<Model, List<GrowState>> renderMap = new HashMap<>();
-            toAddEntities.forEach(e -> addGrowStateToRenderMap(e, renderMap,fi));
+            toAddEntities.forEach(e -> addGrowStateToRenderMap(e, renderMap, fi));
             for (Model m : renderMap.keySet()) {
                 render(m, renderMap.get(m));
             }
@@ -74,7 +77,7 @@ public class EntityAdder {
             creationShader.loadFloat("builtProgress", e.buildProgress);
             GL40.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, model.renderInfo.indexOffset * 4, model.renderInfo.vertexOffset);
             Main.inViewObjects++;
-            Main.inViewVerticies+=indiciesLength;
+            Main.inViewVerticies += indiciesLength;
             Main.drawCalls++;
             Main.facesDrawn += indiciesLength / 3;
         }
@@ -86,7 +89,7 @@ public class EntityAdder {
         for (PopulatedIsland island : islands) {
             List<Entity> spawningEntities = generateEntitiesFor(island.island);
             for (Entity e : spawningEntities) {
-                GrowState gr = new GrowState(world,island, 100, playerPos, e, pm);
+                GrowState gr = new GrowState(world, island, 100, playerPos, e, pm);
                 toAddEntities.add(gr);
             }
         }
@@ -143,7 +146,7 @@ public class EntityAdder {
     }
 
     private static void addGrowStateToRenderMap(GrowState entity, Map<Model, List<GrowState>> modelMap, FrustumIntersection fi) {
-        if (entity.isReachedBySeeker()&& Maths.isInsideFrustum(fi,entity.growingEntity)) {
+        if (entity.isReachedBySeeker() && Maths.isInsideFrustum(fi, entity.growingEntity)) {
             Model m = entity.growingEntity.getModel();
             modelMap.computeIfAbsent(m, k -> new ArrayList<>());
             modelMap.get(m).add(entity);

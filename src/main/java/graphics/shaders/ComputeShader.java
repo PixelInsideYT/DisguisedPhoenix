@@ -1,4 +1,4 @@
-package graphics.objects;
+package graphics.shaders;
 
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;

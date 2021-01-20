@@ -1,7 +1,7 @@
 package MultiDrawIndirect;
 
 import graphics.context.Display;
-import graphics.objects.Shader;
+import graphics.shaders.Shader;
 import graphics.objects.Vao;
 import graphics.objects.BufferObject;
 import org.lwjgl.opengl.*;
@@ -76,7 +76,8 @@ public class MultiDrawTest {
         GL11.glCullFace(GL12.GL_BACK);
         GL11.glDisable(GL11.GL_CULL_FACE);
         //setup shader
-        Shader simpleShader = new Shader("\n" +
+        Shader simpleShader = null;
+        /*new Shader("\n" +
                 "#version 150 core\n" +
                 "\n" +
                 "in vec3 pos;\n" +
@@ -86,7 +87,7 @@ public class MultiDrawTest {
                 "\tgl_Position = model * vec4(pos, 1.f);\n" +
                 "}", "#version 150 core\n" +
                 "out vec4 col;void main() {col = vec4(1.f, 1.f, 1.f, 1.f);}").combine("pos", "model");
-
+*/
         simpleShader.bind();
         models.bind();
         GLUtil.setupDebugMessageCallback();

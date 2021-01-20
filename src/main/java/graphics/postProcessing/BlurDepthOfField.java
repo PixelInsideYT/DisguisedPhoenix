@@ -1,9 +1,10 @@
 package graphics.postProcessing;
 
 import graphics.objects.BufferObject;
-import graphics.objects.ComputeShader;
+import graphics.shaders.ComputeShader;
 import graphics.objects.FrameBufferObject;
-import graphics.objects.Shader;
+import graphics.shaders.Shader;
+import graphics.shaders.ShaderFactory;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL45;
@@ -27,16 +28,14 @@ public class BlurDepthOfField {
     public BlurDepthOfField(int width, int height, Matrix4f projMatrix, QuadRenderer renderer, GaussianBlur blurHelper) {
         this.renderer = renderer;
         this.blur = blurHelper;
-
-        depthOfFieldShader = new Shader(Shader.loadShaderCode("postProcessing/quadVS.glsl"), Shader.loadShaderCode("postProcessing/DoF/blurDoFFS.glsl")).combine("pos");
-        depthOfFieldShader.loadUniforms("blured", "original", "depth", "projMatrixInv");
-        depthOfFieldShader.bind();
+        ShaderFactory depthFactory = new ShaderFactory("postProcessing/quadVS.glsl","postProcessing/DoF/blurDoFFS.glsl").withAttributes("pos");
+        depthFactory.withUniforms("blured", "original", "depth", "projMatrixInv");
+        depthFactory.configureSampler("original", 0).configureSampler("blured", 1).configureSampler("depth", 2);
+        depthOfFieldShader=depthFactory.built();
         projMatrixInv = new Matrix4f(projMatrix).invert();
+        depthOfFieldShader.bind();
         depthOfFieldShader.loadMatrix("projMatrixInv", projMatrixInv);
-        depthOfFieldShader.connectSampler("original", 0);
-        depthOfFieldShader.connectSampler("blured", 1);
-        depthOfFieldShader.connectSampler("depth", 2);
-        focusPointComputeShader = new ComputeShader(Shader.loadShaderCode("compute/textureFillerCS.glsl"));
+        focusPointComputeShader = new ComputeShader(ShaderFactory.loadShaderCode("compute/textureFillerCS.glsl"));
         focusPointComputeShader.bind();
         focusPointComputeShader.loadUniforms("depth_input", "imageOut", "projMatrixInv");
         focusPointComputeShader.loadMatrix4f("projMatrixInv", projMatrixInv);

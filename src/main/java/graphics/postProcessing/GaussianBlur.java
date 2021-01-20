@@ -1,7 +1,8 @@
 package graphics.postProcessing;
 
 import graphics.objects.FrameBufferObject;
-import graphics.objects.Shader;
+import graphics.shaders.Shader;
+import graphics.shaders.ShaderFactory;
 import org.joml.Vector2f;
 import org.lwjgl.opengl.GL13;
 
@@ -12,9 +13,8 @@ public class GaussianBlur {
 
     public GaussianBlur(QuadRenderer renderer) {
         this.renderer = renderer;
-        shader = new Shader(Shader.loadShaderCode("postProcessing/quadVS.glsl"), Shader.loadShaderCode("postProcessing/blur/gaussianBlurFS.glsl")).combine("pos");
-        shader.loadUniforms("image", "resolution", "direction");
-        shader.connectSampler("image", 0);
+        ShaderFactory shaderFactory = new ShaderFactory("postProcessing/quadVS.glsl","postProcessing/blur/gaussianBlurFS.glsl").withAttributes("pos");
+        shader = shaderFactory.withUniforms("image", "resolution", "direction").configureSampler("image", 0).built();
     }
 
     public void blur(int inputTexture, int width, int height, FrameBufferObject firstTarget, FrameBufferObject secondTarget, int radius) {

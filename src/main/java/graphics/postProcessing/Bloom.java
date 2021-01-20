@@ -1,7 +1,8 @@
 package graphics.postProcessing;
 
 import graphics.objects.FrameBufferObject;
-import graphics.objects.Shader;
+import graphics.shaders.Shader;
+import graphics.shaders.ShaderFactory;
 import org.joml.Vector2f;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL45;
@@ -18,9 +19,10 @@ public class Bloom {
 
     public Bloom( int width, int height, QuadRenderer renderer) {
         this.renderer = renderer;
-        customBlurShader = new Shader(Shader.loadShaderCode("postProcessing/quadVS.glsl"), Shader.loadShaderCode("postProcessing/blur/bloomBlurFS.glsl")).combine("pos");
-        customBlurShader.loadUniforms("image", "mipMapLevel", "direction");
-        customBlurShader.connectSampler("image",0);
+        ShaderFactory blurFactory = new ShaderFactory("postProcessing/quadVS.glsl","postProcessing/blur/bloomBlurFS.glsl").withAttributes("pos");
+        blurFactory.withUniforms("image", "mipMapLevel", "direction");
+        blurFactory.configureSampler("image",0);
+        customBlurShader = blurFactory.built();
         helperFbo = new FrameBufferObject(width >> mipLevel, height >> mipLevel, 1).addTextureAttachment(0);
         outFbo = new FrameBufferObject(width >> mipLevel, height >> mipLevel, 1).addTextureAttachment(0);
     }

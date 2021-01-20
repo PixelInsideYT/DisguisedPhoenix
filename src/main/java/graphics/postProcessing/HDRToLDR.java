@@ -1,10 +1,9 @@
 package graphics.postProcessing;
 
-import graphics.objects.BufferObject;
 import graphics.objects.FrameBufferObject;
-import graphics.objects.Shader;
+import graphics.shaders.Shader;
+import graphics.shaders.ShaderFactory;
 import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL45;
 
 public class HDRToLDR {
 
@@ -14,8 +13,8 @@ public class HDRToLDR {
 
     public HDRToLDR(int width, int height,QuadRenderer renderer) {
         this.renderer = renderer;
-        resolveShader = new Shader(Shader.loadShaderCode("postProcessing/quadVS.glsl"), Shader.loadShaderCode("postProcessing/combine/hdrToldrFS.glsl")).combine("pos");
-        resolveShader.loadUniforms("linearInputTexture");
+        ShaderFactory resolveFactory = new ShaderFactory("postProcessing/quadVS.glsl","postProcessing/combine/hdrToldrFS.glsl").withAttributes("pos");
+        resolveShader = resolveFactory.withUniforms("linearInputTexture").configureSampler("linearInputTexture",0).built();
         fbo = new FrameBufferObject(width,height,1).addTextureAttachment(0).unbind();
     }
 

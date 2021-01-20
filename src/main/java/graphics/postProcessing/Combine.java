@@ -1,7 +1,8 @@
 package graphics.postProcessing;
 
 import graphics.objects.FrameBufferObject;
-import graphics.objects.Shader;
+import graphics.shaders.Shader;
+import graphics.shaders.ShaderFactory;
 import org.lwjgl.opengl.GL13;
 
 public class Combine {
@@ -12,11 +13,10 @@ public class Combine {
 
     public Combine(int width, int height,QuadRenderer renderer){
         this.renderer=renderer;
-        shader = new Shader(Shader.loadShaderCode("postProcessing/quadVS.glsl"), Shader.loadShaderCode("postProcessing/combine/combineFS.glsl")).combine("pos");
-        shader.loadUniforms("colorTexture","bloomTexture","godRaysTexture");
-        shader.connectSampler("colorTexture",0);
-        shader.connectSampler("bloomTexture",1);
-        shader.connectSampler("godRaysTexture",2);
+        ShaderFactory shaderFactory = new ShaderFactory("postProcessing/quadVS.glsl","postProcessing/combine/combineFS.glsl").withAttributes("pos");
+        shaderFactory.withUniforms("colorTexture","bloomTexture","godRaysTexture");
+        shaderFactory.configureSampler("colorTexture",0).configureSampler("bloomTexture",1).configureSampler("godRaysTexture",2);
+        shader = shaderFactory.built();
         combinedResult = new FrameBufferObject(width, height, 1).addUnclampedTexture(0).unbind();
     }
 

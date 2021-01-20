@@ -1,7 +1,7 @@
 package graphics.postProcessing;
 
-import graphics.objects.FrameBufferObject;
-import graphics.objects.Shader;
+import graphics.shaders.Shader;
+import graphics.shaders.ShaderFactory;
 import org.lwjgl.opengl.GL13;
 
 public class FXAARenderer {
@@ -11,9 +11,9 @@ public class FXAARenderer {
 
     public FXAARenderer(int width, int height,QuadRenderer renderer) {
         this.renderer = renderer;
-        aliasShader = new Shader(Shader.loadShaderCode("postProcessing/quadVS.glsl"), Shader.loadShaderCode("postProcessing/antiAliasing/FXAA.glsl")).combine("pos");
-        aliasShader.loadUniforms("tex");
-        aliasShader.connectSampler("tex", 0);
+        ShaderFactory aliasFactory = new ShaderFactory("postProcessing/quadVS.glsl","postProcessing/antiAliasing/FXAA.glsl").withAttributes("pos");
+        aliasFactory.withUniforms("tex").configureSampler("tex", 0);
+        aliasShader = aliasFactory.built();
     }
 
 

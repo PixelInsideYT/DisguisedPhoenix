@@ -1,9 +1,10 @@
 package graphics.particles;
 
 import disuguisedPhoenix.Main;
-import graphics.objects.Shader;
+import graphics.shaders.Shader;
 import graphics.objects.Vao;
 import graphics.objects.BufferObject;
+import graphics.shaders.ShaderFactory;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -31,8 +32,9 @@ public class ParticleManager {
 
 
     public ParticleManager() {
-        shader = new Shader(Shader.loadShaderCode("particleVS.glsl"), Shader.loadShaderCode("particleFS.glsl")).configureAttribute(0, "pos").configureAttribute(1, "transformationMatrix").configureAttribute(5, "color").combine();
-        shader.loadUniforms("viewMatrix", "projMatrix");
+        ShaderFactory particleFactory = new ShaderFactory("particleVS.glsl","particleFS.glsl");
+        particleFactory.withAttributes("pos","transformationMatrix").setAttributeLocation("color",5);
+        shader = particleFactory.withUniforms("viewMatrix", "projMatrix").built();
         particleVao = new Vao();
         particleVao.addDataAttributes(0, 3, new float[]{0.5f, -0.5f, 0f, 0.5f, 0.5f, 0f, -0.5f, 0.5f, 0f, -0.5f, 0.5f, 0f, 0.5f, -0.5f, 0f, -0.5f, -0.5f, 0f});
         matrixAndColor = new BufferObject(INSTANCES_COUNT * INSTANCE_DATA_LENGTH, GL20.GL_ARRAY_BUFFER, GL15.GL_DYNAMIC_DRAW).unbind();
