@@ -20,6 +20,7 @@ public class Model {
         this.radius = radius;
         this.radiusXZ = radiusXZ;
         this.relativeCenter = relativeCenter;
+        System.out.println(relativeCenter);
     }
 
     public Model(RenderInfo info, Vector3f relativeCenter, float height, float radiusXZ, float radius, Collider collider) {

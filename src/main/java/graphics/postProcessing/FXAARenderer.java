@@ -9,7 +9,7 @@ public class FXAARenderer {
     private final Shader aliasShader;
     private final QuadRenderer renderer;
 
-    public FXAARenderer(int width, int height,QuadRenderer renderer) {
+    public FXAARenderer(QuadRenderer renderer) {
         this.renderer = renderer;
         ShaderFactory aliasFactory = new ShaderFactory("postProcessing/quadVS.glsl","postProcessing/antiAliasing/FXAA.glsl").withAttributes("pos");
         aliasFactory.withUniforms("tex").configureSampler("tex", 0);

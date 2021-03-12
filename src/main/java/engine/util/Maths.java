@@ -9,6 +9,23 @@ public class Maths {
 
     private static final Vector3f tempVec=new Vector3f();
 
+    public static Vector2f raySphere(Vector3f center, float radius, Vector3f rayOrigin, Vector3f rayDir) {
+        Vector3f offset = new Vector3f(rayOrigin).sub(center);
+        float a = rayDir.dot(rayDir);
+        float b = 2 *offset.dot(rayDir);
+        float c = offset.dot( offset) - radius * radius;
+        float discriminant = b * b - 4 * a * c;
+        if (discriminant > 0) {
+            float s = (float) Math.sqrt(discriminant);
+            float dstToSphereNear = Math.max(0, (-b - s) / (2 * a));
+            float dstToSphereFar = (s - b) / (2 * a);
+            if (dstToSphereFar >= 0) {
+                return new Vector2f(dstToSphereNear, dstToSphereFar - dstToSphereNear);
+            }
+        }
+        return new Vector2f(Float.MAX_VALUE, 0f);
+    }
+
     public static float clamp(float currentTurnSpeed, float min, float max) {
         return Math.max(Math.min(currentTurnSpeed, max), min);
     }
@@ -22,8 +39,8 @@ public class Maths {
     }
 
     public static boolean isInsideFrustum(FrustumIntersection cullingHelper,Vector3f pos, Vector3f ralativeCenter, float scale, float radius) {
-        tempVec.set(pos).add(scale*ralativeCenter.x,scale*ralativeCenter.y,scale*ralativeCenter.z);
-        return cullingHelper.testSphere(tempVec, radius * scale);
+        Vector3f p = new Vector3f(pos).add(scale*ralativeCenter.x,scale*ralativeCenter.y,scale*ralativeCenter.z);
+        return cullingHelper.testSphere(p, radius * scale);
     }
 
     public static boolean isInsideFrustum(FrustumIntersection cullingHelper, Entity e){

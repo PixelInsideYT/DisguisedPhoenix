@@ -9,7 +9,7 @@ import org.lwjgl.opengl.GL45;
 
 public class Bloom {
 
-    private final int mipLevel = 3;
+    private final int mipLevel = 0;
 
     private final Shader customBlurShader;
 
@@ -32,14 +32,14 @@ public class Bloom {
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         GL13.glBindTexture(GL13.GL_TEXTURE_2D, highlightTexture);
         GL45.glGenerateMipmap(GL13.GL_TEXTURE_2D);
-        customBlurShader.load2DVector("direction", new Vector2f(1, 0));
+        customBlurShader.load2DVector("direction", new Vector2f(3, 0));
         customBlurShader.loadInt("mipMapLevel",mipLevel);
         helperFbo.bind();
         renderer.renderOnlyQuad();
         helperFbo.unbind();
         GL13.glBindTexture(GL13.GL_TEXTURE_2D, helperFbo.getTextureID(0));
         GL45.glGenerateMipmap(GL13.GL_TEXTURE_2D);
-        customBlurShader.load2DVector("direction", new Vector2f(0, 1));
+        customBlurShader.load2DVector("direction", new Vector2f(0, 3));
         customBlurShader.loadInt("mipMapLevel",0);
         outFbo.bind();
         renderer.renderOnlyQuad();
@@ -50,4 +50,8 @@ public class Bloom {
         return outFbo.getTextureID(0);
     }
 
+    public void resize(int width, int height) {
+        helperFbo.resize(width, height);
+        outFbo.resize(width, height);
+    }
 }

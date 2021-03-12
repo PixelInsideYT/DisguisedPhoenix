@@ -17,25 +17,28 @@ public class Combine {
         shaderFactory.withUniforms("colorTexture","bloomTexture","godRaysTexture");
         shaderFactory.configureSampler("colorTexture",0).configureSampler("bloomTexture",1).configureSampler("godRaysTexture",2);
         shader = shaderFactory.built();
-        combinedResult = new FrameBufferObject(width, height, 1).addUnclampedTexture(0).unbind();
+        combinedResult = new FrameBufferObject(width, height, 1).addTextureAttachment(0).unbind();
     }
 
     public int getCombinedResult(){
         return combinedResult.getTextureID(0);
     }
 
-    public void render(int lightingTexture, int bloomTexture, int godRaysTexture){
+    public void render(int lightingTexture, int bloomTexture){
         combinedResult.bind();
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         GL13.glBindTexture(GL13.GL_TEXTURE_2D,lightingTexture);
         GL13.glActiveTexture(GL13.GL_TEXTURE1);
         GL13.glBindTexture(GL13.GL_TEXTURE_2D,bloomTexture);
-        GL13.glActiveTexture(GL13.GL_TEXTURE2);
-        GL13.glBindTexture(GL13.GL_TEXTURE_2D,godRaysTexture);
+       // GL13.glActiveTexture(GL13.GL_TEXTURE2);
+       // GL13.glBindTexture(GL13.GL_TEXTURE_2D,godRaysTexture);
         shader.bind();
         renderer.renderOnlyQuad();
         shader.unbind();
         combinedResult.unbind();
     }
 
+    public void resize(int width, int height) {
+        combinedResult.resize(width, height);
+    }
 }

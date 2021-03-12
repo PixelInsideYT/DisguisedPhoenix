@@ -6,6 +6,7 @@ import engine.collision.ConvexShape;
 import graphics.objects.Vao;
 import graphics.world.Material;
 import graphics.world.Model;
+import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
@@ -24,29 +25,33 @@ import static org.lwjgl.assimp.Assimp.*;
 
 public class AssimpWrapper {
 
-    private static final int loadFlags = Assimp.aiProcess_Triangulate | Assimp.aiProcess_RemoveRedundantMaterials | Assimp.aiProcess_FindInvalidData | Assimp.aiProcess_FindInstances;
-    private static final Map<String, Model> alreadyLoadedModels = new HashMap<>();
+    private static final int loadFlags = Assimp.aiProcess_Triangulate;
 
-    public static Collider loadCollider(String name, boolean loadToVao) {
+    public static Collider loadCollider(String name) {
         Collider c = new Collider();
-        int flags = 0;
-        if (loadToVao) flags = flags | Assimp.aiProcess_Triangulate;
-        AIScene scene = Assimp.aiImportFile(name, flags);
+        AIScene scene = Assimp.aiImportFile(name, loadFlags);
         if (scene == null || (scene.mFlags() & Assimp.AI_SCENE_FLAGS_INCOMPLETE) == 1 || (scene.mFlags() & Assimp.AI_SCENE_FLAGS_VALIDATION_WARNING) == 1 || scene.mRootNode() == null) {
             System.err.println("ERROR::ASSIMP: " + Assimp.aiGetErrorString());
         }
+        AINode root = scene.mRootNode();
+        PointerBuffer nodePointer = root.mChildren();
         Vector3f max = new Vector3f(-Float.MAX_VALUE);
         Vector3f min = new Vector3f(Float.MAX_VALUE);
-        int numMeshes = scene.mNumMeshes();
         PointerBuffer meshPointer = scene.mMeshes();
-        for (int i = 0; i < numMeshes; i++) {
-            AIMesh mesh = AIMesh.create(meshPointer.get(i));
-            ConvexShape cs = meshToCollisionShape(loadToVao, mesh);
-            max.max(cs.getMax());
-            min.min(cs.getMin());
-            c.addCollisionShape(cs);
+        for (int i = 0; i < root.mNumChildren(); i++) {
+            AINode child = AINode.create(nodePointer.get(i));
+            IntBuffer meshIDs = child.mMeshes();
+            Matrix4f childTransformation = fromAssimp(child.mTransformation());
+            for (int j = 0; j < child.mNumMeshes(); j++) {
+                AIMesh mesh = AIMesh.create(meshPointer.get(meshIDs.get(j)));
+                ConvexShape cs = meshToCollisionShape( mesh, childTransformation);
+                max.max(cs.getMax());
+                min.min(cs.getMin());
+                c.addCollisionShape(cs);
+            }
         }
         c.setBoundingBox(new Box(min, max));
+        Assimp.aiReleaseImport(scene);
         return c;
     }
 
@@ -61,10 +66,22 @@ public class AssimpWrapper {
         String base = "models/" + name.substring(0, Math.max(slashIndex, 0));
         PointerBuffer materialPointer = scene.mMaterials();
         MeshInformation[] rt = new MeshInformation[numMeshes];
-        for (int i = 0; i < numMeshes; i++) {
-            AIMesh mesh = AIMesh.create(meshPointer.get(i));
-            AIMaterial material = AIMaterial.create(materialPointer.get(mesh.mMaterialIndex()));
-            rt[i] = processMesh(mesh, processMaterial(base, material),false);
+        AINode root = scene.mRootNode();
+        Matrix4f globalTransform = fromAssimp(root.mTransformation());
+        System.out.println(name +" \n"+globalTransform);
+        PointerBuffer nodePointer = root.mChildren();
+        int arrayIndex =0;
+        for (int i = 0; i < root.mNumChildren(); i++) {
+            AINode child = AINode.create(nodePointer.get(i));
+            IntBuffer meshIDs = child.mMeshes();
+            Matrix4f childTransformation = fromAssimp(child.mTransformation()).mul(globalTransform);
+            System.out.println(child.mName().dataString()+" \n"+childTransformation);
+            for (int j = 0; j < child.mNumMeshes(); j++) {
+                AIMesh mesh = AIMesh.create(meshPointer.get(meshIDs.get(j)));
+                AIMaterial material = AIMaterial.create(materialPointer.get(mesh.mMaterialIndex()));
+                rt[arrayIndex] = processMesh(mesh, processMaterial(base, material), childTransformation);
+                arrayIndex++;
+            }
         }
         Assimp.aiReleaseImport(scene);
         return rt;
@@ -77,6 +94,14 @@ public class AssimpWrapper {
         vao.addDataAttributes(1, 3, mi.colors);
         vao.addIndicies(mi.indicies);
         return vao;
+    }
+
+    private static Matrix4f fromAssimp(AIMatrix4x4 m) {
+       // return new Matrix4f(m.a1(), m.a2(), m.a3(), m.a4(), m.b1(), m.b2(), m.b3(), m.b4(), m.c1(), m.c2(), m.c3(), m.c4(), m.d1(), m.d2(), m.d3(), m.d4());
+        return new Matrix4f(m.a1(),m.b1(),m.c1(),m.d1(),
+                m.a2(),m.b2(),m.c2(),m.d2(),
+                m.a3(),m.b3(),m.c3(),m.d3(),
+                m.a4(),m.b4(),m.c4(),m.d4());
     }
 
 
@@ -147,7 +172,7 @@ public class AssimpWrapper {
         return path.dataString();
     }
 
-    private static MeshInformation processMesh(AIMesh mesh, Material material, boolean forCollision) {
+    private static MeshInformation processMesh(AIMesh mesh, Material material, Matrix4f transformation) {
         String meshName = mesh.mName().dataString();
         List<Integer> modelIndicies = new ArrayList<>();
         List<Vector3f> modelVerticies = new ArrayList<>();
@@ -168,6 +193,7 @@ public class AssimpWrapper {
             for (int j = 0; j < indicies.remaining(); j++) {
                 int index = indicies.get(j);
                 Vector3f pos = getVec(verticies.get(index));
+                transformation.transformPosition(pos);
                 if (!modelVerticies.contains(pos)) {
                     modelVerticies.add(pos);
                 }
@@ -181,11 +207,8 @@ public class AssimpWrapper {
                 }
                 modelIndicies.add(modelVerticies.indexOf(pos));
             }
-            if ((faceCount / 20) > 0 && i % (faceCount / 20) == 0) {
-                System.out.print(".");
-            }
         }
-        MeshOptimizer.optimize(modelVerticies,modelIndicies);
+        //  MeshOptimizer.optimize(modelVerticies,modelIndicies);
         float[] vaoVerticies = new float[modelVerticies.size() * 3];
         float[] vaoColor = new float[modelVerticies.size() * 3];
         int vertexPointer = 0;
@@ -208,7 +231,7 @@ public class AssimpWrapper {
         return new Vector3f(vec.x(), vec.y(), vec.z());
     }
 
-    private static ConvexShape meshToCollisionShape(boolean useVao, AIMesh mesh) {
+    private static ConvexShape meshToCollisionShape(AIMesh mesh, Matrix4f transformation) {
         Set<Vector3f> axes = new HashSet<>();
         Set<Vector3f> cornerPoints = new HashSet<>();
         AIVector3D.Buffer verticies = mesh.mVertices();
@@ -223,7 +246,8 @@ public class AssimpWrapper {
                 AIVector3D normal = normals.get(index);
                 axes.add(new Vector3f(normal.x(), normal.y(), normal.z()));
                 AIVector3D vertex = verticies.get(index);
-                cornerPoints.add(new Vector3f(vertex.x(), vertex.y(), vertex.z()));
+                Vector3f vec = new Vector3f(vertex.x(), vertex.y(), vertex.z());
+                cornerPoints.add(transformation.transformPosition(vec));
             }
         }
         //remove all axis pointing in the same direction
@@ -237,14 +261,7 @@ public class AssimpWrapper {
                 axeItr.remove();
             }
         }
-        ConvexShape cs = null;
-        if (useVao) {
-            Vao meshVao = getVaoFromMeshInfo(processMesh(mesh, null, true));
-            cs = new ConvexShape(cornerPoints.toArray(new Vector3f[0]), axes.toArray(new Vector3f[0]), meshVao);
-        } else {
-            cs = new ConvexShape(cornerPoints.toArray(new Vector3f[0]), axes.toArray(new Vector3f[0]));
-        }
-        return cs;
+        return new ConvexShape(cornerPoints.toArray(new Vector3f[0]), axes.toArray(new Vector3f[0]));
     }
 
     private static float[] getTextureCoords(int verticesCount, AIVector3D.Buffer buffer) {

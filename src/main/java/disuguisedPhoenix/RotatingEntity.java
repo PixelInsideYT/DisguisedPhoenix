@@ -16,7 +16,7 @@ public class RotatingEntity extends Entity {
 
     public void update(float dt, List<Entity> posCollisions) {
         rotY += 0.3f * (float) Math.PI * dt;
-        super.update(dt, posCollisions);
+        super.update(dt, posCollisions,null);
     }
 
 }

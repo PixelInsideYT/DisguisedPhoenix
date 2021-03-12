@@ -1,8 +1,7 @@
 #version 150
 #define RADIUS 6
-
 // Gaussian filter values from the author's blurring shader
-const float gaussian[RADIUS + 1] = float[](0.136498, 0.129188,0.109523,0.083173,0.056577,0.034474,0.018816);
+const float gaussian[RADIUS + 1] = float[](0.136498, 0.129188, 0.109523, 0.083173, 0.056577, 0.034474, 0.018816);
 
 uniform sampler2D ao_in;
 uniform vec2 axis_f;
@@ -42,5 +41,5 @@ void main(void){
         }
     }
     float v = sum / (weight + 0.0001);
-    result = vec4(v,val.y,val.z,1);
+    result = vec4(v, val.y, val.z, 1);
 }

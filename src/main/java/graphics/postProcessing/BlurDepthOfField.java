@@ -41,8 +41,8 @@ public class BlurDepthOfField {
         focusPointComputeShader.loadMatrix4f("projMatrixInv", projMatrixInv);
         focusPointComputeShader.connectSampler("depth_input", 0);
         focusPointComputeShader.unbind();
-        fbo0 = new FrameBufferObject(width, height, 1).addUnclampedTexture(0).unbind();
-        fbo1 = new FrameBufferObject(width, height, 1).addUnclampedTexture(0).unbind();
+        fbo0 = new FrameBufferObject(width, height, 1).addTextureAttachment(0).unbind();
+        fbo1 = new FrameBufferObject(width, height, 1).addTextureAttachment(0).unbind();
         ssboTest = new BufferObject(new float[]{1000f, 100f}, GL45.GL_SHADER_STORAGE_BUFFER, GL45.GL_DYNAMIC_DRAW);
         GL45.glBindBufferBase(GL45.GL_SHADER_STORAGE_BUFFER, 1, ssboTest.bufferID);
         ssboTest.unbind();

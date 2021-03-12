@@ -54,6 +54,7 @@ public class TextureLoader {
             if (comp.get(0) == 4) {
                 format = GL_RGBA;
             }
+            if(comp.get(0)==1)format=GL_RED;
             int textureID = createTexture(texelWidth, texelHeight, image, wrap, filter, format);
             stbi_image_free(image);
             nameToIdMap.put(resource, textureID);

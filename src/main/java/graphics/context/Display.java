@@ -1,6 +1,7 @@
 package graphics.context;
 
 
+import disuguisedPhoenix.Main;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -23,6 +24,7 @@ public class Display {
     private long window;
     private final int[] size;
     private final Vector3f clearColor;
+    private ResizeListener resizeListener;
     public Display(String title, int width, int height) {
         size = new int[]{width, height};
         create(title, width, height);
@@ -53,7 +55,7 @@ public class Display {
         glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
         glfwWindowHint(GLFW_SAMPLES, 0);
         // Create the window
-        window = glfwCreateWindow(width, height, title, NULL, NULL);
+        window = glfwCreateWindow(width, height, title,NULL, NULL);
         if (window == NULL)
             throw new RuntimeException("Failed to create the GLFW window");
 
@@ -84,12 +86,23 @@ public class Display {
                     GL11.glViewport(0, 0, w, h);
                     size[0] = w;
                     size[1] = h;
+                    if(resizeListener!=null)
+                    resizeListener.resized(w,h,w/(float)h);
                 }
-                System.out.println("Window is resized, aspect ratio: " + (w / (float) h));
+                System.out.println("Window is resized, aspect ratio: "+w+" "+h+" " + (w / (float) h));
             }
         });
         glfwShowWindow(window);
+        pollEvents();
         //GLUtil.setupDebugMessageCallback();
+    }
+
+    public int getWidth(){
+        return size[0];
+    }
+
+    public int getHeight(){
+        return size[1];
     }
 
     public void pollEvents() {
@@ -131,5 +144,9 @@ public class Display {
     public void setViewport() {
         GL11.glViewport(0, 0, size[0], size[1]);
 
+    }
+
+    public void setResizeListener(ResizeListener resizeListener) {
+        this.resizeListener=resizeListener;
     }
 }

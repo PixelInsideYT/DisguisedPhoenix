@@ -180,12 +180,18 @@ public class ModelFileHandler {
                 for (int c = 0; c < collisionShapeCount; c++) {
                     int egdePointsCount = edgeAndAxeCount[c * 2];
                     Vector3f[] edgePointsArray = new Vector3f[egdePointsCount];
+                    float[] array = new float[egdePointsCount * 4];
+
                     int axesCount = edgeAndAxeCount[c * 2 + 1];
                     Vector3f[] axesArray = new Vector3f[axesCount];
                     for (int e = 0; e < egdePointsCount; e++) {
                         float x = buffer.getFloat();
                         float y = buffer.getFloat();
                         float z = buffer.getFloat();
+                        array[e * 4] = x;
+                        array[e * 4 + 1] = y;
+                        array[e * 4 + 2] = z;
+                        array[e * 4 + 3] = 0;
                         edgePointsArray[e] = new Vector3f(x, y, z);
                     }
                     for (int e = 0; e < axesCount; e++) {
@@ -194,7 +200,19 @@ public class ModelFileHandler {
                         float z = buffer.getFloat();
                         axesArray[e] = new Vector3f(x, y, z);
                     }
-                    ConvexShape shape = new ConvexShape(edgePointsArray, axesArray, null);
+                    int[] indiciesCollisionShape = new int[egdePointsCount * egdePointsCount * 2];
+                    int counter = 0;
+                    for (int i = 0; i < egdePointsCount; i++)
+                        for (int j = i; j < egdePointsCount; j++) {
+                            indiciesCollisionShape[counter++] = i;
+                            indiciesCollisionShape[counter++] = j;
+                        }
+                    Vao renderAble = new Vao();
+                    renderAble.addDataAttributes(0, 4, array);
+                    renderAble.addDataAttributes(1, 3, new float[array.length]);
+                    renderAble.addIndicies(indiciesCollisionShape);
+                    renderAble.unbind();
+                    ConvexShape shape = new ConvexShape(edgePointsArray, axesArray, renderAble);
                     if (c == 0) {
                         collider.boundingBox = shape;
                         collider.boundingBoxModel = null;
@@ -298,7 +316,7 @@ public class ModelFileHandler {
         MeshInformation combined = combineMeshesToOne(name, nameToWobbleMap);
         Collider collider = null;
         if (colliderFileName != null)
-            collider = AssimpWrapper.loadCollider(colliderFileName, false);
+            collider = AssimpWrapper.loadCollider(colliderFileName);
         int headerSize = (4 + 2 * (collider != null ? collider.allTheShapes.size() + 1 : 0)) * Integer.BYTES;
         int meshSize = (combined.vertexPositions.length + combined.colors.length) * Float.BYTES + combined.indicies.length * Integer.BYTES;
         int colliderSize = calculateColliderSize(collider);
@@ -488,7 +506,6 @@ class ModelConfig {
     public static ModelConfig load(String s) {
         int startIndex = s.startsWith("\n")?1:0;
         String[] components = s.split("\n");
-        System.out.println(Arrays.toString(components));
         Map<String, String> wobbleInfo = new HashMap<>();
         for (String i : components[startIndex+2].split("\\|")) {
             if (i.length() > 0) {

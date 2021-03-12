@@ -16,8 +16,7 @@ layout (location = 0) out vec4 FragColor;
 layout (location = 1) out vec4 highLight;
 
 uniform vec3 lightPos;
-
-const vec3 lightColor = vec3(0.7,0.7,0.7);
+uniform vec3 lightColor = vec3(0.7,0.7,0.7);
 const vec3 luminanceDot = vec3(0.2126, 0.7152, 0.0722);
 
 vec3 reconstructNormal(vec2 enc){
@@ -55,7 +54,7 @@ void main() {
     vec3 Diffuse = colorAndGeometryCheck.rgb;
     float isGeometry=colorAndGeometryCheck.w;
     // blinn-phong (in view-space)
-    vec3 ambient = vec3(0.2 * Diffuse * ambienOcclusion);// here we add occlusion factor
+    vec3 ambient = vec3(0.1 * Diffuse * ambienOcclusion);// here we add occlusion factor
     vec3 lighting  = ambient;
     vec3 viewDir  = normalize(-FragPos);// viewpos is (0.0.0) in view-space
     // diffuse
@@ -76,4 +75,5 @@ void main() {
     highLight = vec4(lighting*pow(luminance,2),1);
     //highLight = vec4 (vec3(0.0),1.0);
     FragColor = vec4(lighting, 1);
+    //FragColor.rgb = vec3(ambienOcclusion);
 }

@@ -1,6 +1,7 @@
 package disuguisedPhoenix;
 
 import engine.collision.Collider;
+import engine.collision.CollisionShape;
 import engine.collision.SAT;
 import graphics.world.Model;
 import org.joml.Matrix4f;
@@ -18,7 +19,7 @@ public class Entity {
     public float scale;
     protected Matrix4f modelMatrix;
     private final Model model;
-    private boolean changedPosition = true;
+    public boolean changedPosition = true;
     private Collider transformedCollider;
 
     private final int textureIndex = 0;
@@ -47,7 +48,7 @@ public class Entity {
         return modelMatrix;
     }
 
-    public void update(float dt, List<Entity> possibleCollisions) {
+    public void update(float dt, List<Entity> possibleCollisions, List<CollisionShape> shapes) {
         velocity.add(new Vector3f(acceleration).mul(dt));
         if (velocity.length() > 0) {
             changedPosition = true;
@@ -62,6 +63,13 @@ public class Entity {
                         position.add(mtv);
                     }
                 }
+            }
+            for(CollisionShape cs:shapes){
+                for(CollisionShape ownShape : own.allTheShapes){
+                 Vector3f mtv = SAT.getMTVNarrow(ownShape, velocity, cs, dt);
+                    if (mtv != null) {
+                        position.add(mtv);
+                    }}
             }
         }
         position.add(new Vector3f(velocity).mul(dt));

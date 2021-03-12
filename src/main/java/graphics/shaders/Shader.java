@@ -21,10 +21,10 @@ public class Shader {
     private final int shaderProgram;
     private final Map<String, Integer> uniforms;
 
-    protected Shader(int shader, Map<String,Integer> uniforms) {
-        this.shaderProgram=shader;
+    protected Shader(int shader, Map<String, Integer> uniforms) {
+        this.shaderProgram = shader;
         allShaderProgramms.add(shader);
-        this.uniforms=uniforms;
+        this.uniforms = uniforms;
     }
 
     public static void cleanUpAllShaders() {
@@ -76,8 +76,12 @@ public class Shader {
     }
 
     public void loadVector3fArray(String name, Vector3f[] array) {
-        for(int i=0;i<array.length;i++){
-            this.load3DVector(name+"["+i+"]",array[i]);
+        for (int i = 0; i < array.length; i++) {
+            this.load3DVector(name + "[" + i + "]", array[i]);
         }
+    }
+
+    public void loadIVec2(String name, Vector2i vector) {
+        GL20.glUniform2i(uniforms.get(name), vector.x, vector.y);
     }
 }

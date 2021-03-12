@@ -12,13 +12,14 @@ public class FrameBufferObject {
 
     private static final List<FrameBufferObject> allFbos = new ArrayList<>();
 
-    private final int width;
-    private final int height;
+    private int width;
+    private int height;
 
     private final int fbo;
     private final List<Integer> colorTextures = new ArrayList<>();
     private boolean hasDepthAttachment = false;
     private boolean hasDepthTexture = false;
+    private boolean isMipMappedDepth = false;
     private int depthPointer;
 
     public FrameBufferObject(int width, int height, int attachmentCount) {
@@ -32,11 +33,11 @@ public class FrameBufferObject {
         return this.addTextureAttachment(GL_RGBA8, GL_UNSIGNED_BYTE, GL_RGBA, attachment);
     }
 
-    public FrameBufferObject addUnclampedTexture(int attachment){
-        return this.addTextureAttachment(GL40.GL_RGBA16F, GL_FLOAT, GL_RGBA, attachment);
-    }
+     public FrameBufferObject addUnclampedTexture(int attachment){
+         return this.addTextureAttachment(GL40.GL_RGBA16F, GL_FLOAT, GL_RGBA, attachment);
+     }
 
-    public FrameBufferObject addTextureAttachment(int type, int precision, int format, int attachment) {
+    private FrameBufferObject addTextureAttachment(int type, int precision, int format, int attachment) {
         int newTexture = createTextureAttachment(type, precision, format, GL30.GL_COLOR_ATTACHMENT0 + attachment);
         colorTextures.add(newTexture);
         return this;
@@ -49,10 +50,10 @@ public class FrameBufferObject {
         return this;
     }
 
-    public FrameBufferObject addDepthTextureAttachment() {
+    public FrameBufferObject addDepthTextureAttachment(boolean mipMapped) {
         this.hasDepthAttachment = true;
         this.hasDepthTexture = true;
-        this.depthPointer = createDepthTextureAttachment();
+        this.depthPointer = createDepthTextureAttachment(mipMapped);
         return this;
     }
 
@@ -83,7 +84,7 @@ public class FrameBufferObject {
         if (hasDepthAttachment && hasDepthTexture) {
             return depthPointer;
         } else {
-            System.err.println("YOU DONT HAVE A DEPTH TEXTURE OR DEPTH BUFFER ATTACHET TO THAT FBO");
+            System.err.println("YOU DONT HAVE A DEPTH TEXTURE OR DEPTH BUFFER ATTACHMENT TO THAT FBO");
             return 0;
         }
     }
@@ -158,12 +159,19 @@ public class FrameBufferObject {
         return depthBuffer;
     }
 
-    private int createDepthTextureAttachment() {
+    private int createDepthTextureAttachment(boolean mipmapped) {
         int texture = GL11.glGenTextures();
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture);
-        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL30.GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, (ByteBuffer) null);
+        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL30.GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, (ByteBuffer) null);
+        if (mipmapped) {
+            isMipMappedDepth = true;
+            GL30.glGenerateMipmap(GL13.GL_TEXTURE_2D);
+        }
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
         GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, texture, 0);
         return texture;
     }
@@ -181,4 +189,24 @@ public class FrameBufferObject {
     }
 
 
+    public void resize(int width, int height) {
+        this.width = width;
+        this.height = height;
+        for (int texture : colorTextures) {
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture);
+            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (ByteBuffer) null);
+        }
+        if (hasDepthTexture) {
+            if (isMipMappedDepth) {
+                GL11.glDeleteTextures(depthPointer);
+                depthPointer = createDepthTextureAttachment(isMipMappedDepth);
+            } else {
+                GL11.glBindTexture(GL11.GL_TEXTURE_2D, getDepthTexture());
+                GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL30.GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, (ByteBuffer) null);
+            }
+        }
+        if (hasDepthAttachment && !hasDepthTexture) {
+            System.err.println("renderbuffer resizing not supported");
+        }
+    }
 }
