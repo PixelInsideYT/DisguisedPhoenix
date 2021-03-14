@@ -1,16 +1,13 @@
-package disuguisedPhoenix;
+package disuguisedphoenix;
 
-import disuguisedPhoenix.adder.EntityAdder;
-import disuguisedPhoenix.terrain.Island;
-import disuguisedPhoenix.terrain.PopulatedIsland;
-import disuguisedPhoenix.terrain.World;
-import engine.collision.Collider;
+import disuguisedphoenix.adder.EntityAdder;
+import disuguisedphoenix.terrain.Island;
+import disuguisedphoenix.terrain.PopulatedIsland;
+import disuguisedphoenix.terrain.World;
 import engine.collision.CollisionShape;
-import engine.collision.ConvexShape;
 import engine.input.InputManager;
 import engine.input.KeyboardInputMap;
 import engine.input.MouseInputMap;
-import engine.util.Maths;
 import engine.util.ModelFileHandler;
 import engine.util.Zeitgeist;
 import graphics.camera.Camera;
@@ -21,27 +18,29 @@ import graphics.loader.TextureLoader;
 import graphics.objects.FrameBufferObject;
 import graphics.objects.OpenGLState;
 import graphics.objects.TimerQuery;
-import graphics.particles.PointSeekingEmitter;
-import graphics.postProcessing.*;
-import graphics.shaders.Shader;
 import graphics.objects.Vao;
 import graphics.particles.ParticleManager;
+import graphics.particles.PointSeekingEmitter;
+import graphics.postprocessing.*;
 import graphics.renderer.MultiIndirectRenderer;
 import graphics.renderer.TestRenderer;
+import graphics.shaders.Shader;
 import graphics.shaders.ShaderFactory;
 import graphics.world.Model;
 import graphics.world.RenderInfo;
 import org.joml.*;
-import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.*;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL45;
+import org.lwjgl.opengl.GLUtil;
 
-import java.awt.*;
 import java.lang.Math;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
+
+import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL20.*;
 
 public class Main {
 
@@ -91,7 +90,7 @@ public class Main {
         ShaderFactory shaderFactory = new ShaderFactory("testVSMultiDraw.glsl", "testFS.glsl").withAttributes("posAndWobble", "colorAndShininess");
         shaderFactory.withUniforms("projMatrix", "noiseMap", "time", "viewMatrix", "transformationMatrixUniform", "useInputTransformationMatrix");
         Shader shader = shaderFactory.configureSampler("noiseMap", 0).built();
-        int noiseTexture = TextureLoader.loadTexture("misc/noiseMap.png", GL30.GL_REPEAT, GL30.GL_LINEAR);
+        int noiseTexture = TextureLoader.loadTexture("misc/noiseMap.png", GL_REPEAT, GL_LINEAR);
         TestRenderer renderer = new TestRenderer(shader);
         Matrix4f projMatrix = new Matrix4f();
         int width = display.getWidth();
@@ -99,15 +98,15 @@ public class Main {
         float aspectRatio=width/(float)height;
         projMatrix.perspective((float) Math.toRadians(70),aspectRatio, 1f, 100000);
         InputManager input = new InputManager(display.getWindowId());
-        KeyboardInputMap kim = new KeyboardInputMap().addMapping("forward", GLFW.GLFW_KEY_W).addMapping("backward", GLFW.GLFW_KEY_S).addMapping("turnLeft", GLFW.GLFW_KEY_A).addMapping("turnRight", GLFW.GLFW_KEY_D).addMapping("accel", GLFW.GLFW_KEY_SPACE);
-        KeyboardInputMap freeFlightCam = new KeyboardInputMap().addMapping("forward", GLFW.GLFW_KEY_W).addMapping("backward", GLFW.GLFW_KEY_S).addMapping("goLeft", GLFW.GLFW_KEY_A).addMapping("goRight", GLFW.GLFW_KEY_D).addMapping("up", GLFW.GLFW_KEY_SPACE).addMapping("down", GLFW.GLFW_KEY_LEFT_SHIFT).addMapping("fastFlight", GLFW.GLFW_KEY_LEFT_CONTROL);
+        KeyboardInputMap kim = new KeyboardInputMap().addMapping("forward", GLFW_KEY_W).addMapping("backward", GLFW_KEY_S).addMapping("turnLeft", GLFW_KEY_A).addMapping("turnRight", GLFW_KEY_D).addMapping("accel", GLFW_KEY_SPACE);
+        KeyboardInputMap freeFlightCam = new KeyboardInputMap().addMapping("forward", GLFW_KEY_W).addMapping("backward", GLFW_KEY_S).addMapping("goLeft", GLFW_KEY_A).addMapping("goRight", GLFW_KEY_D).addMapping("up", GLFW_KEY_SPACE).addMapping("down", GLFW_KEY_LEFT_SHIFT).addMapping("fastFlight", GLFW_KEY_LEFT_CONTROL);
         input.addInputMapping(kim);
         input.addInputMapping(freeFlightCam);
         input.addInputMapping(mim);
         FreeFlightCamera flightCamera = new FreeFlightCamera(mim, freeFlightCam);
         player.movement = kim;
         OpenGLState.enableDepthTest();
-        OpenGLState.setAlphaBlending(GL20.GL_ONE_MINUS_SRC_ALPHA);
+        OpenGLState.setAlphaBlending(GL_ONE_MINUS_SRC_ALPHA);
         System.err.println("STARTUP TIME: " + (System.currentTimeMillis() - startUpTime) / 1000f);
         //  display.activateWireframe();
         Zeitgeist zeitgeist = new Zeitgeist();
@@ -117,8 +116,8 @@ public class Main {
         long lastSwitchWireframe = System.currentTimeMillis();
         long lastSwitchCollision = System.currentTimeMillis();
         long lastSwitchCam = System.currentTimeMillis();
-        GL30.glActiveTexture(GL30.GL_TEXTURE0);
-        GL30.glBindTexture(GL30.GL_TEXTURE_2D, noiseTexture);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, noiseTexture);
         float time = 1f;
         DecimalFormat df = new DecimalFormat("###,###,###");
         FrameBufferObject fbo = new FrameBufferObject(width, height, 2)
@@ -150,7 +149,7 @@ public class Main {
         TimerQuery lightTimer=new TimerQuery("Lighting Pass");
         Matrix4f cullingMatrix=new Matrix4f();
         FrustumIntersection cullingHelper=new FrustumIntersection();
-        while (!display.shouldClose()&&!input.isKeyDown(GLFW.GLFW_KEY_ESCAPE)) {
+        while (!display.shouldClose()&&!input.isKeyDown(GLFW_KEY_ESCAPE)) {
             float dt = zeitgeist.getDelta();
             lightAngle+=lightSpeed*dt;
             lightPos.x=(float)Math.cos(lightAngle)*lightRadius;
@@ -158,21 +157,21 @@ public class Main {
             long startFrame = System.nanoTime();
             time += dt;
             display.pollEvents();
-            if (input.isKeyDown(GLFW.GLFW_KEY_O) && System.currentTimeMillis() - lastSwitchWireframe > 100) {
+            if (input.isKeyDown(GLFW_KEY_O) && System.currentTimeMillis() - lastSwitchWireframe > 100) {
                 wireframe = !wireframe;
                 lastSwitchWireframe = System.currentTimeMillis();
                 //world.addNextEntities(player.position);
                 //world.addAllEntities();
             }
-            if (input.isKeyDown(GLFW.GLFW_KEY_P)) {
+            if (input.isKeyDown(GLFW_KEY_P)) {
                 PointSeekingEmitter entitySeeker = new PointSeekingEmitter(player.position, new Vector3f(player.position).add(new Vector3f(player.forward).mul(700)), 15, 700f, 30, world);
                 pm.addParticleEmitter(entitySeeker);
             }
-            if (input.isKeyDown(GLFW.GLFW_KEY_L) && System.currentTimeMillis() - lastSwitchCollision > 100) {
+            if (input.isKeyDown(GLFW_KEY_L) && System.currentTimeMillis() - lastSwitchCollision > 100) {
                 collisionBoxes = !collisionBoxes;
                 lastSwitchCollision = System.currentTimeMillis();
             }
-            if (input.isKeyDown(GLFW.GLFW_KEY_C) && System.currentTimeMillis() - lastSwitchCam > 100) {
+            if (input.isKeyDown(GLFW_KEY_C) && System.currentTimeMillis() - lastSwitchCam > 100) {
                 freeFlightCamActivated = !freeFlightCamActivated;
                 if (freeFlightCamActivated) input.hideMouseCursor();
                 else input.showMouseCursor();
@@ -188,7 +187,7 @@ public class Main {
             if (!freeFlightCamActivated) {
                 //player.move(world.getPossibleTerrainCollisions(player), dt, world.getPossibleCollisions(player));
                 player.move(world.getPossibleTerrainCollisions(player), dt, worldsEntity, worldTris);
-                flightCamera.position.set(player.cam.position);
+                flightCamera.getPosition().set(player.cam.getPosition());
             } else {
                 ffc = flightCamera;
             }
@@ -201,20 +200,20 @@ public class Main {
             OpenGLState.enableDepthTest();
             OpenGLState.disableAlphaBlending();
             fbo.bind();
-            GL30.glClearColor(0f,0f, 0f, 0.0f);
+            glClearColor(0f,0f, 0f, 0.0f);
             fbo.clear();
-            GL30.glActiveTexture(GL30.GL_TEXTURE0);
-            GL30.glBindTexture(GL30.GL_TEXTURE_2D, noiseTexture);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, noiseTexture);
             world.renderAdder(projMatrix, viewMatrix);
             renderer.begin(viewMatrix, projMatrix);
             shader.loadInt("useInputTransformationMatrix", 0);
             shader.loadFloat("time", time);
             renderer.render(model, new Matrix4f());
             renderer.render(player.getModel(), player.getTransformationMatrix());
-            world.render(renderer, projMatrix, viewMatrix, ffc.position);
+            world.render(renderer, projMatrix, viewMatrix, ffc.getPosition());
             shader.loadInt("useInputTransformationMatrix", 1);
             cullingHelper.set(cullingMatrix.set(projMatrix).mul(viewMatrix));
-            multiRenderer.render(world.getVisibleEntities(projMatrix, viewMatrix, ffc.position));
+            multiRenderer.render(world.getVisibleEntities(projMatrix, viewMatrix, ffc.getPosition()));
            multiRenderer.render(worldsEntity);
             fbo.unbind();
             vertexTimer.waitOnQuery();
@@ -230,15 +229,15 @@ public class Main {
             ssao.renderEffect(fbo,projMatrix);
             lightTimer.startQuery();
             deferredResult.bind();
-            GL30.glActiveTexture(GL30.GL_TEXTURE0);
-            GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getDepthTexture());
-            GL30.glActiveTexture(GL30.GL_TEXTURE1);
-            GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getTextureID(0));
-            GL30.glActiveTexture(GL30.GL_TEXTURE2);
-            GL30.glBindTexture(GL30.GL_TEXTURE_2D, fbo.getTextureID(1));
-            GL30.glActiveTexture(GL30.GL_TEXTURE3);
-            GL30.glBindTexture(GL30.GL_TEXTURE_2D, ssao.getSSAOTexture());
-            lightColor=postProcessPipeline.calculateLightColor(lightPos,ffc.position);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, fbo.getDepthTexture());
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, fbo.getTextureID(0));
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, fbo.getTextureID(1));
+            glActiveTexture(GL_TEXTURE3);
+            glBindTexture(GL_TEXTURE_2D, ssao.getSSAOTexture());
+            lightColor=postProcessPipeline.calculateLightColor(lightPos,ffc.getPosition());
             quadRenderer.renderDeferredLightingPass(ffc.getViewMatrix(), projMatrix, lightPos, lightColor,ssao.isEnabled());
             OpenGLState.enableDepthTest();
             OpenGLState.enableAlphaBlending();

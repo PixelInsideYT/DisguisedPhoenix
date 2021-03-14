@@ -6,8 +6,8 @@ import org.joml.Vector4f;
 
 public class Camera {
 
-    public Vector3f position;
-    public Vector3f rotation;
+    protected Vector3f position;
+    protected Vector3f rotation;
     Matrix4f viewMatrix;
 
     public Camera() {
@@ -16,8 +16,6 @@ public class Camera {
         rotation = new Vector3f();
     }
 
-    public void update(float dt) {
-    }
 
     public void lookAt(Vector3f target) {
         Vector3f forward = new Vector3f(position).sub(target).normalize();
@@ -33,4 +31,22 @@ public class Camera {
         return viewMatrix;
     }
 
+    public void update(float dt) {
+    }
+
+    public Vector3f getPosition() {
+        return position;
+    }
+
+    public void setPosition(Vector3f position) {
+        this.position = position;
+    }
+
+    public Vector3f getRotation() {
+        return rotation;
+    }
+
+    public void setRotation(Vector3f rotation) {
+        this.rotation = rotation;
+    }
 }

@@ -1,33 +1,34 @@
-package disuguisedPhoenix.adder;
+package disuguisedphoenix.adder;
 
-import disuguisedPhoenix.Entity;
-import disuguisedPhoenix.Main;
-import disuguisedPhoenix.terrain.Island;
-import disuguisedPhoenix.terrain.PopulatedIsland;
-import disuguisedPhoenix.terrain.World;
+import disuguisedphoenix.Entity;
+import disuguisedphoenix.terrain.Island;
+import disuguisedphoenix.terrain.PopulatedIsland;
+import disuguisedphoenix.terrain.World;
 import engine.util.Maths;
 import engine.util.ModelFileHandler;
-import graphics.shaders.Shader;
 import graphics.particles.ParticleManager;
+import graphics.shaders.Shader;
 import graphics.shaders.ShaderFactory;
 import graphics.world.Model;
 import org.joml.FrustumIntersection;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL40;
 
 import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static disuguisedphoenix.Main.*;
+import static org.lwjgl.opengl.GL40.glDrawElementsBaseVertex;
+
 public class EntityAdder {
 
     private final Shader creationShader;
 
-    private final float particlesPerSecondPerAreaUnit = 0.0005f;
-    private final float builtSpeed = 0.1f;
+    private static final float PARTICLES_PER_SECOND_PER_AREA_UNIT = 0.0005f;
+    private static final float BUILT_SPEED = 0.1f;
 
     private int activated = 0;
 
@@ -36,6 +37,7 @@ public class EntityAdder {
     private final ParticleManager pm;
     private List<GrowState> toAddEntities = new ArrayList<>();
     private String[] exclude = new String[]{"birb", "lightPentagon", "cube"};
+    Random rnd;
 
     public EntityAdder(ParticleManager pm) {
         ShaderFactory creationFactory = new ShaderFactory("creationVS.glsl", "creationFS.glsl");
@@ -44,6 +46,7 @@ public class EntityAdder {
         creationShader = creationFactory.withAttributes("pos", "color").built();
         this.pm = pm;
         modelNames.addAll(Arrays.asList("misc/tutorialCrystal.modelFile","misc/rock.modelFile","misc/fox.modelFile","lowPolyTree/tree2.modelFile","lowPolyTree/bendyTree.modelFile","lowPolyTree/vc.modelFile","lowPolyTree/ballTree.modelFile","lowPolyTree/bendyTreeCollider.modelFile","plants/glockenblume.modelFile","plants/flowerTest1.modelFile","plants/mushroom.modelFile","plants/grass.modelFile"));
+        rnd = new Random();
     }
 
     public void fillModelNameList(File startDir) {
@@ -70,7 +73,7 @@ public class EntityAdder {
         Iterator<GrowState> itr = toAddEntities.iterator();
         while (itr.hasNext()) {
             GrowState gs = itr.next();
-            gs.update(dt, builtSpeed, particlesPerSecondPerAreaUnit, pm);
+            gs.update(dt, BUILT_SPEED, PARTICLES_PER_SECOND_PER_AREA_UNIT, pm);
             if (gs.isFullyGrown()) {
                 gs.addToIsland();
                 itr.remove();
@@ -79,14 +82,14 @@ public class EntityAdder {
     }
 
     public void render(Matrix4f camMatrix, Matrix4f projMatrix, FrustumIntersection fi) {
-        if (toAddEntities.size() > 0) {
+        if (!toAddEntities.isEmpty()) {
             creationShader.bind();
             creationShader.loadMatrix("projMatrix", projMatrix);
             creationShader.loadMatrix("viewMatrix", camMatrix);
             Map<Model, List<GrowState>> renderMap = new HashMap<>();
             toAddEntities.forEach(e -> addGrowStateToRenderMap(e, renderMap, fi));
-            for (Model m : renderMap.keySet()) {
-                render(m, renderMap.get(m));
+            for (Map.Entry<Model,List<GrowState>> m : renderMap.entrySet()) {
+                render(m.getKey(), m.getValue());
             }
             creationShader.unbind();
         }
@@ -99,11 +102,11 @@ public class EntityAdder {
         for (GrowState e : toRenderEntities) {
             creationShader.loadMatrix("transformationMatrix", e.growingEntity.getTransformationMatrix());
             creationShader.loadFloat("builtProgress", e.buildProgress);
-            GL40.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, model.renderInfo.indexOffset * 4, model.renderInfo.vertexOffset);
-            Main.inViewObjects++;
-            Main.inViewVerticies += indiciesLength;
-            Main.drawCalls++;
-            Main.facesDrawn += indiciesLength / 3;
+            glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, model.renderInfo.indexOffset * 4L, model.renderInfo.vertexOffset);
+            inViewObjects++;
+            inViewVerticies += indiciesLength;
+            drawCalls++;
+            facesDrawn += indiciesLength / 3;
         }
         model.renderInfo.actualVao.unbind();
     }
@@ -122,7 +125,7 @@ public class EntityAdder {
 
     private List<Entity> generateEntitiesFor(Island terrain) {
         //float terrainAreaEstimate = terrain.getSize() * terrain.getSize();
-        float terrainAreaEstimate = 4 * (float) Math.PI * Main.scale * Main.scale;
+        float terrainAreaEstimate = 4 * (float) Math.PI * scale * scale;
         if (activated < modelNames.size()) {
             Model model = ModelFileHandler.getModel(modelNames.get(activated));
             float modelAreaEstimate = (float) Math.PI * model.radiusXZ * model.radiusXZ;
@@ -134,12 +137,12 @@ public class EntityAdder {
     }
 
     private Entity generateEntiy(Island terrain, Model modelFile, float rotRandomX, float rotRandomY, float rotRandomZ, float scale) {
-        Random rnd = new Random();
+
         float x = rnd.nextFloat() * terrain.getSize() + terrain.position.x;
         float z = rnd.nextFloat() * terrain.getSize() + terrain.position.z;
         float h = terrain.getHeightOfTerrain(x, terrain.position.y, z);
         float scaleDiffrence = (rnd.nextFloat() * 2f - 1) * 0.5f + 1.0f;
-        return new Entity(modelFile, new Vector3f(x, h, z), rnd.nextFloat() * rotRandomX, rnd.nextFloat() * rotRandomY, rnd.nextFloat() * rotRandomZ, scale);
+        return new Entity(modelFile, new Vector3f(x, h, z), rnd.nextFloat() * rotRandomX, rnd.nextFloat() * rotRandomY, rnd.nextFloat() * rotRandomZ, scale*scaleDiffrence);
     }
 
     public List<Entity> getAllEntities(PopulatedIsland flyingIslands) {

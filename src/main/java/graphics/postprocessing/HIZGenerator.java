@@ -1,14 +1,14 @@
-package graphics.postProcessing;
+package graphics.postprocessing;
 
 import graphics.objects.FrameBufferObject;
 import graphics.objects.OpenGLState;
 import graphics.shaders.Shader;
 import graphics.shaders.ShaderFactory;
 import org.joml.Vector2i;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL43;
+
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL13.*;
+import static org.lwjgl.opengl.GL43.*;
 
 public class HIZGenerator {
 
@@ -29,9 +29,9 @@ public class HIZGenerator {
         int currentHeight = fbo.getBufferHeight();
         OpenGLState.enableDepthTest();
         int depthTexture=fbo.getDepthTexture();
-        GL13.glDepthFunc(GL13.GL_ALWAYS);
-        GL30.glActiveTexture(GL13.GL_TEXTURE0);
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, depthTexture);
+        glDepthFunc(GL_ALWAYS);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, depthTexture);
         hizShader.bind();
         for (int i = 1; i < numLevels; i++) {
             Vector2i lastMipSize = new Vector2i(currentWidth, currentHeight);
@@ -41,19 +41,19 @@ public class HIZGenerator {
             // ensure that the viewport size is always at least 1x1
             currentWidth = currentWidth > 0 ? currentWidth : 1;
             currentHeight = currentHeight > 0 ? currentHeight : 1;
-            GL13.glViewport(0, 0, currentWidth, currentHeight);
+            glViewport(0, 0, currentWidth, currentHeight);
             // bind next level for rendering but first restrict fetches only to previous level
-            GL13.glTexParameteri(GL11.GL_TEXTURE_2D, GL13.GL_TEXTURE_BASE_LEVEL, i - 1);
-            GL13.glTexParameteri(GL13.GL_TEXTURE_2D, GL13.GL_TEXTURE_MAX_LEVEL, i - 1);
-            GL43.glFramebufferTexture2D(GL43.GL_FRAMEBUFFER, GL43.GL_DEPTH_ATTACHMENT, GL43.GL_TEXTURE_2D, depthTexture, i);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, i - 1);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, i - 1);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, i);
             hizShader.loadIVec2("LastMipSize", lastMipSize);
             renderer.renderOnlyQuad();
         }
 // reset mipmap level range for the depth image
-        GL43.glTexParameteri(GL43.GL_TEXTURE_2D, GL43.GL_TEXTURE_BASE_LEVEL, 0);
-        GL43.glTexParameteri(GL43.GL_TEXTURE_2D, GL43.GL_TEXTURE_MAX_LEVEL, numLevels - 1);
-        GL43.glFramebufferTexture2D(GL43.GL_FRAMEBUFFER, GL43.GL_DEPTH_ATTACHMENT, GL43.GL_TEXTURE_2D, depthTexture, 0);
-        GL13.glDepthFunc(GL13.GL_LEQUAL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, numLevels - 1);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTexture, 0);
+        glDepthFunc(GL_LEQUAL);
         hizShader.unbind();
     }
 

@@ -19,7 +19,7 @@ public class ConvexShape extends CollisionShape {
         this.model = model;
         transformation = new Matrix4f();
     }
-
+@Override
     public ConvexShape clone() {
         Vector3f[] clonedCornerPoints = new Vector3f[this.cornerPoints.length];
         Vector3f[] clonedAxes = new Vector3f[this.axes.length];

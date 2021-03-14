@@ -1,9 +1,9 @@
 package graphics.objects;
 
-import org.lwjgl.opengl.GL45;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.lwjgl.opengl.GL45.*;
 
 public class LockManger {
 
@@ -22,7 +22,7 @@ public class LockManger {
     }
 
     public void addFence(int beginIndex, int endIndex) {
-        long syncObj = GL45.glFenceSync(GL45.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+        long syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
         LockObject bufferLock = new LockObject(syncObj, beginIndex, endIndex);
         activeFences.add(bufferLock);
     }
@@ -32,9 +32,9 @@ public class LockManger {
 
 class LockObject {
     private boolean fenceReturned;
-    public long syncObj;
-    public int startIndex;
-    public int endIndex;
+    private long syncObj;
+    private int startIndex;
+    private int endIndex;
 
     public LockObject(long syncObj, int startIndex, int endIndex) {
         this.syncObj = syncObj;
@@ -55,7 +55,7 @@ class LockObject {
     }
 
     public void delete() {
-        GL45.glDeleteSync(syncObj);
+        glDeleteSync(syncObj);
     }
 
     public boolean isDone() {
@@ -65,8 +65,8 @@ class LockObject {
 
 
     private boolean checkFence() {
-        int answer = GL45.glClientWaitSync(syncObj, GL45.GL_SYNC_FLUSH_COMMANDS_BIT, 1);
-        fenceReturned = answer == GL45.GL_ALREADY_SIGNALED || answer == GL45.GL_CONDITION_SATISFIED;
+        int answer = glClientWaitSync(syncObj, GL_SYNC_FLUSH_COMMANDS_BIT, 1);
+        fenceReturned = answer == GL_ALREADY_SIGNALED || answer == GL_CONDITION_SATISFIED;
         return fenceReturned;
     }
 

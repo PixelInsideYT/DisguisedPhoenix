@@ -1,12 +1,15 @@
 package graphics.objects;
 
-import org.lwjgl.opengl.*;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL32;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL30.*;
 
 public class FrameBufferObject {
 
@@ -34,11 +37,11 @@ public class FrameBufferObject {
     }
 
      public FrameBufferObject addUnclampedTexture(int attachment){
-         return this.addTextureAttachment(GL40.GL_RGBA16F, GL_FLOAT, GL_RGBA, attachment);
+         return this.addTextureAttachment(GL_RGBA16F, GL_FLOAT, GL_RGBA, attachment);
      }
 
     private FrameBufferObject addTextureAttachment(int type, int precision, int format, int attachment) {
-        int newTexture = createTextureAttachment(type, precision, format, GL30.GL_COLOR_ATTACHMENT0 + attachment);
+        int newTexture = createTextureAttachment(type, precision, format, GL_COLOR_ATTACHMENT0 + attachment);
         colorTextures.add(newTexture);
         return this;
     }
@@ -70,9 +73,9 @@ public class FrameBufferObject {
     }
 
     public void blit(int bit, int output, int outWidth, int outHeight) {
-        GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, output);
-        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, this.fbo);
-        GL30.glBlitFramebuffer(0, 0, width, height, 0, 0, outWidth, outHeight, bit, GL11.GL_NEAREST);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, output);
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, this.fbo);
+        glBlitFramebuffer(0, 0, width, height, 0, 0, outWidth, outHeight, bit, GL_NEAREST);
         this.unbind();
     }
 
@@ -90,14 +93,14 @@ public class FrameBufferObject {
     }
 
     public void cleanUp() {// call when closing the game
-        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
-        GL30.glDeleteFramebuffers(fbo);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glDeleteFramebuffers(fbo);
         colorTextures.forEach(GL11::glDeleteTextures);
         if (hasDepthAttachment) {
             if (hasDepthTexture) {
-                GL11.glDeleteTextures(depthPointer);
+                glDeleteTextures(depthPointer);
             } else {
-                GL30.glDeleteRenderbuffers(depthPointer);
+                glDeleteRenderbuffers(depthPointer);
             }
         }
     }
@@ -117,62 +120,62 @@ public class FrameBufferObject {
     }
 
     public FrameBufferObject unbind() {// call to switch to default frame buffer
-        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         return this;
     }
 
     private void bindFrameBuffer(int frameBuffer, int width, int height) {
-        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, frameBuffer);
-        GL11.glViewport(0, 0, width, height);
+        glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+        glViewport(0, 0, width, height);
     }
 
     private int createFrameBuffer(int attachmentCount) {
-        int frameBuffer = GL30.glGenFramebuffers();
+        int frameBuffer = glGenFramebuffers();
         // generate name for frame buffer
-        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, frameBuffer);
+        glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
         // create the framebuffer
         int[] attachments = new int[attachmentCount];
         for (int i = 0; i < attachmentCount; i++) {
-            attachments[i] = GL30.GL_COLOR_ATTACHMENT0 + i;
+            attachments[i] = GL_COLOR_ATTACHMENT0 + i;
         }
-        GL40.glDrawBuffers(attachments);
+        glDrawBuffers(attachments);
         return frameBuffer;
     }
 
     private int createTextureAttachment(int type, int precision, int format, int attachment) {
-        int colourTexture = GL11.glGenTextures();
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, colourTexture);
-        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, type, width, height, 0, format, precision, (ByteBuffer) null);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
-        GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, attachment, GL11.GL_TEXTURE_2D, colourTexture, 0);
+        int colourTexture = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, colourTexture);
+        glTexImage2D(GL_TEXTURE_2D, 0, type, width, height, 0, format, precision, (ByteBuffer) null);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, colourTexture, 0);
         return colourTexture;
     }
 
     private int createDepthBufferAttachment() {
-        int depthBuffer = GL30.glGenRenderbuffers();
-        GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, depthBuffer);
-        GL30.glRenderbufferStorage(GL30.GL_RENDERBUFFER, GL11.GL_DEPTH_COMPONENT, width, height);
-        GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, depthBuffer);
+        int depthBuffer = glGenRenderbuffers();
+        glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
         return depthBuffer;
     }
 
     private int createDepthTextureAttachment(boolean mipmapped) {
-        int texture = GL11.glGenTextures();
-        GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture);
-        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL30.GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, (ByteBuffer) null);
+        int texture = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, (ByteBuffer) null);
         if (mipmapped) {
             isMipMappedDepth = true;
-            GL30.glGenerateMipmap(GL13.GL_TEXTURE_2D);
+            glGenerateMipmap(GL_TEXTURE_2D);
         }
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-        GL32.glFramebufferTexture(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, texture, 0);
+        GL32.glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, texture, 0);
         return texture;
     }
 
@@ -193,16 +196,16 @@ public class FrameBufferObject {
         this.width = width;
         this.height = height;
         for (int texture : colorTextures) {
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, texture);
-            GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (ByteBuffer) null);
+            glBindTexture(GL_TEXTURE_2D, texture);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (ByteBuffer) null);
         }
         if (hasDepthTexture) {
             if (isMipMappedDepth) {
-                GL11.glDeleteTextures(depthPointer);
+                glDeleteTextures(depthPointer);
                 depthPointer = createDepthTextureAttachment(isMipMappedDepth);
             } else {
-                GL11.glBindTexture(GL11.GL_TEXTURE_2D, getDepthTexture());
-                GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL30.GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, (ByteBuffer) null);
+                glBindTexture(GL_TEXTURE_2D, getDepthTexture());
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, (ByteBuffer) null);
             }
         }
         if (hasDepthAttachment && !hasDepthTexture) {

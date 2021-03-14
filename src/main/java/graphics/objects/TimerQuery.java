@@ -1,10 +1,11 @@
 package graphics.objects;
 
 import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL45;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.lwjgl.opengl.GL45.*;
 
 public class TimerQuery {
     private List<Float> gpuTimes = new ArrayList<>();
@@ -20,18 +21,18 @@ public class TimerQuery {
     }
 
     public void startQuery() {
-        queryId = GL45.glGenQueries();
-        GL45.glBeginQuery(GL45.GL_TIME_ELAPSED, queryId);
+        queryId = glGenQueries();
+        glBeginQuery(GL_TIME_ELAPSED, queryId);
     }
 
     public void waitOnQuery(float ... floats) {
-        GL45.glEndQuery(GL45.GL_TIME_ELAPSED);
+        glEndQuery(GL_TIME_ELAPSED);
         int[] done = new int[]{0};
         while (done[0] == 0) {
-            GL45.glGetQueryObjectiv(queryId, GL45.GL_QUERY_RESULT_AVAILABLE, done);
+            glGetQueryObjectiv(queryId, GL_QUERY_RESULT_AVAILABLE, done);
         }
         long[] elapsedTime = new long[1];
-        GL45.glGetQueryObjectui64v(queryId, GL15.GL_QUERY_RESULT, elapsedTime);
+        glGetQueryObjectui64v(queryId, GL15.GL_QUERY_RESULT, elapsedTime);
         float msTime = elapsedTime[0] / 1000000.0f;
         if(floats.length>0){
             msTime/=floats[0];

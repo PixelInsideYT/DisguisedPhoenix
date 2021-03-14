@@ -5,8 +5,8 @@ import java.util.Map;
 
 public abstract class InputMap {
 
-    public String deviceName;
-    public int deviceNumber;
+    String deviceName;
+    int deviceNumber;
 
     protected Map<String, Float> actionToValueMap = new HashMap<>();
 

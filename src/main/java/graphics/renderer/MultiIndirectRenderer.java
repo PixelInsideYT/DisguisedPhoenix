@@ -1,10 +1,10 @@
 package graphics.renderer;
 
-import disuguisedPhoenix.Entity;
-import disuguisedPhoenix.Main;
+import disuguisedphoenix.Entity;
+import disuguisedphoenix.Main;
+import graphics.objects.BufferObject;
 import graphics.objects.LockManger;
 import graphics.objects.Vao;
-import graphics.objects.BufferObject;
 import graphics.world.RenderInfo;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
@@ -17,6 +17,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL40.*;
 
 public class MultiIndirectRenderer {
 
@@ -34,10 +37,10 @@ public class MultiIndirectRenderer {
 
 
     public MultiIndirectRenderer() {
-        persistantMatrixVbo = new BufferObject(GL20.GL_ARRAY_BUFFER);
+        persistantMatrixVbo = new BufferObject(GL_ARRAY_BUFFER);
         matrixBuffer = persistantMatrixVbo.createPersistantVbo(maxInstanceCount * bufferCount * floatsPerInstance);
         persistantMatrixVbo.unbind();
-        cmdBuffer = new BufferObject(maxCommandCount * 5, GL40.GL_DRAW_INDIRECT_BUFFER, GL20.GL_STREAM_DRAW);
+        cmdBuffer = new BufferObject(maxCommandCount * 5, GL_DRAW_INDIRECT_BUFFER, GL_STREAM_DRAW);
         cmdBuffer.unbind();
         toRender = new HashMap<>();
         lockManger = new LockManger();

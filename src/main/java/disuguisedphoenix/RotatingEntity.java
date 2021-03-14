@@ -1,4 +1,4 @@
-package disuguisedPhoenix;
+package disuguisedphoenix;
 
 import graphics.world.Model;
 import org.joml.Vector3f;

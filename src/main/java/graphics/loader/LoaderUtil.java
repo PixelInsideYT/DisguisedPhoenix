@@ -9,6 +9,8 @@ import java.nio.channels.ReadableByteChannel;
 
 public class LoaderUtil {
 
+    private LoaderUtil(){}
+
     public static ByteBuffer ioResourceToByteBuffer(String resource, int bufferSize) {
         ByteBuffer buffer = null;
         try (InputStream source = LoaderUtil.class.getClassLoader().getResourceAsStream(resource);
@@ -27,7 +29,7 @@ public class LoaderUtil {
 
         } catch (Exception x) {
             x.printStackTrace();
-
+            return null;
         }
         buffer.flip();
         return buffer;

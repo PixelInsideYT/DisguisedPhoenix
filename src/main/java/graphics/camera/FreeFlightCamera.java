@@ -3,65 +3,57 @@ package graphics.camera;
 import engine.input.InputMap;
 import engine.input.MouseInputMap;
 import org.joml.Matrix4f;
-import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 public class FreeFlightCamera extends Camera {
 
     private final MouseInputMap movement;
     private final InputMap otherMovement;
-    private float ySpeed;
-    private float sideSpeed;
-    private float xzSpeed;
 
 
-    private final float normalSpeed = 500;
-    private final float fastSpeed = 5000;
+    private static final float NORMAL_SPEED = 500;
+    private static final float FAST_SPEED = 5000;
 
     private Vector3f lookDirection = new Vector3f(0, 0, 1);
 
-    private final float turnSpeed = 1.6f / 50f;
-    private final float upSpeed = 0.1f / 5f;
+    private  static final float TURN_SPEED = 1.6f / 50f;
+    private static  final float UP_SPEED = 0.1f / 5f;
 
     public FreeFlightCamera(MouseInputMap mim, InputMap otherMovement) {
         this.movement = mim;
         this.otherMovement = otherMovement;
         position.set(0, 10, 0);
     }
-
+@Override
     public void update(float dt) {
-        float flySpeed = normalSpeed;
+        float flySpeed = NORMAL_SPEED;
         if (otherMovement.getValueForAction("fastFlight") > 0) {
-            flySpeed = fastSpeed;
+            flySpeed = FAST_SPEED;
         }
+        float sideSpeed=0;
         if (otherMovement.getValueForAction("goLeft") > 0) {
-            this.sideSpeed = flySpeed;
+            sideSpeed = flySpeed;
         } else if (otherMovement.getValueForAction("goRight") > 0) {
-            this.sideSpeed = -flySpeed;
-        } else {
-            this.sideSpeed = 0;
+            sideSpeed = -flySpeed;
         }
+        float xzSpeed=0;
         if (otherMovement.getValueForAction("forward") > 0) {
-            this.xzSpeed = flySpeed;
+            xzSpeed = flySpeed;
         } else if (otherMovement.getValueForAction("backward") > 0) {
-            this.xzSpeed = -flySpeed;
-        } else {
-            this.xzSpeed = 0;
+            xzSpeed = -flySpeed;
         }
+        float ySpeed=0;
         if (otherMovement.getValueForAction("up") > 0) {
-            this.ySpeed = flySpeed;
+            ySpeed = flySpeed;
         } else if (otherMovement.getValueForAction("down") > 0) {
-            this.ySpeed = -flySpeed;
-        } else {
-            this.ySpeed = 0;
+            ySpeed = -flySpeed;
         }
         Vector3f up = new Vector3f(position).normalize();
         Vector3f right = up.cross(lookDirection, new Vector3f()).normalize();
         Vector3f forward = right.cross(up, new Vector3f()).normalize();
-        lookDirection.add(new Vector3f(up).mul(movement.getValueForAction(MouseInputMap.MOUSE_DY) * upSpeed*dt));
-        lookDirection.add(new Vector3f(right).mul(movement.getValueForAction(MouseInputMap.MOUSE_DX) * turnSpeed*dt));
+        lookDirection.add(new Vector3f(up).mul(movement.getValueForAction(MouseInputMap.MOUSE_DY) * UP_SPEED *dt));
+        lookDirection.add(new Vector3f(right).mul(movement.getValueForAction(MouseInputMap.MOUSE_DX) * TURN_SPEED *dt));
         lookDirection.normalize();
-        float length = position.length();
         position.add(forward.mul(xzSpeed*dt));
         //account for curvature in view direction
         Vector3f afterForwardTranslation = new Vector3f(position).normalize();

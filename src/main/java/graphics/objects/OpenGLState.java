@@ -4,6 +4,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL12.*;
 
 public class OpenGLState {
 
@@ -11,14 +12,14 @@ public class OpenGLState {
 
     public static void enableAlphaBlending() {
         if (!alphaBlending) {
-            GL11.glEnable(GL12.GL_BLEND);
+            glEnable(GL_BLEND);
             alphaBlending = true;
         }
     }
 
     public static void disableAlphaBlending() {
         if (alphaBlending) {
-            GL11.glDisable(GL12.GL_BLEND);
+            glDisable(GL_BLEND);
             alphaBlending = false;
         }
     }
@@ -32,7 +33,7 @@ public class OpenGLState {
     public static void setAlphaBlending(int mode) {
         enableAlphaBlending();
         if (mode != blendingMode) {
-            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, mode);
+            glBlendFunc(GL_SRC_ALPHA, mode);
             blendingMode = mode;
         }
     }
@@ -41,14 +42,14 @@ public class OpenGLState {
 
     public static void enableDepthTest() {
         if (!depthTest) {
-            GL11.glEnable(GL11.GL_DEPTH_TEST);
+            glEnable(GL_DEPTH_TEST);
             depthTest = true;
         }
     }
 
     public static void disableDepthTest() {
         if (depthTest) {
-            GL11.glDisable(GL11.GL_DEPTH_TEST);
+            glDisable(GL_DEPTH_TEST);
             depthTest = false;
         }
     }
@@ -57,15 +58,15 @@ public class OpenGLState {
 
     public static void enableBackFaceCulling() {
         if (!backFaceCulling) {
-            GL11.glEnable(GL11.GL_CULL_FACE);
-            GL11.glCullFace(GL12.GL_BACK);
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
             backFaceCulling = true;
         }
     }
 
     public static void disableBackFaceCulling() {
         if (backFaceCulling) {
-            GL11.glDisable(GL11.GL_CULL_FACE);
+            glDisable(GL_CULL_FACE);
            backFaceCulling = false;
         }
     }

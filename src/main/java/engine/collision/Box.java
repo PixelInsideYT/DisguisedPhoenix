@@ -5,18 +5,18 @@ import org.joml.Vector3f;
 public class Box extends CollisionShape {
 
     public Box() {
-        super(getCornerPoints(), getAxes());
+        super(getBoxCorners(), getAxes());
     }
 
     public Box(Vector3f min, Vector3f max) {
-        super(getCornerPoints(min, max), getAxes());
+        super(getBoxCorners(min, max), getAxes());
     }
 
     private static Vector3f[] getAxes() {
         return new Vector3f[]{new Vector3f(1, 0, 0), new Vector3f(0, 1, 0), new Vector3f(0, 0, 1)};
     }
 
-    private static Vector3f[] getCornerPoints() {
+    private static Vector3f[] getBoxCorners() {
         Vector3f[] cornerPoints = new Vector3f[8];
         int count = 0;
         for (int x = 0; x <= 1; x++) {
@@ -29,7 +29,7 @@ public class Box extends CollisionShape {
         return cornerPoints;
     }
 
-    private static Vector3f[] getCornerPoints(Vector3f min, Vector3f max) {
+    private static Vector3f[] getBoxCorners(Vector3f min, Vector3f max) {
         Vector3f[] cornerPoints = new Vector3f[8];
         int count = 0;
         for (int x = 0; x <= 1; x++) {

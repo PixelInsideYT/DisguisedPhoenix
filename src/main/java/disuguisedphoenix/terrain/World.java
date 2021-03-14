@@ -1,8 +1,7 @@
-package disuguisedPhoenix.terrain;
+package disuguisedphoenix.terrain;
 
-import disuguisedPhoenix.Entity;
-import disuguisedPhoenix.Player;
-import disuguisedPhoenix.adder.EntityAdder;
+import disuguisedphoenix.Entity;
+import disuguisedphoenix.adder.EntityAdder;
 import graphics.particles.ParticleManager;
 import graphics.renderer.TestRenderer;
 import org.joml.FrustumIntersection;
@@ -75,7 +74,7 @@ public class World {
     }
 
     public List<Island> getPossibleTerrainCollisions(Entity e) {
-        return getPossibleTerrainCollisions(e.position);
+        return getPossibleTerrainCollisions(e.getPosition());
     }
 
     public List<Island> getPossibleTerrainCollisions(Vector3f pos){

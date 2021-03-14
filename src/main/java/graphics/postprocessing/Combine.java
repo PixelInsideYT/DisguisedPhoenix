@@ -1,9 +1,10 @@
-package graphics.postProcessing;
+package graphics.postprocessing;
 
 import graphics.objects.FrameBufferObject;
 import graphics.shaders.Shader;
 import graphics.shaders.ShaderFactory;
-import org.lwjgl.opengl.GL13;
+
+import static org.lwjgl.opengl.GL13.*;
 
 public class Combine {
 
@@ -26,10 +27,10 @@ public class Combine {
 
     public void render(int lightingTexture, int bloomTexture){
         combinedResult.bind();
-        GL13.glActiveTexture(GL13.GL_TEXTURE0);
-        GL13.glBindTexture(GL13.GL_TEXTURE_2D,lightingTexture);
-        GL13.glActiveTexture(GL13.GL_TEXTURE1);
-        GL13.glBindTexture(GL13.GL_TEXTURE_2D,bloomTexture);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D,lightingTexture);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D,bloomTexture);
        // GL13.glActiveTexture(GL13.GL_TEXTURE2);
        // GL13.glBindTexture(GL13.GL_TEXTURE_2D,godRaysTexture);
         shader.bind();

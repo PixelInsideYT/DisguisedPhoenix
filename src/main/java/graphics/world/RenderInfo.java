@@ -21,7 +21,7 @@ public class RenderInfo {
 
     public RenderInfo(Vao actualVao) {
         this.actualVao = actualVao;
-        this.indiciesCount=actualVao.getIndiciesLength();
+        this.indiciesCount=actualVao.getIndicesLength();
         isMultiDrawCapabel =false;
     }
 }

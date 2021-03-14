@@ -1,12 +1,4 @@
-package graphics.postProcessing;
-
-import graphics.objects.FrameBufferObject;
-import graphics.objects.OpenGLState;
-import graphics.shaders.Shader;
-import org.joml.Matrix4f;
-import org.joml.Vector2f;
-import org.joml.Vector4f;
-import org.lwjgl.opengl.GL13;
+package graphics.postprocessing;
 
 public class BokehDepthOfField {
 /*

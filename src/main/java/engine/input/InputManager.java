@@ -13,7 +13,7 @@ import java.util.List;
 
 public class InputManager {
 
-    private final int KEYBOARD_SIZE = 512;
+    private static final int KEYBOARD_SIZE = 512;
     protected GLFWJoystickCallback joystickListner = new GLFWJoystickCallback() {
 
         @Override
@@ -22,7 +22,6 @@ public class InputManager {
                     + (event == GLFW.GLFW_CONNECTED ? "connected" : "disconnected"));
         }
     };
-    private long lastPoll;
     private final long window;
     private final int[] keyStates = new int[KEYBOARD_SIZE];
     private final boolean[] activeKeys = new boolean[KEYBOARD_SIZE];
@@ -38,7 +37,10 @@ public class InputManager {
             keyCallbacks.forEach(c -> c.invoke(window, key, scancode, action, mods));
         }
     };
-    private float currentMouseX, currentMouseY, lastMouseX, lastMouseY;
+    private float currentMouseX;
+    private float currentMouseY;
+    private float lastMouseX;
+    private float lastMouseY;
     protected GLFWCursorPosCallback mousePosListener = new GLFWCursorPosCallback() {
         @Override
         public void invoke(long window, double xpos, double ypos) {
@@ -46,7 +48,9 @@ public class InputManager {
             currentMouseY = (float) ypos;
         }
     };
-    private int left_mouse, middle_mouse, right_mouse;
+    private int leftMouse;
+    private int middleMouse;
+        private int rightMouse;
 
     public InputManager(long window) {
         this.window = window;
@@ -79,9 +83,9 @@ public class InputManager {
     }
 
     public void updateInputMaps() {
-        left_mouse = GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_LEFT);
-        middle_mouse = GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
-        right_mouse = GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_RIGHT);
+        leftMouse = GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_LEFT);
+        middleMouse = GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_MIDDLE);
+        rightMouse = GLFW.glfwGetMouseButton(window, GLFW.GLFW_MOUSE_BUTTON_RIGHT);
         for (InputMap im : deviceInputs) {
             if (im instanceof JoystickInputMap) {
                 updateJoystick((JoystickInputMap) im);
@@ -102,9 +106,9 @@ public class InputManager {
         im.setValue(MouseInputMap.MOUSE_DY, dy);
         im.setValue(MouseInputMap.CURRENT_MOUSE_POS_X, currentMouseX);
         im.setValue(MouseInputMap.CURRENT_MOUSE_POS_Y, currentMouseY);
-        im.setValue(MouseInputMap.BUTTON_LEFT, left_mouse == GLFW.GLFW_PRESS ? 1 : 0);
-        im.setValue(MouseInputMap.BUTTON_MIDDLE, middle_mouse == GLFW.GLFW_PRESS ? 1 : 0);
-        im.setValue(MouseInputMap.BUTTON_RIGHT, right_mouse == GLFW.GLFW_PRESS ? 1 : 0);
+        im.setValue(MouseInputMap.BUTTON_LEFT, leftMouse == GLFW.GLFW_PRESS ? 1 : 0);
+        im.setValue(MouseInputMap.BUTTON_MIDDLE, middleMouse == GLFW.GLFW_PRESS ? 1 : 0);
+        im.setValue(MouseInputMap.BUTTON_RIGHT, rightMouse == GLFW.GLFW_PRESS ? 1 : 0);
     }
 
     private void updateKeyboard(KeyboardInputMap keyboardMap) {

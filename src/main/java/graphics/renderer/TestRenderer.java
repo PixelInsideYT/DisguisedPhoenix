@@ -1,16 +1,17 @@
 package graphics.renderer;
 
-import disuguisedPhoenix.Entity;
-import disuguisedPhoenix.Main;
-import graphics.shaders.Shader;
+import disuguisedphoenix.Entity;
+import disuguisedphoenix.Main;
 import graphics.objects.Vao;
+import graphics.shaders.Shader;
 import graphics.world.Model;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL40;
 
 import java.util.List;
 import java.util.Map;
+
+import static org.lwjgl.opengl.GL40.glDrawElementsBaseVertex;
 
 
 public class TestRenderer {
@@ -29,10 +30,10 @@ public class TestRenderer {
 
     public void render(Model model, Matrix4f... modelMatrixArray) {
         model.renderInfo.actualVao.bind();
-        int indiciesLength = model.renderInfo.actualVao.getIndiciesLength();
+        int indiciesLength = model.renderInfo.actualVao.getIndicesLength();
         for (Matrix4f modelMatrix : modelMatrixArray) {
             shader.loadMatrix("transformationMatrixUniform", modelMatrix);
-            GL40.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, model.renderInfo.indexOffset * 4, model.renderInfo.vertexOffset);
+            glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, model.renderInfo.indexOffset * 4, model.renderInfo.vertexOffset);
             Main.inViewObjects++;
             Main.inViewVerticies+=indiciesLength;
             Main.drawCalls++;
@@ -45,10 +46,10 @@ public class TestRenderer {
         for (Model model : toRender.keySet()) {
             Vao mesh = model.renderInfo.actualVao;
             mesh.bind();
-            int indiciesLength = mesh.getIndiciesLength();
+            int indiciesLength = mesh.getIndicesLength();
             for (Entity e : toRender.get(model)) {
                 shader.loadMatrix("transformationMatrixUniform", e.getTransformationMatrix());
-                GL40.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, model.renderInfo.indexOffset * 4, model.renderInfo.vertexOffset);
+                glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, model.renderInfo.indexOffset * 4, model.renderInfo.vertexOffset);
                 Main.inViewObjects++;
                 Main.inViewVerticies+=indiciesLength;
                 Main.drawCalls++;

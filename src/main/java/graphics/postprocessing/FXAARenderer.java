@@ -1,8 +1,9 @@
-package graphics.postProcessing;
+package graphics.postprocessing;
 
 import graphics.shaders.Shader;
 import graphics.shaders.ShaderFactory;
-import org.lwjgl.opengl.GL13;
+
+import static org.lwjgl.opengl.GL13.*;
 
 public class FXAARenderer {
 
@@ -19,8 +20,8 @@ public class FXAARenderer {
 
     public void render(int colorTexture) {
         aliasShader.bind();
-        GL13.glActiveTexture(GL13.GL_TEXTURE0);
-        GL13.glBindTexture(GL13.GL_TEXTURE_2D, colorTexture);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, colorTexture);
         renderer.renderOnlyQuad();
         aliasShader.unbind();
     }

@@ -5,7 +5,6 @@ import engine.collision.Collider;
 import engine.collision.ConvexShape;
 import graphics.objects.Vao;
 import graphics.world.Material;
-import graphics.world.Model;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;

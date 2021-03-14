@@ -1,4 +1,4 @@
-package disuguisedPhoenix.terrain;
+package disuguisedphoenix.terrain;
 
 import engine.util.Maths;
 import graphics.objects.Vao;
@@ -11,8 +11,8 @@ import org.joml.Vector3f;
 
 public class Island {
 
-    public static final int octaves = 5;
-    public static final float fallOff = 0.3f;
+    public static final int OCTAVES = 5;
+    public static final float FALL_OFF = 0.3f;
     public static final float NOISE_SCALE = 0.0001f;
     public static final float VERTEX_PER_SIZE = 16f / 5000f;
     public static final float TERRAIN_HEIGHT = 2500f;
@@ -80,18 +80,6 @@ public class Island {
         }
         return answer + this.position.y;
     }
-
-   /* private Vector3f calculateNormal(int x, int z) {
-        float heightL = getHeight(x - 1, z);
-        float heightR = getHeight(x + 1, z);
-        float heightD = getHeight(x, z - 1);
-        float heightU = getHeight(x, z + 1);
-
-        Vector3f normal = new Vector3f(heightL - heightR, 2f, heightD - heightU);
-        normal.normalize();
-        return normal;
-
-    }*/
 
     private Model createTerrain() {
         heights = new float[vertexCount][vertexCount];
@@ -229,8 +217,8 @@ public class Island {
 
     private float getIslandBottem(float x, float z, int gridX, int gridZ) {
         float result = 0;
-        for (int i = 0; i < octaves; i++) {
-            float heightFactor = (float) Math.pow(fallOff, i);
+        for (int i = 0; i < OCTAVES; i++) {
+            float heightFactor = (float) Math.pow(FALL_OFF, i);
             float octaveFactor = (float) Math.pow(2f, i);
             result -= (SimplexNoise.noise(x * NOISE_SCALE * octaveFactor, z * NOISE_SCALE * octaveFactor) + 1f) * TERRAIN_HEIGHT * heightFactor + 100;
         }
@@ -243,8 +231,8 @@ public class Island {
 
     private float getHeight(float x, float z, int gridX, int gridZ) {
         float result = 0;
-        for (int i = 0; i < octaves; i++) {
-            float heightFactor = (float) Math.pow(fallOff, i);
+        for (int i = 0; i < OCTAVES; i++) {
+            float heightFactor = (float) Math.pow(FALL_OFF, i);
             float octaveFactor = (float) Math.pow(2f, i);
             result += SimplexNoise.noise(x * NOISE_SCALE * octaveFactor, z * NOISE_SCALE * octaveFactor) * TERRAIN_HEIGHT * heightFactor;
         }

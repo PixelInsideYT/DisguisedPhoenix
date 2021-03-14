@@ -3,7 +3,6 @@ package graphics.shaders;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL43;
 
 import java.nio.FloatBuffer;
 import java.util.HashMap;
@@ -11,6 +10,7 @@ import java.util.Map;
 
 import static org.lwjgl.opengl.GL11.GL_FALSE;
 import static org.lwjgl.opengl.GL20.GL_LINK_STATUS;
+import static org.lwjgl.opengl.GL43.*;
 
 public class ComputeShader {
     private static final FloatBuffer matrixBuffer4f = BufferUtils.createFloatBuffer(16);
@@ -19,7 +19,7 @@ public class ComputeShader {
 
     public ComputeShader(String shaderCode) {
         shaderId = GL20.glCreateProgram();
-        int computeShader = GL20.glCreateShader(GL43.GL_COMPUTE_SHADER);
+        int computeShader = GL20.glCreateShader(GL_COMPUTE_SHADER);
         GL20.glShaderSource(computeShader, shaderCode);
         GL20.glAttachShader(shaderId, computeShader);
         GL20.glLinkProgram(shaderId);
@@ -56,7 +56,7 @@ public class ComputeShader {
     }
 
     public void loadImage(int unit,int texture, int access,int format){
-        GL43.glBindImageTexture(unit,texture,0,false,0, access,format);
+        glBindImageTexture(unit,texture,0,false,0, access,format);
     }
 
     public void connectSampler(String samplerName, int unit) {
@@ -64,12 +64,13 @@ public class ComputeShader {
     }
 
     public void run(int x, int y, int z) {
-        GL43.glDispatchCompute(x, y, z);
+        glDispatchCompute(x, y, z);
     }
     public void setImageAccesBarrier(){
-        GL43.glMemoryBarrier(GL43.GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
-    public void setSSBOAccesBarrier(){GL43.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT);}
+    public void setSSBOAccesBarrier(){
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);}
     public boolean isFinished() {
         return true;
     }

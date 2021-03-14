@@ -1,18 +1,19 @@
 package graphics.objects;
 
 import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL45;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.lwjgl.opengl.GL45.*;
+
 public class BufferObject {
 
     private static final List<BufferObject> allBufferObjects = new ArrayList<>();
 
-    public int bufferID;
+    private int bufferID;
     private final int target;
 
     public BufferObject(int target) {
@@ -24,7 +25,7 @@ public class BufferObject {
 
     public BufferObject(int dataCount, int target, int usage) {
         this(target);
-        GL15.glBufferData(target, dataCount * 4, usage);
+        GL15.glBufferData(target, dataCount * 4L, usage);
     }
 
     public BufferObject(float[] data, int target, int usage) {
@@ -34,9 +35,10 @@ public class BufferObject {
 
 
     public ByteBuffer createPersistantVbo(int floatCount) {
-        int flags = GL45.GL_MAP_PERSISTENT_BIT | GL45.GL_MAP_WRITE_BIT | GL45.GL_MAP_COHERENT_BIT;
-        GL45.glBufferStorage(target, floatCount * 4, flags);
-        return GL45.glMapBufferRange(target, 0, floatCount * 4, flags);
+        int flags = GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT;
+        long floatSizeInBytes = floatCount*4L;
+        glBufferStorage(target, floatSizeInBytes, flags);
+        return glMapBufferRange(target, 0, floatSizeInBytes, flags);
     }
 
     public static void cleanUp() {
@@ -66,6 +68,10 @@ public class BufferObject {
     public BufferObject unbind() {
         GL15.glBindBuffer(target, 0);
         return this;
+    }
+
+    public int getBufferID(){
+        return bufferID;
     }
 
 }

@@ -1,7 +1,7 @@
 package graphics.particles;
 
-import disuguisedPhoenix.terrain.Island;
-import disuguisedPhoenix.terrain.World;
+import disuguisedphoenix.terrain.Island;
+import disuguisedphoenix.terrain.World;
 import org.joml.SimplexNoise;
 import org.joml.Vector3f;
 import org.joml.Vector4f;

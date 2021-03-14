@@ -1,6 +1,6 @@
 package engine.util;
 
-import disuguisedPhoenix.Entity;
+import disuguisedphoenix.Entity;
 import org.joml.*;
 
 import java.lang.Math;
@@ -44,7 +44,7 @@ public class Maths {
     }
 
     public static boolean isInsideFrustum(FrustumIntersection cullingHelper, Entity e){
-        return isInsideFrustum(cullingHelper,e.position,e.getModel().relativeCenter,e.scale,e.getModel().radius);
+        return isInsideFrustum(cullingHelper,e.getPosition(),e.getModel().relativeCenter,e.getScale(),e.getModel().radius);
     }
 
     public static Matrix4f lookAt(Vector3f target, Vector3f position) {

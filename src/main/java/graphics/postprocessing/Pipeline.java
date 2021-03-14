@@ -1,4 +1,4 @@
-package graphics.postProcessing;
+package graphics.postprocessing;
 
 import graphics.camera.Camera;
 import graphics.context.Display;

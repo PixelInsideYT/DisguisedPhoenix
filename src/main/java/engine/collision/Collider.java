@@ -2,7 +2,6 @@ package engine.collision;
 
 import graphics.objects.Vao;
 import org.joml.Matrix4f;
-import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,9 +9,9 @@ import java.util.stream.Collectors;
 
 public class Collider {
 
-    public List<CollisionShape> allTheShapes = new ArrayList<>();
-    public CollisionShape boundingBox;
-    public Vao boundingBoxModel;
+    List<CollisionShape> allTheShapes = new ArrayList<>();
+    CollisionShape boundingBox;
+    Vao boundingBoxModel;
 
     public Collider cloneAndTransform(Matrix4f matrix) {
         Collider c = new Collider();
@@ -31,8 +30,27 @@ public class Collider {
         allTheShapes.add(shape);
     }
 
-    public void setBoundingBox(Box b) {
+    public void setBoundingBox(CollisionShape b) {
         this.boundingBox = b;
     }
 
+    public List<CollisionShape> getAllTheShapes() {
+        return allTheShapes;
+    }
+
+    public void setAllTheShapes(List<CollisionShape> allTheShapes) {
+        this.allTheShapes = allTheShapes;
+    }
+
+    public CollisionShape getBoundingBox() {
+        return boundingBox;
+    }
+
+    public Vao getBoundingBoxModel() {
+        return boundingBoxModel;
+    }
+
+    public void setBoundingBoxModel(Vao boundingBoxModel) {
+        this.boundingBoxModel = boundingBoxModel;
+    }
 }

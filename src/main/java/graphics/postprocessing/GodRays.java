@@ -1,19 +1,20 @@
-package graphics.postProcessing;
+package graphics.postprocessing;
 
 import engine.util.ModelFileHandler;
 import graphics.loader.MeshInformation;
 import graphics.objects.FrameBufferObject;
 import graphics.objects.OpenGLState;
-import graphics.shaders.Shader;
 import graphics.objects.Vao;
+import graphics.shaders.Shader;
 import graphics.shaders.ShaderFactory;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL40;
+
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
+import static org.lwjgl.opengl.GL13.glActiveTexture;
 
 public class GodRays {
 
@@ -77,17 +78,17 @@ public class GodRays {
         lightShader.bind();
         lightShader.load3DVector("color", new Vector3f(10, 10, 10));
         lightShader.loadMatrix("matrix", matrix);
-        GL13.glActiveTexture(GL13.GL_TEXTURE0);
-        GL13.glBindTexture(GL13.GL_TEXTURE_2D, geometryInfoTexture);
-        GL40.glDrawElements(GL11.GL_TRIANGLES, lightShape.getIndiciesLength(), GL11.GL_UNSIGNED_INT, 0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, geometryInfoTexture);
+        glDrawElements(GL_TRIANGLES, lightShape.getIndicesLength(), GL_UNSIGNED_INT, 0);
         lightShader.unbind();
         lightShape.unbind();
         lightRenderd.unbind();
         result.bind();
         result.clear(0,0,0,0);
         radialBlur.bind();
-        GL13.glActiveTexture(GL13.GL_TEXTURE0);
-        GL13.glBindTexture(GL13.GL_TEXTURE_2D, lightRenderd.getTextureID(0));
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, lightRenderd.getTextureID(0));
         radialBlur.load2DVector("blurCenter", uvPos);
         renderer.renderOnlyQuad();
         radialBlur.unbind();

@@ -1,6 +1,6 @@
-package disuguisedPhoenix.terrain;
+package disuguisedphoenix.terrain;
 
-import disuguisedPhoenix.Entity;
+import disuguisedphoenix.Entity;
 import engine.util.Maths;
 import org.joml.FrustumIntersection;
 import org.joml.Vector3f;

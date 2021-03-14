@@ -1,9 +1,9 @@
 package graphics.particles;
 
-import disuguisedPhoenix.Main;
-import graphics.shaders.Shader;
-import graphics.objects.Vao;
+import disuguisedphoenix.Main;
 import graphics.objects.BufferObject;
+import graphics.objects.Vao;
+import graphics.shaders.Shader;
 import graphics.shaders.ShaderFactory;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
@@ -16,6 +16,8 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import static org.lwjgl.opengl.GL20.*;
 
 public class ParticleManager {
 
@@ -37,7 +39,7 @@ public class ParticleManager {
         shader = particleFactory.withUniforms("viewMatrix", "projMatrix").built();
         particleVao = new Vao();
         particleVao.addDataAttributes(0, 3, new float[]{0.5f, -0.5f, 0f, 0.5f, 0.5f, 0f, -0.5f, 0.5f, 0f, -0.5f, 0.5f, 0f, 0.5f, -0.5f, 0f, -0.5f, -0.5f, 0f});
-        matrixAndColor = new BufferObject(INSTANCES_COUNT * INSTANCE_DATA_LENGTH, GL20.GL_ARRAY_BUFFER, GL15.GL_DYNAMIC_DRAW).unbind();
+        matrixAndColor = new BufferObject(INSTANCES_COUNT * INSTANCE_DATA_LENGTH, GL_ARRAY_BUFFER, GL15.GL_DYNAMIC_DRAW).unbind();
         particleVao.addInstancedAttribute(matrixAndColor, 1, 4, INSTANCE_DATA_LENGTH, 0);
         particleVao.addInstancedAttribute(matrixAndColor, 2, 4, INSTANCE_DATA_LENGTH, 4);
         particleVao.addInstancedAttribute(matrixAndColor, 3, 4, INSTANCE_DATA_LENGTH, 8);

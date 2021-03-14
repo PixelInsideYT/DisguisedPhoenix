@@ -16,7 +16,7 @@ public class ShaderFactory {
     public static final int TESSELATION_CONTROL_SHADER = 2;
     public static final int TESSELATION_EVALUATION_SHADER = 3;
     public static final int FRAGMENT_SHADER = 4;
-
+//TODO: bind textures to name not to int
     int shaderProgram;
     private String[] shaderSources = new String[5];
     private List<String> uniformNames = new ArrayList<>();
@@ -117,13 +117,13 @@ public class ShaderFactory {
 
         List<Integer> compiledSources = compileAllShaders();
         compiledSources.forEach(i -> glAttachShader(shaderProgram, i));
-        attributeLocationMap.keySet().forEach(name -> GL20.glBindAttribLocation(shaderProgram, attributeLocationMap.get(name), name));
+        attributeLocationMap.keySet().forEach(name -> glBindAttribLocation(shaderProgram, attributeLocationMap.get(name), name));
         if(attributeLocationMap.keySet().size()==0){
             System.err.println("WARNING: Your shader has no input Variables!");
         }
         glLinkProgram(shaderProgram);
-        if (GL20.glGetProgrami(shaderProgram, GL_LINK_STATUS) == GL_FALSE) {
-            System.out.println(GL20.glGetProgramInfoLog(shaderProgram, 500));
+        if (glGetProgrami(shaderProgram, GL_LINK_STATUS) == GL_FALSE) {
+            System.out.println(glGetProgramInfoLog(shaderProgram, 500));
             System.err.println("Could not link shaders.");
             System.exit(-1);
         }
@@ -135,7 +135,7 @@ public class ShaderFactory {
         shader.bind();
         //load texture locations
         for(String name:samplerTextureIdMap.keySet()){
-            GL20.glUniform1i(uniformLocationMap.get(name), samplerTextureIdMap.get(name));
+            glUniform1i(uniformLocationMap.get(name), samplerTextureIdMap.get(name));
         }
         deleteUnusedSources(compiledSources);
         return shader;
@@ -145,7 +145,7 @@ public class ShaderFactory {
     //Shader Building
 
     private int loadUniform(String name) {
-        int id = GL20.glGetUniformLocation(shaderProgram, name);
+        int id = glGetUniformLocation(shaderProgram, name);
         if (id == -1) {
             System.err.println("Uniform: " + name + " not found!");
         }
@@ -178,9 +178,9 @@ public class ShaderFactory {
         int shader = glCreateShader(convertOwnConventionToOpenGL(type));
         glShaderSource(shader, code);
         glCompileShader(shader);
-        if (GL20.glGetShaderi(shader, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
+        if (glGetShaderi(shader, GL_COMPILE_STATUS) == GL11.GL_FALSE) {
             System.out.println("Something went wrong for code: " + code + " \n");
-            System.out.println(GL20.glGetShaderInfoLog(shader, 500));
+            System.out.println(glGetShaderInfoLog(shader, 500));
             System.err.println("Could not compile shader.");
             System.exit(-1);
         }

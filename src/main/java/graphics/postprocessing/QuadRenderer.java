@@ -1,13 +1,15 @@
-package graphics.postProcessing;
+package graphics.postprocessing;
 
-import disuguisedPhoenix.Main;
-import graphics.shaders.Shader;
+import disuguisedphoenix.Main;
 import graphics.objects.Vao;
+import graphics.shaders.Shader;
 import graphics.shaders.ShaderFactory;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
+
+import static org.lwjgl.opengl.GL13.*;
 
 public class QuadRenderer {
 
@@ -47,8 +49,8 @@ public class QuadRenderer {
 
     public void renderTextureToScreen(int texture) {
         testShader.bind();
-        GL13.glActiveTexture(GL13.GL_TEXTURE0);
-        GL13.glBindTexture(GL13.GL_TEXTURE_2D, texture);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
         renderOnlyQuad();
         testShader.unbind();
     }

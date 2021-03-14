@@ -6,7 +6,7 @@ import org.joml.Vector3f;
 
 public class CollisionShape {
 
-    public Vector3f[] cornerPoints;
+    protected Vector3f[] cornerPoints;
     protected Vector3f center;
     protected Vector3f[] axes;
 
@@ -74,5 +74,12 @@ public class CollisionShape {
         return min;
     }
 
+    public int getCornerPointCount(){
+        return cornerPoints.length;
+    }
+
+    public final Vector3f[] getCornerPoints(){
+        return cornerPoints;
+    }
 
 }

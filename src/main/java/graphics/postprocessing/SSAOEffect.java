@@ -1,18 +1,17 @@
-package graphics.postProcessing;
+package graphics.postprocessing;
 
 import graphics.objects.FrameBufferObject;
-import graphics.objects.OpenGLState;
-import graphics.shaders.Shader;
 import graphics.objects.TimerQuery;
+import graphics.shaders.Shader;
 import graphics.shaders.ShaderFactory;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
-import org.joml.Vector2i;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL43;
+
+import static org.lwjgl.opengl.GL30.*;
 
 public class SSAOEffect {
     private final int width;
@@ -65,7 +64,7 @@ public class SSAOEffect {
             ssaoTimer.startQuery();
             fbo.bind();
             fbo.clear(1, 1, 1, 1);
-            GL30.glActiveTexture(GL13.GL_TEXTURE0);
+            glActiveTexture(GL13.GL_TEXTURE0);
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getDepthTexture());
             ssaoShader.bind();
             ssaoShader.loadMatrix("projMatrixInv", new Matrix4f(projMatrix).invert());
@@ -83,7 +82,7 @@ public class SSAOEffect {
     private void blurSSAO() {
         helperFbo.bind();
         blurShader.bind();
-        GL30.glActiveTexture(GL13.GL_TEXTURE0);
+        glActiveTexture(GL13.GL_TEXTURE0);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, fbo.getTextureID(0));
         blurShader.load2DVector("axis_f", new Vector2f(1, 0));
         renderer.renderOnlyQuad();

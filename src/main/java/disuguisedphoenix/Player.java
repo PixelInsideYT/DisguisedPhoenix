@@ -1,17 +1,16 @@
-package disuguisedPhoenix;
+package disuguisedphoenix;
 
-import disuguisedPhoenix.terrain.Island;
+import disuguisedphoenix.terrain.Island;
 import engine.collision.CollisionShape;
 import engine.input.InputMap;
 import engine.input.MouseInputMap;
-import engine.util.Maths;
 import graphics.camera.ThirdPersonCamera;
 import graphics.world.Model;
-import org.joml.*;
+import org.joml.Matrix4f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+import org.joml.Vector3i;
 
-import java.lang.Math;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class Player extends Entity {
@@ -60,7 +59,7 @@ public class Player extends Entity {
         velocity.add(right.mul(currentTurnDirection.y * MAX_TURN_SPEED));
         velocity.add(up.mul(currentTurnDirection.x * MAX_TURN_SPEED));
         this.update(dt, possibleCollisions,shapes);
-        cam.position.set(new Vector3f(position).sub(new Vector3f(velocity).normalize(500)));
+        cam.getPosition().set(new Vector3f(position).sub(new Vector3f(velocity).normalize(500)));
         lookAtPosition.set(position);
     }
 

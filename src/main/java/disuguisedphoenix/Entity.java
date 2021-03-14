@@ -1,4 +1,4 @@
-package disuguisedPhoenix;
+package disuguisedphoenix;
 
 import engine.collision.Collider;
 import engine.collision.CollisionShape;
@@ -12,17 +12,17 @@ import java.util.List;
 
 public class Entity {
 
-    public Vector3f position;
+    protected Vector3f position;
     protected Vector3f velocity;
     protected Vector3f acceleration;
-    protected float rotX, rotY, rotZ;
-    public float scale;
+    float rotX;
+    float rotY;
+    float rotZ;
+    float scale;
     protected Matrix4f modelMatrix;
     private final Model model;
-    public boolean changedPosition = true;
+    boolean changedPosition = true;
     private Collider transformedCollider;
-
-    private final int textureIndex = 0;
 
     public Entity(Model model, Vector3f position, float rotX, float rotY, float rotZ, float scale) {
         super();
@@ -65,7 +65,7 @@ public class Entity {
                 }
             }
             for(CollisionShape cs:shapes){
-                for(CollisionShape ownShape : own.allTheShapes){
+                for(CollisionShape ownShape : own.getAllTheShapes()){
                  Vector3f mtv = SAT.getMTVNarrow(ownShape, velocity, cs, dt);
                     if (mtv != null) {
                         position.add(mtv);

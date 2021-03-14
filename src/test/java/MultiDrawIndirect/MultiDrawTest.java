@@ -1,9 +1,9 @@
 package MultiDrawIndirect;
 
 import graphics.context.Display;
-import graphics.shaders.Shader;
-import graphics.objects.Vao;
 import graphics.objects.BufferObject;
+import graphics.objects.Vao;
+import graphics.shaders.Shader;
 import org.lwjgl.opengl.*;
 
 public class MultiDrawTest {

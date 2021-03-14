@@ -214,8 +214,8 @@ public class ModelFileHandler {
                     renderAble.unbind();
                     ConvexShape shape = new ConvexShape(edgePointsArray, axesArray, renderAble);
                     if (c == 0) {
-                        collider.boundingBox = shape;
-                        collider.boundingBoxModel = null;
+                        collider.setBoundingBox(shape);
+                        collider.setBoundingBoxModel(null);
                     } else {
                         collider.addCollisionShape(shape);
                     }
@@ -317,7 +317,7 @@ public class ModelFileHandler {
         Collider collider = null;
         if (colliderFileName != null)
             collider = AssimpWrapper.loadCollider(colliderFileName);
-        int headerSize = (4 + 2 * (collider != null ? collider.allTheShapes.size() + 1 : 0)) * Integer.BYTES;
+        int headerSize = (4 + 2 * (collider != null ? collider.getAllTheShapes().size() + 1 : 0)) * Integer.BYTES;
         int meshSize = (combined.vertexPositions.length + combined.colors.length) * Float.BYTES + combined.indicies.length * Integer.BYTES;
         int colliderSize = calculateColliderSize(collider);
         int modelFileSize = headerSize + meshSize + colliderSize;
@@ -327,11 +327,11 @@ public class ModelFileHandler {
         buffer.putInt(combined.colors.length);
         buffer.putInt(combined.indicies.length);
         if (collider != null) {
-            buffer.putInt(1 + collider.allTheShapes.size());
-            buffer.putInt(collider.boundingBox.cornerPoints.length);
-            buffer.putInt(collider.boundingBox.getAxis().length);
-            for (CollisionShape cs : collider.allTheShapes) {
-                buffer.putInt(cs.cornerPoints.length);
+            buffer.putInt(1 + collider.getAllTheShapes().size());
+            buffer.putInt(collider.getBoundingBox().getCornerPointCount());
+            buffer.putInt(collider.getBoundingBox().getAxis().length);
+            for (CollisionShape cs : collider.getAllTheShapes()) {
+                buffer.putInt(cs.getCornerPointCount());
                 buffer.putInt(cs.getAxis().length);
             }
         } else {
@@ -372,19 +372,19 @@ public class ModelFileHandler {
     private static void writeColliderToBuffer(Collider collider, ByteBuffer buffer) {
         if (collider != null) {
             //write boundingBox
-            for (Vector3f point : collider.boundingBox.cornerPoints) {
+            for (Vector3f point : collider.getBoundingBox().getCornerPoints()) {
                 buffer.putFloat(point.x);
                 buffer.putFloat(point.y);
                 buffer.putFloat(point.z);
             }
-            for (Vector3f axe : collider.boundingBox.getAxis()) {
+            for (Vector3f axe : collider.getBoundingBox().getAxis()) {
                 buffer.putFloat(axe.x);
                 buffer.putFloat(axe.y);
                 buffer.putFloat(axe.z);
             }
             //write other shapes
-            for (CollisionShape cs : collider.allTheShapes) {
-                for (Vector3f point : cs.cornerPoints) {
+            for (CollisionShape cs : collider.getAllTheShapes()) {
+                for (Vector3f point : cs.getCornerPoints()) {
                     buffer.putFloat(point.x);
                     buffer.putFloat(point.y);
                     buffer.putFloat(point.z);
@@ -401,8 +401,8 @@ public class ModelFileHandler {
     private static int calculateColliderSize(Collider collider) {
         if (collider == null) return 0;
         int vectorSize = 3;
-        int boundingBoxSize = (collider.boundingBox.cornerPoints.length * vectorSize + collider.boundingBox.getAxis().length * vectorSize) * Float.BYTES;
-        int collisonShapesSizes = collider.allTheShapes.stream().mapToInt(c -> (c.cornerPoints.length * vectorSize + c.getAxis().length * vectorSize) * Float.BYTES).sum();
+        int boundingBoxSize = (collider.getBoundingBox().getCornerPointCount() * vectorSize + collider.getBoundingBox().getAxis().length * vectorSize) * Float.BYTES;
+        int collisonShapesSizes = collider.getAllTheShapes().stream().mapToInt(c -> (c.getCornerPointCount() * vectorSize + c.getAxis().length * vectorSize) * Float.BYTES).sum();
         return boundingBoxSize + collisonShapesSizes;
     }
 

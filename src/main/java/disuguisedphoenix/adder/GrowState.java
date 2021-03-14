@@ -1,8 +1,8 @@
-package disuguisedPhoenix.adder;
+package disuguisedphoenix.adder;
 
-import disuguisedPhoenix.Entity;
-import disuguisedPhoenix.terrain.PopulatedIsland;
-import disuguisedPhoenix.terrain.World;
+import disuguisedphoenix.Entity;
+import disuguisedphoenix.terrain.PopulatedIsland;
+import disuguisedphoenix.terrain.World;
 import graphics.particles.ParticleManager;
 import graphics.particles.PointSeekingEmitter;
 import graphics.particles.UpwardsParticles;
@@ -10,17 +10,17 @@ import org.joml.Vector3f;
 
 public class GrowState {
 
-    public Entity growingEntity;
-    public float buildProgress;
-    public PointSeekingEmitter entitySeeker;
-    public UpwardsParticles growParticles;
+    Entity growingEntity;
+    float buildProgress;
+    PointSeekingEmitter entitySeeker;
+    UpwardsParticles growParticles;
     private boolean seekerReachedEntity = false;
 
     public PopulatedIsland growingOn;
     private boolean addedToIsland = false;
 
     public GrowState(World world, PopulatedIsland growingOn, int particlesCount, Vector3f playerPos, Entity toGrow, ParticleManager pm) {
-        entitySeeker = new PointSeekingEmitter(playerPos, toGrow.position, 15, 700f, particlesCount, world);
+        entitySeeker = new PointSeekingEmitter(playerPos, toGrow.getPosition(), 15, 700f, particlesCount, world);
         pm.addParticleEmitter(entitySeeker);
         buildProgress = -0.01f;
         this.growingOn = growingOn;
@@ -32,12 +32,12 @@ public class GrowState {
             seekerReachedEntity = true;
             //init upward particle spawner
             float emitTime = 1f / builtSpeed;
-            float radius = growingEntity.scale * growingEntity.getModel().radiusXZ;
+            float radius = growingEntity.getScale() * growingEntity.getModel().radiusXZ;
             growParticles = new UpwardsParticles(new Vector3f(growingEntity.getPosition()), radius, 500, 3.14f * radius * radius * particlesPerSecondPerAreaUnit, emitTime);
             pm.addParticleEmitter(growParticles);
         }
         if (seekerReachedEntity) {
-            growParticles.center.y += dt * builtSpeed * growingEntity.getModel().height * growingEntity.scale;
+            growParticles.center.y += dt * builtSpeed * growingEntity.getModel().height * growingEntity.getScale();
             buildProgress += dt * builtSpeed;
         }
     }
