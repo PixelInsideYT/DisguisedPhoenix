@@ -23,8 +23,8 @@ public class Vao {
     }
 
     public static void cleanUpAllVaos() {
-        allVaos.forEach(Vao::cleanUp);
         BufferObject.cleanUp();
+        allVaos.forEach(Vao::cleanUp);
     }
 
     public int getIndicesLength() {

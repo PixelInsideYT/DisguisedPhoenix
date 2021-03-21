@@ -30,7 +30,7 @@ public class Atmosphere {
     private Vector3f wavelengths = new Vector3f(700, 530, 440);
     private Vector3f scatterCoeffiecients = new Vector3f();
     private float densityFalloff = 4f;
-    private float scatteringStrength = 1f;
+    private float scatteringStrength = 2f;
     private float atmosphereRadius = Main.radius + 12000;
     private float planetRadius = Main.radius;
     private int numOpticalDepthPoints = 10;

@@ -8,7 +8,7 @@ out vec4 out_color;
 const float blurFactor=1;
 const float radius =0.001;
 void main() {
-    float samples = 32;
+    float samples = 32  ;
     vec4 col = vec4(0,0,0,0);
     vec2 dist = uv - blurCenter;
     for(int j = 0; j < samples; j++) {

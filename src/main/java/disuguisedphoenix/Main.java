@@ -53,7 +53,7 @@ public class Main {
 
     private static List<Entity> worldsEntity = new ArrayList<>();
     public static float scale = 60000;
-    public static  float radius = (float) Math.sqrt(Math.pow(scale / 2f, 2) * 3);
+    public static float radius = (float) Math.sqrt(Math.pow(scale / 2f, 2) * 3);
 
     //get models on itch and cgtrader
 
@@ -63,13 +63,13 @@ public class Main {
     // - improved free flight cam to support round world
     // - improved entity adder
     private static float lightSpeed = 0.25f;
-    private static float lightAngle =0;
-    private static float lightRadius =radius*5;
-    private static Vector3f lightPos=new Vector3f(0,1,0);
+    private static float lightAngle = 0;
+    private static float lightRadius = 2 * radius;
+    private static Vector3f lightPos = new Vector3f(0, 1, 0);
     private static Vector3f lightColor = new Vector3f();
 
     public static void main(String[] args) {
-      // ModelFileHandler.regenerateModels("/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/ModelBuilder.info");
+        // ModelFileHandler.regenerateModels("/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/ModelBuilder.info");
         //TODO: refactor rendering into a modular pipeline
         long startUpTime = System.currentTimeMillis();
         Display display = new Display("Disguised Phoenix", 480, 360);
@@ -95,8 +95,8 @@ public class Main {
         Matrix4f projMatrix = new Matrix4f();
         int width = display.getWidth();
         int height = display.getHeight();
-        float aspectRatio=width/(float)height;
-        projMatrix.perspective((float) Math.toRadians(70),aspectRatio, 1f, 100000);
+        float aspectRatio = width / (float) height;
+        projMatrix.perspective((float) Math.toRadians(70), aspectRatio, 1f, 100000);
         InputManager input = new InputManager(display.getWindowId());
         KeyboardInputMap kim = new KeyboardInputMap().addMapping("forward", GLFW_KEY_W).addMapping("backward", GLFW_KEY_S).addMapping("turnLeft", GLFW_KEY_A).addMapping("turnRight", GLFW_KEY_D).addMapping("accel", GLFW_KEY_SPACE);
         KeyboardInputMap freeFlightCam = new KeyboardInputMap().addMapping("forward", GLFW_KEY_W).addMapping("backward", GLFW_KEY_S).addMapping("goLeft", GLFW_KEY_A).addMapping("goRight", GLFW_KEY_D).addMapping("up", GLFW_KEY_SPACE).addMapping("down", GLFW_KEY_LEFT_SHIFT).addMapping("fastFlight", GLFW_KEY_LEFT_CONTROL);
@@ -135,25 +135,22 @@ public class Main {
         Pipeline postProcessPipeline = new Pipeline(width, height, projMatrix, quadRenderer, blur);
         float avgFPS = 0;
         int frameCounter = 0;
-        display.setResizeListener(new ResizeListener() {
-            @Override
-            public void resized(int width, int height, float aspectRatio) {
-                projMatrix.identity().perspective((float) Math.toRadians(70),aspectRatio, 1f, 100000);
-                fbo.resize(width,height);
-                deferredResult.resize(width,height);
-                ssao.resize(width,height);
-                postProcessPipeline.resize(width,height);
-            }
+        display.setResizeListener((width1, height1, aspectRatio1) -> {
+            projMatrix.identity().perspective((float) Math.toRadians(70), aspectRatio1, 1f, 100000);
+            fbo.resize(width1, height1);
+            deferredResult.resize(width1, height1);
+            ssao.resize(width1, height1);
+            postProcessPipeline.resize(width1, height1);
         });
-        TimerQuery vertexTimer=new TimerQuery("Geometry Pass");
-        TimerQuery lightTimer=new TimerQuery("Lighting Pass");
-        Matrix4f cullingMatrix=new Matrix4f();
-        FrustumIntersection cullingHelper=new FrustumIntersection();
-        while (!display.shouldClose()&&!input.isKeyDown(GLFW_KEY_ESCAPE)) {
+        TimerQuery vertexTimer = new TimerQuery("Geometry Pass");
+        TimerQuery lightTimer = new TimerQuery("Lighting Pass");
+        Matrix4f cullingMatrix = new Matrix4f();
+        FrustumIntersection cullingHelper = new FrustumIntersection();
+        while (!display.shouldClose() && !input.isKeyDown(GLFW_KEY_ESCAPE)) {
             float dt = zeitgeist.getDelta();
-            lightAngle+=lightSpeed*dt;
-            lightPos.x=(float)Math.cos(lightAngle)*lightRadius;
-            lightPos.y=(float)Math.sin(lightAngle)*lightRadius;
+            lightAngle += lightSpeed * dt;
+            lightPos.x = (float) Math.cos(lightAngle) * lightRadius;
+            lightPos.y = (float) Math.sin(lightAngle) * lightRadius;
             long startFrame = System.nanoTime();
             time += dt;
             display.pollEvents();
@@ -200,7 +197,7 @@ public class Main {
             OpenGLState.enableDepthTest();
             OpenGLState.disableAlphaBlending();
             fbo.bind();
-            glClearColor(0f,0f, 0f, 0.0f);
+            glClearColor(0f, 0f, 0f, 0.0f);
             fbo.clear();
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, noiseTexture);
@@ -214,7 +211,7 @@ public class Main {
             shader.loadInt("useInputTransformationMatrix", 1);
             cullingHelper.set(cullingMatrix.set(projMatrix).mul(viewMatrix));
             multiRenderer.render(world.getVisibleEntities(projMatrix, viewMatrix, ffc.getPosition()));
-           multiRenderer.render(worldsEntity);
+            multiRenderer.render(worldsEntity);
             fbo.unbind();
             vertexTimer.waitOnQuery();
             OpenGLState.enableAlphaBlending();
@@ -226,7 +223,7 @@ public class Main {
             postProcessPipeline.computeDOFEffect(fbo.getDepthTexture());
             computeTimer.waitOnQuery();*/
             fbo.blitDepth(deferredResult);
-            ssao.renderEffect(fbo,projMatrix);
+            ssao.renderEffect(fbo, projMatrix);
             lightTimer.startQuery();
             deferredResult.bind();
             glActiveTexture(GL_TEXTURE0);
@@ -237,8 +234,8 @@ public class Main {
             glBindTexture(GL_TEXTURE_2D, fbo.getTextureID(1));
             glActiveTexture(GL_TEXTURE3);
             glBindTexture(GL_TEXTURE_2D, ssao.getSSAOTexture());
-            lightColor=postProcessPipeline.calculateLightColor(lightPos,ffc.getPosition());
-            quadRenderer.renderDeferredLightingPass(ffc.getViewMatrix(), projMatrix, lightPos, lightColor,ssao.isEnabled());
+            lightColor = postProcessPipeline.calculateLightColor(lightPos, ffc.getPosition());
+            quadRenderer.renderDeferredLightingPass(ffc.getViewMatrix(), projMatrix, lightPos, lightColor, ssao.isEnabled());
             OpenGLState.enableDepthTest();
             OpenGLState.enableAlphaBlending();
             pm.render(projMatrix, viewMatrix);
@@ -246,7 +243,7 @@ public class Main {
             OpenGLState.disableDepthTest();
             deferredResult.unbind();
             lightTimer.waitOnQuery();
-            postProcessPipeline.applyPostProcessing(display, viewMatrix, deferredResult, fbo, lightPos,ffc);
+            postProcessPipeline.applyPostProcessing(display, viewMatrix, deferredResult, fbo, lightPos, ffc);
             // quadRenderer.renderTextureToScreen(ssao.getSSAOTexture());
          /*  OpenGLState.enableWireframe();
             shader.bind();
@@ -282,8 +279,8 @@ public class Main {
         }
         vertexTimer.printResults();
         lightTimer.printResults();
-        if(ssao.isEnabled())
-        ssao.ssaoTimer.printResults();
+        if (ssao.isEnabled())
+            ssao.ssaoTimer.printResults();
         postProcessPipeline.printTimers();
         System.out.println("AVG FPS: " + (avgFPS / (float) frameCounter));
         TextureLoader.cleanUpAllTextures();
@@ -313,12 +310,12 @@ public class Main {
         Random r = new Random();
 
         float radius = (float) Math.sqrt(Math.pow(scale / 2f, 2) * 3);
-        pos.set(r.nextFloat() * 2f - 1f, r.nextFloat()*0.1f+0.9f, r.nextFloat() * 2f - 1f).normalize(radius);
+        pos.set(r.nextFloat() * 2f - 1f, r.nextFloat() * 0.1f + 0.9f, r.nextFloat() * 2f - 1f).normalize(radius);
         pos.mul(1 + SimplexNoise.noise(pos.x * noiseScale, pos.y * noiseScale, pos.z * noiseScale) * change);
         Vector3f eulerAngles = new Vector3f();
         Quaternionf qf = new Quaternionf();
         qf.rotateTo(new Vector3f(0, 1, 0), new Vector3f(pos).normalize());
-        qf.mul(new Quaternionf().rotateLocalY(r.nextFloat()*7f),qf);
+        qf.mul(new Quaternionf().rotateLocalY(r.nextFloat() * 7f), qf);
         qf.getEulerAnglesXYZ(eulerAngles);
         e.rotX = eulerAngles.x;
         e.rotY = eulerAngles.y;

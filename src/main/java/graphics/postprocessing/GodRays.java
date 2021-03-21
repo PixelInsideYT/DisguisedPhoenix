@@ -94,4 +94,9 @@ public class GodRays {
         radialBlur.unbind();
         result.unbind();
     }
+
+    public void resize(int width, int height) {
+        lightRenderd.resize(width, height);
+        result.resize(width,height);
+    }
 }
