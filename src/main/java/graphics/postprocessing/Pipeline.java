@@ -54,7 +54,6 @@ public class Pipeline {
         atmosphereFbo.unbind();
         display.setViewport();
         fxaa.render(atmosphereFbo.getTextureID(0));
-        //  renderer.renderTextureToScreen(rays.getTexture());
     }
 
     public Vector3f calculateLightColor(Vector3f lightPos, Vector3f camPos) {

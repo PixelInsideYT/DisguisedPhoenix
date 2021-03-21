@@ -28,21 +28,23 @@ public class QuadRenderer {
         });
         quad.unbind();
         ShaderFactory gResolveFactory = new ShaderFactory("postProcessing/quadVS.glsl", "postProcessing/deferred/lightingPassFS.glsl").withAttributes("pos");
-        gResolveFactory.withUniforms("depthTexture", "normalAndSpecularTexture", "colorAndGeometryCheckTexture", "ambientOcclusionTexture", "projMatrixInv", "lightPos","lightColor", "ssaoEnabled");
+        gResolveFactory.withUniforms("depthTexture", "shadowMapTexture","shadowReprojectionMatrix","normalAndSpecularTexture", "colorAndGeometryCheckTexture", "ambientOcclusionTexture", "projMatrixInv", "lightPos","lightColor", "ssaoEnabled");
         gResolveFactory.configureSampler("depthTexture", 0).configureSampler("normalAndSpecularTexture", 1).
-                configureSampler("colorAndGeometryCheckTexture", 2).configureSampler("ambientOcclusionTexture", 3);
+                configureSampler("colorAndGeometryCheckTexture", 2).configureSampler("ambientOcclusionTexture", 3).configureSampler("shadowMapTexture",4);
         shader = gResolveFactory.built();
         testShader = new ShaderFactory("postProcessing/quadVS.glsl","textureTestFS.glsl")
                 .withAttributes("pos").withUniforms("toTest").configureSampler("toTest",0).built();
     }
 
 
-    public void renderDeferredLightingPass(Matrix4f viewMatrix, Matrix4f projMatrix, Vector3f lightPos,Vector3f lightColor, boolean ssaoIsEnabled) {
+    public void renderDeferredLightingPass(Matrix4f viewMatrix, Matrix4f projMatrix, Vector3f lightPos,Vector3f lightColor, boolean ssaoIsEnabled,Matrix4f shadowReproject) {
         shader.bind();
         shader.loadInt("ssaoEnabled", ssaoIsEnabled ? 1 : 0);
         shader.load3DVector("lightPos", viewMatrix.transformPosition(new Vector3f(lightPos)));
         shader.load3DVector("lightColor",lightColor);
         shader.loadMatrix("projMatrixInv", new Matrix4f(projMatrix).invert());
+        Matrix4f shadowReporjectionMatrix = shadowReproject.mul(new Matrix4f(viewMatrix).invert());
+        shader.loadMatrix("shadowReprojectionMatrix",shadowReporjectionMatrix);
         renderOnlyQuad();
         shader.unbind();
     }

@@ -6,8 +6,10 @@ uniform sampler2D depthTexture;
 uniform sampler2D normalAndSpecularTexture;
 uniform sampler2D colorAndGeometryCheckTexture;
 uniform sampler2D ambientOcclusionTexture;
+uniform sampler2D shadowMapTexture;
 
 uniform mat4 projMatrixInv;
+uniform mat4 shadowReprojectionMatrix;
 uniform float luminanceThreshold = 0.7;
 uniform int ssaoEnabled;
 in vec2 uv;
@@ -16,7 +18,7 @@ layout (location = 0) out vec4 FragColor;
 layout (location = 1) out vec4 highLight;
 
 uniform vec3 lightPos;
-uniform vec3 lightColor = vec3(0.7,0.7,0.7);
+uniform vec3 lightColor = vec3(0.7, 0.7, 0.7);
 const vec3 luminanceDot = vec3(0.2126, 0.7152, 0.0722);
 
 vec3 reconstructNormal(vec2 enc){
@@ -29,7 +31,7 @@ vec3 reconstructNormal(vec2 enc){
     return n;
 }
 
-vec3 viewPosFromDepth(vec2 TexCoord,float depth) {
+vec3 viewPosFromDepth(vec2 TexCoord, float depth) {
     float z = depth * 2.0 - 1.0;
     vec4 clipSpacePosition = vec4(TexCoord * 2.0 - 1.0, z, 1.0);
     vec4 viewSpacePosition = projMatrixInv * clipSpacePosition;
@@ -38,15 +40,18 @@ vec3 viewPosFromDepth(vec2 TexCoord,float depth) {
 }
 void main() {
     vec4 colorAndGeometryCheck = texture(colorAndGeometryCheckTexture, uv);
-    if(colorAndGeometryCheck.w==0){
-        FragColor = vec4(colorAndGeometryCheck.rgb,1.0);
-        highLight = vec4(0,0,0,1);
+    if (colorAndGeometryCheck.w==0){
+        FragColor = vec4(colorAndGeometryCheck.rgb, 1.0);
+        highLight = vec4(0, 0, 0, 1);
         return;
     }
-    vec3 FragPos = viewPosFromDepth(uv, texture(depthTexture,uv).r);
+    vec3 FragPos = viewPosFromDepth(uv, texture(depthTexture, uv).r);
+    vec4 shadowMapPos = shadowReprojectionMatrix*vec4(FragPos, 1.0);
+    vec2 uvShadowMap = shadowMapPos.xy;
+    float distanceFromLight = shadowMapPos.z;
     vec3 normalAndShininess = texture(normalAndSpecularTexture, uv).xyz;
     float ambienOcclusion = 1;
-    if(ssaoEnabled==1){
+    if (ssaoEnabled==1){
         ambienOcclusion= texture(ambientOcclusionTexture, uv).r;
     }
     float shininess = normalAndShininess.z;
@@ -56,6 +61,10 @@ void main() {
     // blinn-phong (in view-space)
     vec3 ambient = vec3(0.1 * Diffuse * ambienOcclusion);// here we add occlusion factor
     vec3 lighting  = ambient;
+    float lightFactor = 1.0;
+    if (texture(shadowMapTexture, uvShadowMap).r<distanceFromLight-0.001){
+        lightFactor=0.4;
+    }
     vec3 viewDir  = normalize(-FragPos);// viewpos is (0.0.0) in view-space
     // diffuse
     vec3 lightDir = normalize(lightPos - FragPos);
@@ -69,11 +78,10 @@ void main() {
     float attenuation = 1.0 / (dist * dist);
     // diffuse  *= attenuation;
     // specular *= attenuation;
-    lighting += diffuse;
+    lighting += diffuse*lightFactor;
     //calculate highlight for bloom post processing
     float luminance = dot(lighting, luminanceDot);
-    highLight = vec4(lighting*pow(luminance,2),1);
+    highLight = vec4(lighting*pow(luminance, 2), 1);
     //highLight = vec4 (vec3(0.0),1.0);
     FragColor = vec4(lighting, 1);
-    //FragColor.rgb = vec3(ambienOcclusion);
 }

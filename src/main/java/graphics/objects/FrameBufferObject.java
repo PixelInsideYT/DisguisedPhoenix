@@ -134,11 +134,15 @@ public class FrameBufferObject {
         // generate name for frame buffer
         glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
         // create the framebuffer
-        int[] attachments = new int[attachmentCount];
-        for (int i = 0; i < attachmentCount; i++) {
-            attachments[i] = GL_COLOR_ATTACHMENT0 + i;
+        if(attachmentCount!=0) {
+            int[] attachments = new int[attachmentCount];
+            for (int i = 0; i < attachmentCount; i++) {
+                attachments[i] = GL_COLOR_ATTACHMENT0 + i;
+            }
+            glDrawBuffers(attachments);
+        }else {
+            glDrawBuffers(GL_NONE);
         }
-        glDrawBuffers(attachments);
         return frameBuffer;
     }
 

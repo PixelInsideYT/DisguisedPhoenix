@@ -1,7 +1,8 @@
-package graphics.postprocessing;
+package graphics.occlusion;
 
 import graphics.objects.FrameBufferObject;
 import graphics.objects.TimerQuery;
+import graphics.postprocessing.QuadRenderer;
 import graphics.shaders.Shader;
 import graphics.shaders.ShaderFactory;
 import org.joml.Matrix4f;
