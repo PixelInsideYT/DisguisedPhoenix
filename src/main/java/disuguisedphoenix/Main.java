@@ -148,8 +148,9 @@ public class Main {
         FrustumIntersection cullingHelper = new FrustumIntersection();
         while (!display.shouldClose() && !input.isKeyDown(GLFW_KEY_ESCAPE)) {
             float dt = zeitgeist.getDelta();
-            lightAngle += lightSpeed * dt;
-            lightPos.x = (float) Math.cos(lightAngle) * lightRadius;
+           // lightAngle += lightSpeed * dt;
+           lightAngle=1f;
+            lightPos.z = (float) Math.cos(lightAngle) * lightRadius;
             lightPos.y = (float) Math.sin(lightAngle) * lightRadius;
             long startFrame = System.nanoTime();
             time += dt;
@@ -210,8 +211,10 @@ public class Main {
             world.render(renderer, projMatrix, viewMatrix, ffc.getPosition());
             shader.loadInt("useInputTransformationMatrix", 1);
             cullingHelper.set(cullingMatrix.set(projMatrix).mul(viewMatrix));
-            multiRenderer.render(world.getVisibleEntities(projMatrix, viewMatrix, ffc.getPosition()));
-            multiRenderer.render(worldsEntity);
+            multiRenderer.prepareRenderer(world.getVisibleEntities(projMatrix, viewMatrix, ffc.getPosition()));
+            multiRenderer.render();
+            multiRenderer.prepareRenderer(worldsEntity);
+            multiRenderer.render();
             fbo.unbind();
             vertexTimer.waitOnQuery();
             OpenGLState.enableAlphaBlending();

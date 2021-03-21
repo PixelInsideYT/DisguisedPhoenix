@@ -2,18 +2,20 @@ package graphics.renderer;
 
 import disuguisedphoenix.Entity;
 import disuguisedphoenix.Main;
+import engine.util.Maths;
 import graphics.objects.BufferObject;
 import graphics.objects.LockManger;
 import graphics.objects.Vao;
 import graphics.world.RenderInfo;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL40;
 import org.lwjgl.opengl.GL43;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL40.*;
@@ -30,7 +32,7 @@ public class MultiIndirectRenderer {
     BufferObject cmdBuffer;
     private int writeHead;
     private final LockManger lockManger;
-    Map<Vao, Map<RenderInfo, List<Matrix4f>>> toRender;
+    Map<Vao, int[]> renderCommands;
 
 
     public MultiIndirectRenderer() {
@@ -39,77 +41,74 @@ public class MultiIndirectRenderer {
         persistantMatrixVbo.unbind();
         cmdBuffer = new BufferObject(maxCommandCount * 5, GL_DRAW_INDIRECT_BUFFER, GL_STREAM_DRAW);
         cmdBuffer.unbind();
-        toRender = new HashMap<>();
+        renderCommands = new HashMap<>();
         lockManger = new LockManger();
         writeHead = 0;
     }
-private int count=0;
-    public void render(List<Entity> entities) {
-        Map<Vao, int[]> vaoCommandMap = prepareBuffersFor(entities);
-        count++;
-        for (Map.Entry<Vao, int[]> e : vaoCommandMap.entrySet()) {
-            int[] newCommands = e.getValue();
-            Vao vao = e.getKey();
-            System.out.println(newCommands.length/5);
-            cmdBuffer.updateVbo(newCommands);
-            //update command buffer
-            cmdBuffer.bind();
-            //render
-            vao.bind();
-            GL43.glMultiDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, IndirectCommand.getCommandCount(newCommands), 0);
-            Main.drawCalls++;
-            vao.unbind();
-        }
-    }
 
-
-    private Map<Vao, int[]> prepareBuffersFor(List<Entity> entities) {
+    public void prepareRenderer(List<Entity> entities) {
         //sort entities according to Vao and model (remeber one vao has multiple models)
-        toRender.clear();
+        renderCommands.clear();
+        Map<Vao, Map<RenderInfo, List<Matrix4f>>> vaoSortedEntities = new HashMap<>();
         for (Entity e : entities) {
             RenderInfo entityRenderInfo = e.getModel().renderInfo;
             if (entityRenderInfo.isMultiDrawCapabel) {
-                Map<RenderInfo, List<Matrix4f>> instanceMap = toRender.computeIfAbsent(entityRenderInfo.actualVao, k -> new HashMap<>());
+                Map<RenderInfo, List<Matrix4f>> instanceMap = vaoSortedEntities.computeIfAbsent(entityRenderInfo.actualVao, k -> new HashMap<>());
                 List<Matrix4f> entityTransformation = instanceMap.computeIfAbsent(entityRenderInfo, k -> new ArrayList<>());
                 entityTransformation.add(e.getTransformationMatrix());
                 Main.inViewObjects++;
+
                 Main.facesDrawn += entityRenderInfo.indiciesCount / 3;
             }
         }
-        Map<Vao, int[]> rtVal = new HashMap<>();
-        for (Vao vao : toRender.keySet()) {
-            Map<RenderInfo, List<Matrix4f>> modelMatrixMap = toRender.get(vao);
-            List<IndirectCommand> drawCommandsPerVao = new ArrayList<>();
+        //build command buffer per vao, fill matrix buffer and render
+        for (Vao vao : vaoSortedEntities.keySet()) {
+            Map<RenderInfo, List<Matrix4f>> modelMatrixMap = vaoSortedEntities.get(vao);
             int newEntries = modelMatrixMap.keySet().stream().mapToInt(ri -> modelMatrixMap.get(ri).size()).sum();
             int beginIndex = writeHead;
-            int endIndex = (writeHead + newEntries - 1) % (bufferCount * maxInstanceCount);
-            //loop around to zero to avoid blinking entities
+            int endIndex = (int) Maths.clamp(writeHead + newEntries - 1f, 0, bufferCount * maxInstanceCount - 1f);
+            int overShooting = (writeHead + newEntries - 1)%(bufferCount * maxInstanceCount);
+            List<IndirectCommand> commands = new ArrayList<>();
             lockManger.waitForFence(beginIndex, endIndex);
             for (RenderInfo info : modelMatrixMap.keySet()) {
                 List<Matrix4f> instances = modelMatrixMap.get(info);
-                int startWriteHead = writeHead;
-                int instanceCount = 0;
+                //add command
+                int startingHead = writeHead;
+                int instancesSize = 0;
                 Main.inViewVerticies += info.indiciesCount * instances.size();
                 //add matricies to buffer
                 for (Matrix4f m : instances) {
                     // * floatsPerInstance * 4 because its a bytebuffer so offset needs to be in bytes
                     m.get(writeHead * floatsPerInstance * 4, matrixBuffer);
+                    instancesSize++;
                     writeHead++;
-                    instanceCount++;
-                    if (writeHead > bufferCount * maxInstanceCount) {
-                        drawCommandsPerVao.add(new IndirectCommand(info.indiciesCount, instanceCount, info.indexOffset, info.vertexOffset, startWriteHead));
-                        lockManger.waitForFence(beginIndex, instances.size()-instanceCount);
-                        startWriteHead = writeHead=0;
-                        instanceCount = 0;
+                    if (writeHead >= bufferCount * maxInstanceCount) {
+                        lockManger.waitForFence(0, overShooting);
+                        commands.add(new IndirectCommand(info.indiciesCount, instancesSize, info.indexOffset, info.vertexOffset, startingHead));
+                        lockManger.addFence(0,overShooting);
+                        startingHead = writeHead = 0;
+                        instancesSize = 0;
                     }
                 }
-                drawCommandsPerVao.add(new IndirectCommand(info.indiciesCount, instanceCount, info.indexOffset, info.vertexOffset, startWriteHead));
+                commands.add(new IndirectCommand(info.indiciesCount, instancesSize, info.indexOffset, info.vertexOffset, startingHead));
             }
-            rtVal.put(vao, drawCommandsPerVao.stream().flatMapToInt(IndirectCommand::toStream).toArray());
+            renderCommands.put(vao, commands.stream().flatMapToInt(IndirectCommand::toStream).toArray());
             lockManger.addFence(beginIndex, endIndex);
         }
-        return rtVal;
     }
 
+    public void render() {
+        for (Map.Entry<Vao, int[]> vaoCommand : renderCommands.entrySet()) {
+            Vao vao = vaoCommand.getKey();
+            cmdBuffer.updateVbo(vaoCommand.getValue());
+            //update command buffer
+            cmdBuffer.bind();
+            //render
+            vao.bind();
+            GL43.glMultiDrawElementsIndirect(GL11.GL_TRIANGLES, GL11.GL_UNSIGNED_INT, 0, IndirectCommand.getCommandCount(vaoCommand.getValue()), 0);
+            Main.drawCalls++;
+            vao.unbind();
+        }
+    }
 
 }
