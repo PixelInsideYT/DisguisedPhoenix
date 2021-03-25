@@ -70,4 +70,8 @@ public class Pipeline {
     public void printTimers() {
         atm.printTimer();
     }
+
+    public Atmosphere getAtmosphere(){
+        return atm;
+    }
 }

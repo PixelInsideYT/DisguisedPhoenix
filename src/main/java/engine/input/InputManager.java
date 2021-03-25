@@ -1,9 +1,6 @@
 package engine.input;
 
-import org.lwjgl.glfw.GLFW;
-import org.lwjgl.glfw.GLFWCursorPosCallback;
-import org.lwjgl.glfw.GLFWJoystickCallback;
-import org.lwjgl.glfw.GLFWKeyCallback;
+import org.lwjgl.glfw.*;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -26,7 +23,12 @@ public class InputManager {
     private final int[] keyStates = new int[KEYBOARD_SIZE];
     private final boolean[] activeKeys = new boolean[KEYBOARD_SIZE];
     private final List<InputMap> deviceInputs = new ArrayList<>();
-    private final List<GLFWKeyCallback> keyCallbacks = new ArrayList<>();
+    private final List<GLFWKeyCallbackI> keyCallbacks = new ArrayList<>();
+    private final List<GLFWCharCallbackI> charCallbacks = new ArrayList<>();
+    private final List<GLFWCursorPosCallbackI> cursorPosCallbacks = new ArrayList<>();
+    private final List<GLFWScrollCallbackI> scrollCallbacks = new ArrayList<>();
+    private final List<GLFWMouseButtonCallbackI> mouseButtonCallbacks = new ArrayList<>();
+
     protected GLFWKeyCallback keyboard = new GLFWKeyCallback() {
         @Override
         public void invoke(long window, int key, int scancode, int action, int mods) {
@@ -46,18 +48,60 @@ public class InputManager {
         public void invoke(long window, double xpos, double ypos) {
             currentMouseX = (float) xpos;
             currentMouseY = (float) ypos;
+            cursorPosCallbacks.forEach(cb -> cb.invoke(window, xpos, ypos));
         }
     };
+
+
+    protected GLFWScrollCallback scrollCallback = new GLFWScrollCallback() {
+        @Override
+        public void invoke(long l, double v, double v1) {
+            scrollCallbacks.forEach(i -> i.invoke(l, v, v1));
+        }
+    };
+
+    protected GLFWCharCallback charCallback = new GLFWCharCallback() {
+        @Override
+        public void invoke(long l, int i) {
+            charCallbacks.forEach(callback -> callback.invoke(l, i));
+        }
+    };
+
+    protected GLFWMouseButtonCallback mouseButtonCallback = new GLFWMouseButtonCallback() {
+        @Override
+        public void invoke(long l, int i, int i1, int i2) {
+            mouseButtonCallbacks.forEach(cb -> cb.invoke(l, i, i1, i2));
+        }
+    };
+
     private int leftMouse;
     private int middleMouse;
-        private int rightMouse;
+    private int rightMouse;
 
     public InputManager(long window) {
         this.window = window;
         GLFW.glfwSetKeyCallback(window, keyboard);
         GLFW.glfwSetCursorPosCallback(window, mousePosListener);
         GLFW.glfwSetJoystickCallback(joystickListner);
+        GLFW.glfwSetScrollCallback(window, scrollCallback);
+        GLFW.glfwSetCharCallback(window, charCallback);
+        GLFW.glfwSetMouseButtonCallback(window, mouseButtonCallback);
+    }
 
+    public void addCharCallback(GLFWCharCallbackI callback) {
+        charCallbacks.add(callback);
+    }
+
+    public void addScrollCallback(GLFWScrollCallbackI callback) {
+        scrollCallbacks.add(callback);
+    }
+
+    public void addCursorPosCallback(GLFWCursorPosCallbackI callbackI) {
+        cursorPosCallbacks.add(callbackI);
+    }
+
+    public void addMouseButtonCallback(GLFWMouseButtonCallbackI callbackI) {
+        mouseButtonCallbacks.add(callbackI);
     }
 
     public void addKeyCallback(GLFWKeyCallback callback) {

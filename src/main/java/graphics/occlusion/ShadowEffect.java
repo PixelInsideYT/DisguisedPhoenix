@@ -28,8 +28,8 @@ public class ShadowEffect {
     }
 
 
-    public void render(Matrix4f viewMatrix, Matrix4f projMatrix, Vector3f lightPos, Shader shader, MultiIndirectRenderer renderer) {
-        update(viewMatrix, projMatrix, lightPos);
+    public void render(Matrix4f viewMatrix, float fov,float aspect, Vector3f lightPos, Shader shader, MultiIndirectRenderer renderer) {
+        update(viewMatrix, 1f,5000f,fov,aspect, lightPos);
         shader.loadInt("useInputTransformationMatrix", 1);
         shader.loadMatrix("projMatrix", lightProjMatrix);
         shader.loadMatrix("viewMatrix", lightViewMatrix);
@@ -40,11 +40,11 @@ public class ShadowEffect {
     }
 
 
-    private void update(Matrix4f viewMatrix, Matrix4f projMatrix, Vector3f lightPos) {
+    private void update(Matrix4f viewMatrix, float near, float far, float fov,float aspect, Vector3f lightPos) {
         // Calculate frustum corners in world space
         float maxZ = Float.MIN_VALUE;
         float minZ = Float.MAX_VALUE;
-        Matrix4f projViewMatrix = new Matrix4f(projMatrix).mul(viewMatrix);
+        Matrix4f projViewMatrix = new Matrix4f().perspective(fov,aspect,near,far).mul(viewMatrix);
         for (int i = 0; i < frustumCorners.length; i++) {
             Vector3f corner = frustumCorners[i];
             corner.set(0, 0, 0);

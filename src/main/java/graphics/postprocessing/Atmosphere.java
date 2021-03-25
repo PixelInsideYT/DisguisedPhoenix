@@ -3,6 +3,7 @@ package graphics.postprocessing;
 import disuguisedphoenix.Main;
 import engine.util.Maths;
 import graphics.camera.Camera;
+import graphics.gui.Gui;
 import graphics.loader.TextureLoader;
 import graphics.objects.FrameBufferObject;
 import graphics.objects.TimerQuery;
@@ -11,11 +12,19 @@ import graphics.shaders.ShaderFactory;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.nuklear.*;
+import org.lwjgl.system.MemoryStack;
 
+import java.nio.IntBuffer;
+
+import static org.lwjgl.nuklear.Nuklear.*;
+import static org.lwjgl.nuklear.Nuklear.nk_end;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.*;
+import static org.lwjgl.system.MemoryStack.stackPush;
 
-public class Atmosphere {
+public class Atmosphere implements Gui {
 
     private static final String ATMOSPHERE_RADIUS="atmosphereRadius";
     private static final String PLANET_RADIUS="planetRadius";
@@ -29,9 +38,9 @@ public class Atmosphere {
     private QuadRenderer renderer;
     private Vector3f wavelengths = new Vector3f(700, 530, 440);
     private Vector3f scatterCoeffiecients = new Vector3f();
-    private float densityFalloff = 4f;
-    private float scatteringStrength = 2f;
-    private float atmosphereRadius = Main.radius + 12000;
+    private float densityFalloff = 0.4f;
+    private float scatteringStrength = 0.5f;
+    private float atmosphereRadius = Main.radius + 52000;
     private float planetRadius = Main.radius;
     private int numOpticalDepthPoints = 10;
     private int blueNoiseTexture;
@@ -142,5 +151,69 @@ public class Atmosphere {
     public void printTimer() {
         timer.printResults();
     }
+
+
+
+    private static final int EASY = 0;
+    private static final int HARD = 1;
+
+    static NkColorf background = NkColorf.create()
+            .r(0.10f)
+            .g(0.18f)
+            .b(0.24f)
+            .a(1.0f);
+
+    private static  int op = EASY;
+
+    private static IntBuffer compression = BufferUtils.createIntBuffer(1).put(0, 20);
+
+
+    public void show(NkContext ctx,float windowWidth,float windowHeight){
+        int x=200;
+        int y=200;
+        try (MemoryStack stack = stackPush()) {
+            NkRect rect = NkRect.mallocStack(stack);
+
+            if (nk_begin(
+                    ctx,
+                    "Demo",
+                    nk_rect(x, y, 230, 250, rect),
+                    NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE | NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE
+            )) {
+                nk_layout_row_static(ctx, 30, 80, 1);
+                if (nk_button_label(ctx, "button")) {
+                    System.out.println("button pressed");
+                }
+
+                nk_layout_row_dynamic(ctx, 30, 2);
+                if (nk_option_label(ctx, "easy", op == EASY)) {
+                    op = EASY;
+                }
+                if (nk_option_label(ctx, "hard", op == HARD)) {
+                    op = HARD;
+                }
+
+                nk_layout_row_dynamic(ctx, 25, 1);
+                nk_property_int(ctx, "Compression:", 0, compression, 100, 10, 1);
+
+                nk_layout_row_dynamic(ctx, 20, 1);
+                nk_label(ctx, "background:", NK_TEXT_LEFT);
+                nk_layout_row_dynamic(ctx, 25, 1);
+                if (nk_combo_begin_color(ctx, nk_rgb_cf(background, NkColor.mallocStack(stack)), NkVec2.mallocStack(stack).set(nk_widget_width(ctx), 400))) {
+                    nk_layout_row_dynamic(ctx, 120, 1);
+                    nk_color_picker(ctx, background, NK_RGBA);
+                    nk_layout_row_dynamic(ctx, 25, 1);
+                    background
+                            .r(nk_propertyf(ctx, "#R:", 0, background.r(), 1.0f, 0.01f, 0.005f))
+                            .g(nk_propertyf(ctx, "#G:", 0, background.g(), 1.0f, 0.01f, 0.005f))
+                            .b(nk_propertyf(ctx, "#B:", 0, background.b(), 1.0f, 0.01f, 0.005f))
+                            .a(nk_propertyf(ctx, "#A:", 0, background.a(), 1.0f, 0.01f, 0.005f));
+                    nk_combo_end(ctx);
+                }
+            }
+            nk_end(ctx);
+        }
+    }
+
 
 }

@@ -4,6 +4,8 @@ import disuguisedphoenix.adder.EntityAdder;
 import disuguisedphoenix.terrain.Island;
 import disuguisedphoenix.terrain.PopulatedIsland;
 import disuguisedphoenix.terrain.World;
+import static org.lwjgl.nuklear.Nuklear.*;
+import static org.lwjgl.system.MemoryStack.*;
 import engine.collision.CollisionShape;
 import engine.input.InputManager;
 import engine.input.KeyboardInputMap;
@@ -13,6 +15,7 @@ import engine.util.Zeitgeist;
 import graphics.camera.Camera;
 import graphics.camera.FreeFlightCamera;
 import graphics.context.Display;
+import graphics.gui.NuklearBinding;
 import graphics.loader.TextureLoader;
 import graphics.objects.FrameBufferObject;
 import graphics.objects.OpenGLState;
@@ -30,11 +33,15 @@ import graphics.shaders.ShaderFactory;
 import graphics.world.Model;
 import graphics.world.RenderInfo;
 import org.joml.*;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.nuklear.*;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL45;
 import org.lwjgl.opengl.GLUtil;
+import org.lwjgl.system.MemoryStack;
 
 import java.lang.Math;
+import java.nio.IntBuffer;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -148,6 +155,8 @@ public class Main {
         TimerQuery lightTimer = new TimerQuery("Lighting Pass");
         Matrix4f cullingMatrix = new Matrix4f();
         FrustumIntersection cullingHelper = new FrustumIntersection();
+        NuklearBinding nuklearBinding=new NuklearBinding(input,display);
+        nuklearBinding.registerGui(postProcessPipeline.getAtmosphere());
         while (!display.shouldClose() && !input.isKeyDown(GLFW_KEY_ESCAPE)) {
             float dt = zeitgeist.getDelta();
            // lightAngle += lightSpeed * dt;
@@ -157,6 +166,7 @@ public class Main {
             long startFrame = System.nanoTime();
             time += dt;
             display.pollEvents();
+           // nuklearBinding.pollInputs();
             if (input.isKeyDown(GLFW_KEY_O) && System.currentTimeMillis() - lastSwitchWireframe > 100) {
                 wireframe = !wireframe;
                 lastSwitchWireframe = System.currentTimeMillis();
@@ -218,7 +228,7 @@ public class Main {
             multiRenderer.prepareRenderer(worldsEntity);
             multiRenderer.render();
             fbo.unbind();
-            shadows.render(viewMatrix,projMatrix,lightPos,shader,multiRenderer);
+            shadows.render(viewMatrix,(float) Math.toRadians(70), aspectRatio,lightPos,shader,multiRenderer);
             vertexTimer.waitOnQuery();
             OpenGLState.enableAlphaBlending();
             display.clear();
@@ -275,6 +285,7 @@ public class Main {
             });
             shader.unbind();
             OpenGLState.disableWireframe();*/
+            nuklearBinding.renderGUI(display.getWidth(),display.getHeight());
             display.flipBuffers();
             avgFPS += zeitgeist.getFPS();
             display.setFrameTitle("Disguised Phoenix: " + " FPS: " + zeitgeist.getFPS() + ", In frustum objects: " + inViewObjects + ", drawcalls: " + drawCalls + " faces: " + df.format(facesDrawn));
@@ -289,6 +300,7 @@ public class Main {
         lightTimer.printResults();
         if (ssao.isEnabled())
             ssao.ssaoTimer.printResults();
+        nuklearBinding.cleanUp();
         postProcessPipeline.printTimers();
         System.out.println("AVG FPS: " + (avgFPS / (float) frameCounter));
         TextureLoader.cleanUpAllTextures();
