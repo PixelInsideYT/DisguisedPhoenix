@@ -45,12 +45,13 @@ public class Pipeline {
         atmosphereFbo = new FrameBufferObject(width, height, 1).addTextureAttachment(0);
     }
 
-    public void applyPostProcessing(Display display, Matrix4f viewMatrix, FrameBufferObject deferredResult, FrameBufferObject deferred, Vector3f lightPos, Camera ffc) {
+    public void applyPostProcessing(Display display, Matrix4f viewMatrix,Matrix4f toShadowMatrix, FrameBufferObject deferredResult, FrameBufferObject deferred,int shadowTexture, Vector3f lightPos, Camera ffc) {
         bloom.render(deferredResult.getTextureID(1));
-        rays.render(projMatrix, viewMatrix, lightPos, deferred.getTextureID(1));
+        //rays.render(projMatrix, viewMatrix, lightPos, deferred.getTextureID(1));
         combine.render(deferredResult.getTextureID(0), bloom.getTexture(), rays.getTexture());
         atmosphereFbo.bind();
-        atm.render(ffc, projMatrix, combine.getCombinedResult(), deferred.getDepthTexture(), lightPos);
+        Matrix4f viewShadowMatrix=new Matrix4f(toShadowMatrix);
+        atm.render(ffc, projMatrix,viewShadowMatrix, combine.getCombinedResult(), deferred.getDepthTexture(),shadowTexture, lightPos);
         atmosphereFbo.unbind();
         display.setViewport();
         fxaa.render(atmosphereFbo.getTextureID(0));

@@ -43,7 +43,7 @@ public class QuadRenderer {
         shader.load3DVector("lightPos", viewMatrix.transformPosition(new Vector3f(lightPos)));
         shader.load3DVector("lightColor",lightColor);
         shader.loadMatrix("projMatrixInv", new Matrix4f(projMatrix).invert());
-        Matrix4f shadowReporjectionMatrix = shadowReproject.mul(new Matrix4f(viewMatrix).invert());
+        Matrix4f shadowReporjectionMatrix = new Matrix4f(shadowReproject).mul(new Matrix4f(viewMatrix).invert());
         shader.loadMatrix("shadowReprojectionMatrix",shadowReporjectionMatrix);
         renderOnlyQuad();
         shader.unbind();

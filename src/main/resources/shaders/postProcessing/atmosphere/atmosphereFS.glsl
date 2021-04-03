@@ -5,10 +5,17 @@ in vec2 uv;
 in vec3 viewDir;
 out vec4 color;
 
+const float G_SCATTERING=-0.99f;
+const float mieStrength = 10f;
+
 uniform sampler2D originalTexture;
 uniform sampler2D depthTexture;
 uniform sampler2D noiseTexture;
 uniform sampler2D lookUpTexture;
+
+uniform sampler2D shadowTexture;
+uniform mat4 toShadowMapCoords;
+
 uniform vec3 camPos;
 uniform vec3 scatterCoefficients;
 uniform float atmosphereRadius;
@@ -72,12 +79,19 @@ float opticalDepth2(vec3 rayOrigin, vec3 rayDir, float rayLength){
     return mix(d2, d1, w);
 }
 
+float ComputeScattering(float lightDotView)
+{
+    float result = 1.0f - G_SCATTERING * G_SCATTERING;
+    result /= (4.0f * 3.141592f * pow(1.0f + G_SCATTERING * G_SCATTERING - (2.0f * G_SCATTERING) *      lightDotView, 1.5f));
+    return result;
+}
 
 vec3 calculateLight(vec3 rayOrigin, vec3 rayDir, float rayLength, vec3 originalColor){
     vec3 inScatterPoint = rayOrigin;
     float stepSize = rayLength/(numInScatterPoints-1);
     vec3 inScatteredLight = vec3(0);
     for(int i=0;i<numInScatterPoints;i++){
+        //rayleigh
         float sunRayLength = raySphere(vec3(0), atmosphereRadius, inScatterPoint,dirToSun).y;
         float sunRayOpticalDepth = opticalDepth(inScatterPoint, dirToSun);
         float viewRayOpticalDepth = opticalDepth2(inScatterPoint, -rayDir,stepSize*i);
@@ -88,6 +102,28 @@ vec3 calculateLight(vec3 rayOrigin, vec3 rayDir, float rayLength, vec3 originalC
     }
     vec3 origColorTransmittance = exp(-opticalDepth2(rayOrigin, rayDir,rayLength)*scatterCoefficients);
     return origColorTransmittance*originalColor+inScatteredLight;
+}
+
+vec3 mieFog(vec3 rayOrigin, vec3 rayDir, vec3 originalColor, float maxTravel){
+    int mieScatterPoints = 50;
+    float rayLength=min(maxTravel,10000);
+    vec3 accumFog = vec3(3);
+    vec3 inScatterPoint = rayOrigin;
+    float stepSize = rayLength/(mieScatterPoints-1);
+    for(int i=0;i<mieScatterPoints;i++){
+        //mie
+        vec4 shadowMapPos = toShadowMapCoords*vec4(inScatterPoint, 1.0);
+        shadowMapPos/=shadowMapPos.w;
+        vec2 uvShadowMap = shadowMapPos.xy;
+        float distanceFromLight = shadowMapPos.z;
+        float shadowMapValue = texture(shadowTexture, uvShadowMap).r;
+        if (shadowMapValue>distanceFromLight){
+            accumFog += ComputeScattering(dot(rayDir,-dirToSun))*vec3(1f);
+        }
+        inScatterPoint += rayDir * stepSize;
+    }
+    accumFog=accumFog/mieScatterPoints;
+    return accumFog;
 }
 
 float getSceneDistance(float depth){
@@ -108,7 +144,7 @@ void main() {
     if(dstThroughAtmosphere>0){
         const float epsilon = 0.00001;
         vec3 pointInAtmosphere = rayOrigin + rayDir * (dstToAtmosphere+epsilon);
-        vec3 light = calculateLight(pointInAtmosphere,rayDir,dstThroughAtmosphere-2*epsilon,originalColor);
+        vec3 light = calculateLight(pointInAtmosphere,rayDir,dstThroughAtmosphere-2*epsilon,originalColor)+mieFog(pointInAtmosphere,rayDir,originalColor,sceneDepth-dstToAtmosphere);
         light.rgb += (noise.r *2.0-1.0)/255.0;
         color = vec4(light, 1.0);
     }else{

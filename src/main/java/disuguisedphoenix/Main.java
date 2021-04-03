@@ -10,6 +10,7 @@ import engine.collision.CollisionShape;
 import engine.input.InputManager;
 import engine.input.KeyboardInputMap;
 import engine.input.MouseInputMap;
+import engine.util.Maths;
 import engine.util.ModelFileHandler;
 import engine.util.Zeitgeist;
 import graphics.camera.Camera;
@@ -46,6 +47,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL20.*;
@@ -94,7 +96,7 @@ public class Main {
         worldsEntity.addAll(ea.getAllEntities(new PopulatedIsland(new Vector3f(0), 1000)));
         worldsEntity.forEach(e -> placeEntity(e));
         //  for (int i = 0; i < 1; i++) world.addIsland(1000);
-        Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(0, scale + 100, 0), mim);
+        Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(0, radius + 100, 0), mim);
         ShaderFactory shaderFactory = new ShaderFactory("testVSMultiDraw.glsl", "testFS.glsl").withAttributes("posAndWobble", "colorAndShininess");
         shaderFactory.withUniforms("projMatrix", "noiseMap", "time", "viewMatrix", "transformationMatrixUniform", "useInputTransformationMatrix");
         Shader shader = shaderFactory.configureSampler("noiseMap", 0).built();
@@ -139,6 +141,7 @@ public class Main {
         QuadRenderer quadRenderer = new QuadRenderer();
         GaussianBlur blur = new GaussianBlur(quadRenderer);
         SSAOEffect ssao = new SSAOEffect(quadRenderer, width, height, projMatrix);
+        ssao.disable();
         ShadowEffect shadows = new ShadowEffect();
         HIZGenerator hizGen = new HIZGenerator(quadRenderer);
         Pipeline postProcessPipeline = new Pipeline(width, height, projMatrix, quadRenderer, blur);
@@ -157,6 +160,7 @@ public class Main {
         FrustumIntersection cullingHelper = new FrustumIntersection();
         NuklearBinding nuklearBinding=new NuklearBinding(input,display);
         nuklearBinding.registerGui(postProcessPipeline.getAtmosphere());
+        flightCamera.getPosition().set(player.position);
         while (!display.shouldClose() && !input.isKeyDown(GLFW_KEY_ESCAPE)) {
             float dt = zeitgeist.getDelta();
            // lightAngle += lightSpeed * dt;
@@ -196,15 +200,17 @@ public class Main {
             Camera ffc = player.cam;
             if (!freeFlightCamActivated) {
                 //player.move(world.getPossibleTerrainCollisions(player), dt, world.getPossibleCollisions(player));
-                player.move(world.getPossibleTerrainCollisions(player), dt, worldsEntity, worldTris);
-                flightCamera.getPosition().set(player.cam.getPosition());
+               // player.move(world.getPossibleTerrainCollisions(player), dt, worldsEntity, worldTris);
+                //flightCamera.getPosition().set(player.cam.getPosition());
+
             } else {
                 ffc = flightCamera;
+                ffc.update(dt);
             }
-            world.update(dt);
-            ffc.update(dt);
-            input.updateInputMaps();
             Matrix4f viewMatrix = ffc.getViewMatrix();
+            viewMatrix=flightCamera.getViewMatrix();
+            world.update(dt);
+            input.updateInputMaps();
             vertexTimer.startQuery();
             OpenGLState.enableBackFaceCulling();
             OpenGLState.enableDepthTest();
@@ -225,10 +231,11 @@ public class Main {
             cullingHelper.set(cullingMatrix.set(projMatrix).mul(viewMatrix));
             multiRenderer.prepareRenderer(world.getVisibleEntities(projMatrix, viewMatrix, ffc.getPosition()));
             multiRenderer.render();
-            multiRenderer.prepareRenderer(worldsEntity);
+            multiRenderer.prepareRenderer(worldsEntity.parallelStream().filter(e->Maths.isInsideFrustum(cullingHelper,e)).collect(Collectors.toList()));
             multiRenderer.render();
             fbo.unbind();
-            shadows.render(viewMatrix,(float) Math.toRadians(70), aspectRatio,lightPos,shader,multiRenderer);
+            shader.unbind();
+            shadows.render(viewMatrix,(float) Math.toRadians(70), aspectRatio,time,lightPos,multiRenderer);
             vertexTimer.waitOnQuery();
             OpenGLState.enableAlphaBlending();
             display.clear();
@@ -262,7 +269,7 @@ public class Main {
             OpenGLState.disableDepthTest();
             deferredResult.unbind();
             lightTimer.waitOnQuery();
-            postProcessPipeline.applyPostProcessing(display, viewMatrix, deferredResult, fbo, lightPos, ffc);
+            postProcessPipeline.applyPostProcessing(display, viewMatrix,shadows.getShadowProjViewMatrix(), deferredResult, fbo,shadows.getShadowTexture(), lightPos, ffc);
          /*  OpenGLState.enableWireframe();
             shader.bind();
             shader.loadInt("useInputTransformationMatrix", 0);
@@ -322,15 +329,13 @@ public class Main {
         return String.format("%." + decimalPlaces + "f", v);
     }
 
-    private static float noiseScale = 1f / scale;
-    private static float change = 0.05f;
+    private static float noiseScale = 1f / radius;
+    private static float change = 0.1f;
 
     private static void placeEntity(Entity e) {
         Vector3f pos = e.position;
         Random r = new Random();
-
-        float radius = (float) Math.sqrt(Math.pow(scale / 2f, 2) * 3);
-        pos.set(r.nextFloat() * 2f - 1f, r.nextFloat() * 0.1f + 0.9f, r.nextFloat() * 2f - 1f).normalize(radius);
+        pos.set(r.nextFloat() * 2f - 1f, r.nextFloat() *2f-1f, r.nextFloat() * 2f - 1f).normalize(radius);
         pos.mul(1 + SimplexNoise.noise(pos.x * noiseScale, pos.y * noiseScale, pos.z * noiseScale) * change);
         Vector3f eulerAngles = new Vector3f();
         Quaternionf qf = new Quaternionf();
@@ -344,7 +349,8 @@ public class Main {
 
 
     private static Model createSphere() {
-        int subdivisions = 25;
+        float scale = 100;
+        int subdivisions = 30;
         List<Vector3f> sphereVerticies = createPlane(subdivisions, scale, 1, 0, 0);
         int indicyOffset = sphereVerticies.size();
         sphereVerticies.addAll(createPlane(subdivisions, scale, -1, 0, 0));
@@ -353,9 +359,7 @@ public class Main {
         sphereVerticies.addAll(createPlane(subdivisions, scale, 0, 0, 1));
         sphereVerticies.addAll(createPlane(subdivisions, scale, 0, 0, -1));
 
-        float radius = (float) Math.sqrt(Math.pow(scale / 2f, 2) * 3);
-        sphereVerticies.forEach(v -> v.normalize(radius));
-        sphereVerticies.forEach(v -> v.mul(1 + SimplexNoise.noise(v.x * noiseScale, v.y * noiseScale, v.z * noiseScale) * change));
+        sphereVerticies.forEach(v -> v.normalize(radius).mul(1 + SimplexNoise.noise(v.x * noiseScale, v.y * noiseScale, v.z * noiseScale) * change));
         List<Integer> sphereIndicies = createIndiecies(subdivisions, 0, true);
         for (int i = 1; i < 6; i++) {
             sphereIndicies.addAll(createIndiecies(subdivisions, indicyOffset * i, i % 2 == 0));

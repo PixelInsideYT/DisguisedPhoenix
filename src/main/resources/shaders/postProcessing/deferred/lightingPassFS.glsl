@@ -10,6 +10,8 @@ uniform sampler2D shadowMapTexture;
 
 uniform mat4 projMatrixInv;
 uniform mat4 shadowReprojectionMatrix;
+uniform float shadowDistance = 10000;
+const float transitionDistance = 10;
 uniform float luminanceThreshold = 0.7;
 uniform int ssaoEnabled;
 in vec2 uv;
@@ -62,8 +64,13 @@ void main() {
     vec3 ambient = vec3(0.1 * Diffuse * ambienOcclusion);// here we add occlusion factor
     vec3 lighting  = ambient;
     float lightFactor = 1.0;
+
+    float distance = length(FragPos);
+    distance = distance -(shadowDistance-transitionDistance);
+    distance = distance / transitionDistance;
+    float shadingFactor = clamp(1-distance,0.0,1.0);
     if (texture(shadowMapTexture, uvShadowMap).r<distanceFromLight-0.001){
-        lightFactor=0.4;
+        lightFactor=1.0-(0.6*shadingFactor);
     }
     vec3 viewDir  = normalize(-FragPos);// viewpos is (0.0.0) in view-space
     // diffuse

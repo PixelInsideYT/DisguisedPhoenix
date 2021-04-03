@@ -125,12 +125,12 @@ public class EntityAdder {
 
     private List<Entity> generateEntitiesFor(Island terrain) {
         //float terrainAreaEstimate = terrain.getSize() * terrain.getSize();
-        float terrainAreaEstimate = 4 * (float) Math.PI * scale * scale;
+        float terrainAreaEstimate = 4 * (float) Math.PI * radius*radius;
         if (activated < modelNames.size()) {
             Model model = ModelFileHandler.getModel(modelNames.get(activated));
             float modelAreaEstimate = (float) Math.PI * model.radiusXZ * model.radiusXZ;
-            float count = terrainAreaEstimate / modelAreaEstimate / modelNames.size();
-            if (count > 1000) count = 1000;
+            float count = terrainAreaEstimate / modelAreaEstimate/modelNames.size();
+            if (count > 10000) count = 10000;
             return IntStream.range(0, (int) count).mapToObj(i -> generateEntiy(terrain, model, 0, 6f, 0, 1)).collect(Collectors.toList());
         }
         return new ArrayList<>();

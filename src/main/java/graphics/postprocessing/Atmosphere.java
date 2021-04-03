@@ -16,6 +16,7 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.nuklear.*;
 import org.lwjgl.system.MemoryStack;
 
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 import static org.lwjgl.nuklear.Nuklear.*;
@@ -38,9 +39,9 @@ public class Atmosphere implements Gui {
     private QuadRenderer renderer;
     private Vector3f wavelengths = new Vector3f(700, 530, 440);
     private Vector3f scatterCoeffiecients = new Vector3f();
-    private float densityFalloff = 0.4f;
-    private float scatteringStrength = 0.5f;
-    private float atmosphereRadius = Main.radius + 52000;
+    private float densityFalloff = 1f;
+    private float scatteringStrength = 1f;
+    private float atmosphereRadius = Main.radius + 12000;
     private float planetRadius = Main.radius;
     private int numOpticalDepthPoints = 10;
     private int blueNoiseTexture;
@@ -75,11 +76,12 @@ public class Atmosphere implements Gui {
     public Atmosphere(QuadRenderer renderer) {
         this.renderer = renderer;
         ShaderFactory atmosphereFactory = new ShaderFactory("postProcessing/atmosphere/atmosphereVS.glsl", "postProcessing/atmosphere/atmosphereFS.glsl").withAttributes("pos");
-        atmosphereFactory.withUniforms("originalTexture", "depthTexture", "noiseTexture", "lookUpTexture", "camPos", ATMOSPHERE_RADIUS, "dirToSun", PLANET_RADIUS, DENSITY_FALLOFF, "scatterCoefficients", "invProjMatrix", "zNear", "zFar");
+        atmosphereFactory.withUniforms("originalTexture", "depthTexture", "noiseTexture", "lookUpTexture","shadowTexture", "toShadowMapCoords","camPos", ATMOSPHERE_RADIUS, "dirToSun", PLANET_RADIUS, DENSITY_FALLOFF, "scatterCoefficients", "invProjMatrix", "zNear", "zFar");
         atmosphereFactory.configureSampler("originalTexture", 0);
         atmosphereFactory.configureSampler("depthTexture", 1);
         atmosphereFactory.configureSampler("noiseTexture", 2);
         atmosphereFactory.configureSampler("lookUpTexture", 3);
+        atmosphereFactory.configureSampler("shadowTexture", 4);
 
         atmosphereFactory.configureShaderConstant("numInScatterPoints", 10);
         atmosphereFactory.configureShaderConstant("numOpticalDepthPoints", numOpticalDepthPoints);
@@ -105,7 +107,7 @@ public class Atmosphere implements Gui {
         timer = new TimerQuery("Atmosphere");
     }
 
-    public void render(Camera camera, Matrix4f projMatrix, int texture, int depthTexture, Vector3f lightPos) {
+    public void render(Camera camera, Matrix4f projMatrix,Matrix4f toShadowMap, int texture, int depthTexture,int shadowMap, Vector3f lightPos) {
         timer.startQuery();
         atmosphereShader.bind();
         glActiveTexture(GL_TEXTURE0);
@@ -116,13 +118,19 @@ public class Atmosphere implements Gui {
         glBindTexture(GL_TEXTURE_2D, blueNoiseTexture);
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, lookUpTable.getTextureID(0));
+        glActiveTexture(GL_TEXTURE4);
+        glBindTexture(GL_TEXTURE_2D, shadowMap);
         atmosphereShader.load3DVector("dirToSun", new Vector3f(lightPos).normalize());
         atmosphereShader.loadFloat("zNear", 1f);
         atmosphereShader.loadFloat("zFar", 100000);
+        scatteringStrength=scatterStrengthBuffer.get(0);
+        atmosphereRadius=atmosphereRadiusBuffer.get(0);
+        densityFalloff=densityFallOffBuffer.get(0);
+        calculateScatterCoefficients();
+        atmosphereShader.loadMatrix("toShadowMapCoords",toShadowMap);
+        atmosphereShader.load3DVector("scatterCoefficients", scatterCoeffiecients);
         atmosphereShader.loadFloat(ATMOSPHERE_RADIUS, atmosphereRadius);
         atmosphereShader.loadFloat(PLANET_RADIUS, planetRadius);
-        calculateScatterCoefficients();
-        atmosphereShader.load3DVector("scatterCoefficients", scatterCoeffiecients);
         atmosphereShader.loadFloat(DENSITY_FALLOFF, densityFalloff);
         atmosphereShader.load3DVector("camPos", camera.getPosition());
         Matrix4f projViewMatrix = new Matrix4f(projMatrix).mul(camera.getViewMatrix());
@@ -152,68 +160,26 @@ public class Atmosphere implements Gui {
         timer.printResults();
     }
 
-
-
-    private static final int EASY = 0;
-    private static final int HARD = 1;
-
-    static NkColorf background = NkColorf.create()
-            .r(0.10f)
-            .g(0.18f)
-            .b(0.24f)
-            .a(1.0f);
-
-    private static  int op = EASY;
-
-    private static IntBuffer compression = BufferUtils.createIntBuffer(1).put(0, 20);
-
+    private FloatBuffer densityFallOffBuffer = BufferUtils.createFloatBuffer(1).put(0, densityFalloff);
+        private FloatBuffer scatterStrengthBuffer = BufferUtils.createFloatBuffer(1).put(0, scatteringStrength);
+    private FloatBuffer atmosphereRadiusBuffer = BufferUtils.createFloatBuffer(1).put(0, atmosphereRadius);
 
     public void show(NkContext ctx,float windowWidth,float windowHeight){
+        if(false){
         int x=200;
         int y=200;
         try (MemoryStack stack = stackPush()) {
             NkRect rect = NkRect.mallocStack(stack);
-
             if (nk_begin(
-                    ctx,
-                    "Demo",
-                    nk_rect(x, y, 230, 250, rect),
-                    NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE | NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE
-            )) {
-                nk_layout_row_static(ctx, 30, 80, 1);
-                if (nk_button_label(ctx, "button")) {
-                    System.out.println("button pressed");
-                }
-
-                nk_layout_row_dynamic(ctx, 30, 2);
-                if (nk_option_label(ctx, "easy", op == EASY)) {
-                    op = EASY;
-                }
-                if (nk_option_label(ctx, "hard", op == HARD)) {
-                    op = HARD;
-                }
-
+                    ctx, "Amtosphere Settings", nk_rect(x, y, 400, 250, rect),NK_WINDOW_TITLE)) {
                 nk_layout_row_dynamic(ctx, 25, 1);
-                nk_property_int(ctx, "Compression:", 0, compression, 100, 10, 1);
-
-                nk_layout_row_dynamic(ctx, 20, 1);
-                nk_label(ctx, "background:", NK_TEXT_LEFT);
-                nk_layout_row_dynamic(ctx, 25, 1);
-                if (nk_combo_begin_color(ctx, nk_rgb_cf(background, NkColor.mallocStack(stack)), NkVec2.mallocStack(stack).set(nk_widget_width(ctx), 400))) {
-                    nk_layout_row_dynamic(ctx, 120, 1);
-                    nk_color_picker(ctx, background, NK_RGBA);
-                    nk_layout_row_dynamic(ctx, 25, 1);
-                    background
-                            .r(nk_propertyf(ctx, "#R:", 0, background.r(), 1.0f, 0.01f, 0.005f))
-                            .g(nk_propertyf(ctx, "#G:", 0, background.g(), 1.0f, 0.01f, 0.005f))
-                            .b(nk_propertyf(ctx, "#B:", 0, background.b(), 1.0f, 0.01f, 0.005f))
-                            .a(nk_propertyf(ctx, "#A:", 0, background.a(), 1.0f, 0.01f, 0.005f));
-                    nk_combo_end(ctx);
-                }
+                nk_property_float(ctx, "DensityFalloff:", -10, densityFallOffBuffer, 10, 0.1f, 0.01f);
+                nk_property_float(ctx, "ScatterStrength:", 0, scatterStrengthBuffer, 5f, 0.1f, 0.01f);
+                nk_property_float(ctx, "AtmosphereRadius:", 1000, atmosphereRadiusBuffer, 1000000, 100, 100);
             }
             nk_end(ctx);
         }
-    }
+    }}
 
 
 }
