@@ -60,6 +60,7 @@ public class AssimpWrapper {
     }
 
     public static MeshInformation[] loadModelToMeshInfo(String name) {
+        System.out.println(name);
         AIScene scene = Assimp.aiImportFile(name, loadFlags);
         if (scene == null || (scene.mFlags() & Assimp.AI_SCENE_FLAGS_INCOMPLETE) == 1 || (scene.mFlags() & Assimp.AI_SCENE_FLAGS_VALIDATION_WARNING) == 1 || scene.mRootNode() == null) {
             System.err.println("ERROR::ASSIMP: " + Assimp.aiGetErrorString());
@@ -68,8 +69,8 @@ public class AssimpWrapper {
         int numMeshes = scene.mNumMeshes();
         int slashIndex = name.lastIndexOf("/");
         String base = "models/" + name.substring(0, Math.max(slashIndex, 0));
-        if(name.startsWith("/home")){
-            base=name.substring(name.lastIndexOf("models/"),slashIndex);
+        if (name.startsWith("/home")) {
+            base = name.substring(name.lastIndexOf("models/"), slashIndex);
         }
         PointerBuffer materialPointer = scene.mMaterials();
         MeshInformation[] rt = new MeshInformation[numMeshes];
@@ -84,7 +85,7 @@ public class AssimpWrapper {
             for (int j = 0; j < child.mNumMeshes(); j++) {
                 AIMesh mesh = AIMesh.create(meshPointer.get(meshIDs.get(j)));
                 AIMaterial material = AIMaterial.create(materialPointer.get(mesh.mMaterialIndex()));
-                rt[arrayIndex] = processMesh(mesh, processMaterial(base, material), childTransformation);
+                rt[arrayIndex] = processMesh(mesh, processMaterial(base, material), childTransformation, name);
                 arrayIndex++;
             }
         }
@@ -139,7 +140,7 @@ public class AssimpWrapper {
         String texturePath = getTexturePath(aiMaterial, aiTextureType_DIFFUSE, diffusePath, wrapMode);
         if (texturePath != null && texturePath.length() > 0) {
             if (AssimpWrapper.class.getClassLoader().getResourceAsStream(base + "/" + texturePath) != null) {
-             //   material.diffuseTextureId = TextureLoader.loadTexture(base + "/" + texturePath, assimpWrapToOpenGLWrap(wrapMode.get(0)), GL11.GL_LINEAR);
+                //   material.diffuseTextureId = TextureLoader.loadTexture(base + "/" + texturePath, assimpWrapToOpenGLWrap(wrapMode.get(0)), GL11.GL_LINEAR);
                 try {
                     material.diffuesTexture = ImageIO.read(AssimpWrapper.class.getClassLoader().getResourceAsStream(base + "/" + texturePath));
                 } catch (IOException e) {
@@ -181,7 +182,7 @@ public class AssimpWrapper {
         return path.dataString();
     }
 
-    private static MeshInformation processMesh(AIMesh mesh, Material material, Matrix4f transformation) {
+    private static MeshInformation processMesh(AIMesh mesh, Material material, Matrix4f transformation, String path) {
         String meshName = mesh.mName().dataString();
         List<Integer> modelIndicies = new ArrayList<>();
         List<Vector3f> modelVerticies = new ArrayList<>();
@@ -193,7 +194,7 @@ public class AssimpWrapper {
         boolean useTextureToVertexColor = material.diffuesTexture != null && colors == null;
         Vector3f alternativeColor = new Vector3f(0, 0, 0);
         if (colors == null) {
-            System.err.println("CANT LOAD colors and "+(useTextureToVertexColor?" use Texture to vertex Color instead":"CANT use texture"));
+            System.err.println("CANT LOAD colors and " + (useTextureToVertexColor ? " use Texture to vertex Color instead" : "CANT use texture") + " " + path);
             if (material != null) {
                 alternativeColor = material.diffuse;
             }
@@ -216,10 +217,10 @@ public class AssimpWrapper {
                 } else {
                     if (useTextureToVertexColor) {
                         BufferedImage texture = material.diffuesTexture;
-                        int uvX =(int)  textureCoords.get(index).x()*texture.getWidth();
-                        int uvY =(int) textureCoords.get(index).y()*texture.getHeight();
-                        Color c = new Color(texture.getRGB(uvX,uvY));
-                        vertexColors.put(pos, new Vector3f((float) Math.pow(c.getRed()/255f, 2.2d), (float) Math.pow(c.getGreen()/255f, 2.2d), (float) Math.pow(c.getBlue()/255f, 2.2d)));
+                        int uvX = (int) ((textureCoords.get(index).x()) * (float) texture.getWidth());
+                        int uvY = (int) ((1f - textureCoords.get(index).y()) * (float) texture.getHeight());
+                        Color c = new Color(texture.getRGB(uvX, uvY));
+                        vertexColors.put(pos, new Vector3f((float) Math.pow(c.getRed() / 255f, 2.2d), (float) Math.pow(c.getGreen() / 255f, 2.2d), (float) Math.pow(c.getBlue() / 255f, 2.2d)));
                     } else {
                         vertexColors.put(pos, alternativeColor);
                     }

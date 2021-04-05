@@ -129,9 +129,9 @@ public class EntityAdder {
         if (activated < modelNames.size()) {
             Model model = ModelFileHandler.getModel(modelNames.get(activated));
             float modelAreaEstimate = (float) Math.PI * model.radiusXZ * model.radiusXZ;
-            float count = terrainAreaEstimate / modelAreaEstimate/modelNames.size()/100;
-            if (count > 10000) count = 1000;
-            return IntStream.range(0, (int) count).mapToObj(i -> generateEntiy(terrain, model, 0, 6f, 0, 10f)).collect(Collectors.toList());
+            float count = terrainAreaEstimate / modelAreaEstimate/modelNames.size();
+            if (count > 10000) count = 10000;
+            return IntStream.range(0, (int) count).mapToObj(i -> generateEntiy(terrain, model, 0, 6f, 0, 1f)).collect(Collectors.toList());
         }
         return new ArrayList<>();
     }
