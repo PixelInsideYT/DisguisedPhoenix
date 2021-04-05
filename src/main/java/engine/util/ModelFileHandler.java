@@ -55,7 +55,7 @@ public class ModelFileHandler {
                     for(String mc:modelConfigsString){
                         if(mc.length()>0&&mc.split("\n").length>0){
                             ModelConfig mco = ModelConfig.load(mc);
-                            generateModelFile(mco.relativePath,mco.relativeColliderPath,mco.wobbleInfo);
+                            generateModelFile(mco.relativePath,mco.relativeColliderPath,mco.wobbleInfo,false);
                         }
                     }
                 } catch (IOException e) {
@@ -68,7 +68,7 @@ public class ModelFileHandler {
                 jfc.showOpenDialog(null);
                 colliderFileName = jfc.getSelectedFile().getAbsolutePath();
             }
-            generateModelFile(selectedFile.getPath(), colliderFileName, new HashMap<>());
+            generateModelFile(selectedFile.getPath(), colliderFileName, new HashMap<>(),false);
             }
             returnValue = jfc.showOpenDialog(null);
         }
@@ -93,7 +93,7 @@ public class ModelFileHandler {
             for(String mc:modelConfigsString){
                 if(mc.length()>0&&mc.split("\n").length>0){
                     ModelConfig mco = ModelConfig.load(mc);
-                    generateModelFile(mco.relativePath,mco.relativeColliderPath,mco.wobbleInfo);
+                    generateModelFile(mco.relativePath,mco.relativeColliderPath,mco.wobbleInfo,false);
                 }
             }
         } catch (IOException e) {
@@ -265,7 +265,7 @@ public class ModelFileHandler {
     }
 
 
-    public static MeshInformation combineMeshesToOne(String modelName, Map<String, String> nameToWobbleInfoMap) {
+    public static MeshInformation combineMeshesToOne(String modelName, Map<String, String> nameToWobbleInfoMap, boolean putZero) {
         //load model
         MeshInformation[] model = AssimpWrapper.loadModelToMeshInfo(modelName);
         int combinedVerticiesCount = 0, combinedIndiciesCount = 0;
@@ -286,7 +286,12 @@ public class ModelFileHandler {
             String answer = null;
             if (nameToWobbleInfoMap != null) answer = nameToWobbleInfoMap.get(mi.meshName);
             if (answer == null) {
-                answer = JOptionPane.showInputDialog("How much should: " + mi.meshName + " be affected by wind?\nFormat [ 0; 3 ]:<wobble>\n0: constant wobble\n1: linear wobble from [0;radiusXZPlane]\n2: linear wobble from [0;height]\n3: linear wobble from [0;height+radiusXZPlane]");
+                if(!putZero) {
+                    answer = JOptionPane.showInputDialog("How much should: " + mi.meshName + " be affected by wind?\nFormat [ 0; 3 ]:<wobble>\n0: constant wobble\n1: linear wobble from [0;radiusXZPlane]\n2: linear wobble from [0;height]\n3: linear wobble from [0;height+radiusXZPlane]");
+                }else {
+                    answer="0:0";
+                }
+
                 nameToWobbleInfoMap.put(mi.meshName,answer);
             }
             String[] answerSplit = answer.split(":");
@@ -312,8 +317,8 @@ public class ModelFileHandler {
         return new MeshInformation(modelName.substring(0, modelName.lastIndexOf(".")), null, vertexPositions, colors, indicies);
     }
 
-    public static void generateModelFile(String name, String colliderFileName, Map<String, String> nameToWobbleMap) {
-        MeshInformation combined = combineMeshesToOne(name, nameToWobbleMap);
+    public static void generateModelFile(String name, String colliderFileName, Map<String, String> nameToWobbleMap,boolean putZero) {
+        MeshInformation combined = combineMeshesToOne(name, nameToWobbleMap,putZero);
         Collider collider = null;
         if (colliderFileName != null)
             collider = AssimpWrapper.loadCollider(colliderFileName);

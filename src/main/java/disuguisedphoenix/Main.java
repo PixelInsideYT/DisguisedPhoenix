@@ -79,7 +79,7 @@ public class Main {
     private static Vector3f lightColor = new Vector3f();
 
     public static void main(String[] args) {
-        // ModelFileHandler.regenerateModels("/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/ModelBuilder.info");
+         ModelFileHandler.regenerateModels("/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/ModelBuilder.info");
         //TODO: refactor rendering into a modular pipeline
         long startUpTime = System.currentTimeMillis();
         Display display = new Display("Disguised Phoenix", 480, 360);
@@ -89,10 +89,10 @@ public class Main {
         model = createSphere();
         MouseInputMap mim = new MouseInputMap();
         ParticleManager pm = new ParticleManager();
-        MultiIndirectRenderer multiRenderer = new MultiIndirectRenderer();
-        ModelFileHandler.loadModelsForMultiDraw(multiRenderer.persistantMatrixVbo, "plants/flowerTest1.modelFile", "lowPolyTree/vc.modelFile", "lowPolyTree/ballTree.modelFile", "lowPolyTree/bendyTree.modelFile", "lowPolyTree/tree2.modelFile", "misc/rock.modelFile", "plants/grass.modelFile", "plants/mushroom.modelFile", "misc/tutorialCrystal.modelFile", "plants/glockenblume.modelFile", "misc/fox.modelFile");
-        World world = new World(pm);
         EntityAdder ea = new EntityAdder(pm);
+        MultiIndirectRenderer multiRenderer = new MultiIndirectRenderer();
+        ModelFileHandler.loadModelsForMultiDraw(multiRenderer.persistantMatrixVbo, ea.modelNames.toArray(String[]::new));
+        World world = new World(pm);
         worldsEntity.addAll(ea.getAllEntities(new PopulatedIsland(new Vector3f(0), 1000)));
         worldsEntity.forEach(e -> placeEntity(e));
         //  for (int i = 0; i < 1; i++) world.addIsland(1000);
@@ -292,7 +292,7 @@ public class Main {
             });
             shader.unbind();
             OpenGLState.disableWireframe();*/
-            nuklearBinding.renderGUI(display.getWidth(),display.getHeight());
+           // nuklearBinding.renderGUI(display.getWidth(),display.getHeight());
             display.flipBuffers();
             avgFPS += zeitgeist.getFPS();
             display.setFrameTitle("Disguised Phoenix: " + " FPS: " + zeitgeist.getFPS() + ", In frustum objects: " + inViewObjects + ", drawcalls: " + drawCalls + " faces: " + df.format(facesDrawn));
@@ -350,7 +350,7 @@ public class Main {
 
     private static Model createSphere() {
         float scale = 100;
-        int subdivisions = 30;
+        int subdivisions = 100;
         List<Vector3f> sphereVerticies = createPlane(subdivisions, scale, 1, 0, 0);
         int indicyOffset = sphereVerticies.size();
         sphereVerticies.addAll(createPlane(subdivisions, scale, -1, 0, 0));

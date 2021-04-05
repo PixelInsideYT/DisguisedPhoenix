@@ -15,10 +15,15 @@ import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.*;
+import java.util.List;
 
 import static org.lwjgl.assimp.Assimp.*;
 
@@ -43,7 +48,7 @@ public class AssimpWrapper {
             Matrix4f childTransformation = fromAssimp(child.mTransformation());
             for (int j = 0; j < child.mNumMeshes(); j++) {
                 AIMesh mesh = AIMesh.create(meshPointer.get(meshIDs.get(j)));
-                ConvexShape cs = meshToCollisionShape( mesh, childTransformation);
+                ConvexShape cs = meshToCollisionShape(mesh, childTransformation);
                 max.max(cs.getMax());
                 min.min(cs.getMin());
                 c.addCollisionShape(cs);
@@ -63,18 +68,19 @@ public class AssimpWrapper {
         int numMeshes = scene.mNumMeshes();
         int slashIndex = name.lastIndexOf("/");
         String base = "models/" + name.substring(0, Math.max(slashIndex, 0));
+        if(name.startsWith("/home")){
+            base=name.substring(name.lastIndexOf("models/"),slashIndex);
+        }
         PointerBuffer materialPointer = scene.mMaterials();
         MeshInformation[] rt = new MeshInformation[numMeshes];
         AINode root = scene.mRootNode();
         Matrix4f globalTransform = fromAssimp(root.mTransformation());
-        System.out.println(name +" \n"+globalTransform);
         PointerBuffer nodePointer = root.mChildren();
-        int arrayIndex =0;
+        int arrayIndex = 0;
         for (int i = 0; i < root.mNumChildren(); i++) {
             AINode child = AINode.create(nodePointer.get(i));
             IntBuffer meshIDs = child.mMeshes();
             Matrix4f childTransformation = fromAssimp(child.mTransformation()).mul(globalTransform);
-            System.out.println(child.mName().dataString()+" \n"+childTransformation);
             for (int j = 0; j < child.mNumMeshes(); j++) {
                 AIMesh mesh = AIMesh.create(meshPointer.get(meshIDs.get(j)));
                 AIMaterial material = AIMaterial.create(materialPointer.get(mesh.mMaterialIndex()));
@@ -96,11 +102,10 @@ public class AssimpWrapper {
     }
 
     private static Matrix4f fromAssimp(AIMatrix4x4 m) {
-       // return new Matrix4f(m.a1(), m.a2(), m.a3(), m.a4(), m.b1(), m.b2(), m.b3(), m.b4(), m.c1(), m.c2(), m.c3(), m.c4(), m.d1(), m.d2(), m.d3(), m.d4());
-        return new Matrix4f(m.a1(),m.b1(),m.c1(),m.d1(),
-                m.a2(),m.b2(),m.c2(),m.d2(),
-                m.a3(),m.b3(),m.c3(),m.d3(),
-                m.a4(),m.b4(),m.c4(),m.d4());
+        return new Matrix4f(m.a1(), m.b1(), m.c1(), m.d1(),
+                m.a2(), m.b2(), m.c2(), m.d2(),
+                m.a3(), m.b3(), m.c3(), m.d3(),
+                m.a4(), m.b4(), m.c4(), m.d4());
     }
 
 
@@ -134,7 +139,12 @@ public class AssimpWrapper {
         String texturePath = getTexturePath(aiMaterial, aiTextureType_DIFFUSE, diffusePath, wrapMode);
         if (texturePath != null && texturePath.length() > 0) {
             if (AssimpWrapper.class.getClassLoader().getResourceAsStream(base + "/" + texturePath) != null) {
-                material.diffuseTextureId = TextureLoader.loadTexture(base + "/" + texturePath, assimpWrapToOpenGLWrap(wrapMode.get(0)), GL11.GL_LINEAR);
+             //   material.diffuseTextureId = TextureLoader.loadTexture(base + "/" + texturePath, assimpWrapToOpenGLWrap(wrapMode.get(0)), GL11.GL_LINEAR);
+                try {
+                    material.diffuesTexture = ImageIO.read(AssimpWrapper.class.getClassLoader().getResourceAsStream(base + "/" + texturePath));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             } else {
                 System.out.println("Cannot find texture: " + base + "/" + texturePath);
             }
@@ -177,11 +187,13 @@ public class AssimpWrapper {
         List<Vector3f> modelVerticies = new ArrayList<>();
         Map<Vector3f, Vector3f> vertexColors = new HashMap<>();
         AIVector3D.Buffer verticies = mesh.mVertices();
+        AIVector3D.Buffer textureCoords = mesh.mTextureCoords(0);
         int faceCount = mesh.mNumFaces();
         AIColor4D.Buffer colors = mesh.mColors(0);
+        boolean useTextureToVertexColor = material.diffuesTexture != null && colors == null;
         Vector3f alternativeColor = new Vector3f(0, 0, 0);
         if (colors == null) {
-            System.err.println("CANT LOAD colors ");
+            System.err.println("CANT LOAD colors and "+(useTextureToVertexColor?" use Texture to vertex Color instead":"CANT use texture"));
             if (material != null) {
                 alternativeColor = material.diffuse;
             }
@@ -202,7 +214,15 @@ public class AssimpWrapper {
                     Vector3f linearRGB = new Vector3f((float) Math.pow(sRGB.x, 2.2d), (float) Math.pow(sRGB.y, 2.2d), (float) Math.pow(sRGB.z, 2.2d));
                     vertexColors.put(pos, linearRGB);
                 } else {
-                    vertexColors.put(pos, alternativeColor);
+                    if (useTextureToVertexColor) {
+                        BufferedImage texture = material.diffuesTexture;
+                        int uvX =(int)  textureCoords.get(index).x()*texture.getWidth();
+                        int uvY =(int) textureCoords.get(index).y()*texture.getHeight();
+                        Color c = new Color(texture.getRGB(uvX,uvY));
+                        vertexColors.put(pos, new Vector3f((float) Math.pow(c.getRed()/255f, 2.2d), (float) Math.pow(c.getGreen()/255f, 2.2d), (float) Math.pow(c.getBlue()/255f, 2.2d)));
+                    } else {
+                        vertexColors.put(pos, alternativeColor);
+                    }
                 }
                 modelIndicies.add(modelVerticies.indexOf(pos));
             }
