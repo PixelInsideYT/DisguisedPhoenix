@@ -10,6 +10,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 
 import static org.lwjgl.opengl.GL13.*;
+import static org.lwjgl.opengl.GL30.GL_TEXTURE_2D_ARRAY;
 
 public class QuadRenderer {
 
@@ -28,7 +29,8 @@ public class QuadRenderer {
         });
         quad.unbind();
         ShaderFactory gResolveFactory = new ShaderFactory("postProcessing/quadVS.glsl", "postProcessing/deferred/lightingPassFS.glsl").withAttributes("pos");
-        gResolveFactory.withUniforms("depthTexture", "shadowMapTexture","shadowReprojectionMatrix","normalAndSpecularTexture", "colorAndGeometryCheckTexture", "ambientOcclusionTexture", "projMatrixInv", "lightPos","lightColor", "ssaoEnabled");
+        gResolveFactory.withUniforms("depthTexture", "shadowMapTexture","zFar","normalAndSpecularTexture", "colorAndGeometryCheckTexture", "ambientOcclusionTexture", "projMatrixInv", "lightPos","lightColor", "ssaoEnabled");
+        gResolveFactory.withUniformArray("shadowReprojectionMatrix",4);
         gResolveFactory.configureSampler("depthTexture", 0).configureSampler("normalAndSpecularTexture", 1).
                 configureSampler("colorAndGeometryCheckTexture", 2).configureSampler("ambientOcclusionTexture", 3).configureSampler("shadowMapTexture",4);
         shader = gResolveFactory.built();
@@ -37,14 +39,18 @@ public class QuadRenderer {
     }
 
 
-    public void renderDeferredLightingPass(Matrix4f viewMatrix, Matrix4f projMatrix, Vector3f lightPos,Vector3f lightColor, boolean ssaoIsEnabled,Matrix4f shadowReproject) {
+    public void renderDeferredLightingPass(Matrix4f viewMatrix, Matrix4f projMatrix, Vector3f lightPos,Vector3f lightColor, boolean ssaoIsEnabled,Matrix4f[] shadowReproject) {
         shader.bind();
         shader.loadInt("ssaoEnabled", ssaoIsEnabled ? 1 : 0);
         shader.load3DVector("lightPos", viewMatrix.transformPosition(new Vector3f(lightPos)));
         shader.load3DVector("lightColor",lightColor);
+        shader.loadFloat("zFar",Main.FAR_PLANE);
         shader.loadMatrix("projMatrixInv", new Matrix4f(projMatrix).invert());
-        Matrix4f shadowReporjectionMatrix = new Matrix4f(shadowReproject).mul(new Matrix4f(viewMatrix).invert());
-        shader.loadMatrix("shadowReprojectionMatrix",shadowReporjectionMatrix);
+        Matrix4f[] shadowReporjectionMatrix = new Matrix4f[shadowReproject.length];
+        for(int i=0;i<shadowReporjectionMatrix.length;i++) {
+           shadowReporjectionMatrix[i]=new Matrix4f (shadowReproject[i]).mul(new Matrix4f(viewMatrix).invert());
+        }
+        shader.loadMatrix4fArray("shadowReprojectionMatrix",shadowReporjectionMatrix);
         renderOnlyQuad();
         shader.unbind();
     }
@@ -52,7 +58,7 @@ public class QuadRenderer {
     public void renderTextureToScreen(int texture) {
         testShader.bind();
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
         renderOnlyQuad();
         testShader.unbind();
     }

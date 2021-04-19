@@ -18,7 +18,7 @@ const float epsilon = 0.0001;
 
 
 uniform mat4 projMatrixInv;
-uniform float farPlane = 100000.0;
+uniform float farPlane;
 
 uniform float radius;
 uniform float projScale;

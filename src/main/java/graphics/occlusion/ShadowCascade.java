@@ -10,14 +10,11 @@ public class ShadowCascade {
     private Matrix4f lightProjMatrix;
     private Matrix4f lightViewMatrix;
 
-    protected FrameBufferObject shadowMap;
     private Vector3f[] frustumCorners;
     private Vector3f centroid;
 
-    float shadowDistance = 10000;
 
     public ShadowCascade() {
-        shadowMap = new FrameBufferObject(4096, 4096, 0).addDepthTextureAttachment(false);
         frustumCorners = new Vector3f[8];
         centroid = new Vector3f();
         for (int i = 0; i < frustumCorners.length; i++) frustumCorners[i] = new Vector3f();
@@ -26,8 +23,7 @@ public class ShadowCascade {
     }
 
 
-    protected void update(Matrix4f viewMatrix, float near, float fov,float aspect, Vector3f lightPos) {
-        float far = shadowDistance;
+    protected void update(Matrix4f viewMatrix, float near,float far, float fov,float aspect, Vector3f lightPos) {
         // Calculate frustum corners in world space
         float maxZ = Float.MIN_VALUE;
         float minZ = Float.MAX_VALUE;
@@ -73,8 +69,7 @@ public class ShadowCascade {
         float maxY = -Float.MIN_VALUE;
         float minZ = Float.MAX_VALUE;
         float maxZ = -Float.MIN_VALUE;
-        for (int i = 0; i < frustumCorners.length; i++) {
-            Vector3f corner = frustumCorners[i];
+        for (Vector3f corner : frustumCorners) {
             tmpVec.set(corner, 1);
             tmpVec.mul(lightViewMatrix);
             minX = Math.min(tmpVec.x, minX);
@@ -97,10 +92,6 @@ public class ShadowCascade {
 
     public Matrix4f getViewProjMatrix(){
         return new Matrix4f(lightProjMatrix).mul(lightViewMatrix);
-    }
-
-    public int getShadowTexture() {
-        return shadowMap.getDepthTexture();
     }
 
 }

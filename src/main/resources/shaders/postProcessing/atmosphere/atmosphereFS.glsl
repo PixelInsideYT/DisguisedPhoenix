@@ -13,8 +13,9 @@ uniform sampler2D depthTexture;
 uniform sampler2D noiseTexture;
 uniform sampler2D lookUpTexture;
 
-uniform sampler2D shadowTexture;
-uniform mat4 toShadowMapCoords;
+uniform sampler2DArray shadowTexture;
+uniform mat4[4] toShadowMapCoords;
+uniform float[4] cascadeDepths;
 
 uniform vec3 camPos;
 uniform vec3 scatterCoefficients;
@@ -112,11 +113,18 @@ vec3 mieFog(vec3 rayOrigin, vec3 rayDir, vec3 originalColor, float maxTravel){
     float stepSize = rayLength/(mieScatterPoints-1);
     for(int i=0;i<mieScatterPoints;i++){
         //mie
-        vec4 shadowMapPos = toShadowMapCoords*vec4(inScatterPoint, 1.0);
+        int index=0;
+        for(int i=0;i<4;i++){
+            if(distance(inScatterPoint,camPos)<cascadeDepths[i]){
+                index=i;
+                break;
+            }
+        }
+        vec4 shadowMapPos = toShadowMapCoords[index]*vec4(inScatterPoint, 1.0);
         shadowMapPos/=shadowMapPos.w;
         vec2 uvShadowMap = shadowMapPos.xy;
         float distanceFromLight = shadowMapPos.z;
-        float shadowMapValue = texture(shadowTexture, uvShadowMap).r;
+        float shadowMapValue = texture(shadowTexture, vec3(uvShadowMap,index)).r;
         if (shadowMapValue>distanceFromLight){
             accumFog += ComputeScattering(dot(rayDir,-dirToSun))*vec3(1f);
         }

@@ -3,6 +3,7 @@ package graphics.objects;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL32;
+import org.lwjgl.opengl.GL46;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -59,7 +60,12 @@ public class FrameBufferObject {
         this.depthPointer = createDepthTextureAttachment(mipMapped);
         return this;
     }
-
+    public FrameBufferObject addLayeredDepthTextureAttachment(int splits, int size) {
+        this.hasDepthAttachment = true;
+        this.hasDepthTexture = true;
+        this.depthPointer = createLayeredDepthTexture(splits,size);
+        return this;
+    }
     public void blitToFbo(FrameBufferObject out) {
         blit(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT, out.fbo, out.getBufferWidth(), out.getBufferHeight());
     }
@@ -182,7 +188,18 @@ public class FrameBufferObject {
         GL32.glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, texture, 0);
         return texture;
     }
-
+    private int createLayeredDepthTexture(int splits, int size) {
+        int texture = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
+        GL46.glTexStorage3D(GL_TEXTURE_2D_ARRAY,1,GL_DEPTH_COMPONENT32F,size,size,splits);
+       /*glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, (ByteBuffer) null);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);*/
+        GL32.glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, texture, 0);
+        return texture;
+    }
     public static void cleanUpAllFbos() {
         allFbos.forEach(FrameBufferObject::cleanUp);
     }

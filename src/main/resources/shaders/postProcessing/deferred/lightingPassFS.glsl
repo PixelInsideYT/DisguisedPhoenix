@@ -6,12 +6,13 @@ uniform sampler2D depthTexture;
 uniform sampler2D normalAndSpecularTexture;
 uniform sampler2D colorAndGeometryCheckTexture;
 uniform sampler2D ambientOcclusionTexture;
-uniform sampler2D shadowMapTexture;
+uniform sampler2DArray shadowMapTexture;
 
 uniform mat4 projMatrixInv;
-uniform mat4 shadowReprojectionMatrix;
-uniform float shadowDistance = 10000;
-const float transitionDistance = 10;
+uniform mat4 shadowReprojectionMatrix[4];
+uniform float zFar;
+uniform float splitRange[4]=float[](0.02,0.05,0.5,1);
+
 uniform float luminanceThreshold = 0.7;
 uniform int ssaoEnabled;
 in vec2 uv;
@@ -40,6 +41,25 @@ vec3 viewPosFromDepth(vec2 TexCoord, float depth) {
     viewSpacePosition /= viewSpacePosition.w;
     return viewSpacePosition.xyz;
 }
+float shadow(vec3 position){
+    float shadow =1;
+    int index =0;
+    float linearDepth = -position.z/zFar;
+    for(int i=0;i<4;i++){
+        if(linearDepth<splitRange[i]){
+            index=i;
+            break;
+        }
+    }
+    vec4 shadowMapPos = shadowReprojectionMatrix[index]*vec4(position, 1.0);
+    vec2 uvShadowMap = shadowMapPos.xy;
+    float distanceFromLight = shadowMapPos.z;
+    if (texture(shadowMapTexture, vec3(uvShadowMap,index)).r<distanceFromLight-0.001){
+        shadow=0.4;
+    }
+    return shadow;
+}
+
 void main() {
     vec4 colorAndGeometryCheck = texture(colorAndGeometryCheckTexture, uv);
     if (colorAndGeometryCheck.w==0){
@@ -48,9 +68,7 @@ void main() {
         return;
     }
     vec3 FragPos = viewPosFromDepth(uv, texture(depthTexture, uv).r);
-    vec4 shadowMapPos = shadowReprojectionMatrix*vec4(FragPos, 1.0);
-    vec2 uvShadowMap = shadowMapPos.xy;
-    float distanceFromLight = shadowMapPos.z;
+
     vec3 normalAndShininess = texture(normalAndSpecularTexture, uv).xyz;
     float ambienOcclusion = 1;
     if (ssaoEnabled==1){
@@ -63,15 +81,6 @@ void main() {
     // blinn-phong (in view-space)
     vec3 ambient = vec3(0.1 * Diffuse * ambienOcclusion);// here we add occlusion factor
     vec3 lighting  = ambient;
-    float lightFactor = 1.0;
-
-    float distance = length(FragPos);
-    distance = distance -(shadowDistance-transitionDistance);
-    distance = distance / transitionDistance;
-    float shadingFactor = clamp(1-distance,0.0,1.0);
-    if (texture(shadowMapTexture, uvShadowMap).r<distanceFromLight-0.001){
-        lightFactor=1.0-(0.6*shadingFactor);
-    }
     vec3 viewDir  = normalize(-FragPos);// viewpos is (0.0.0) in view-space
     // diffuse
     vec3 lightDir = normalize(lightPos - FragPos);
@@ -85,7 +94,8 @@ void main() {
     float attenuation = 1.0 / (dist * dist);
     // diffuse  *= attenuation;
     // specular *= attenuation;
-    lighting += diffuse*lightFactor;
+    vec3 cascadeVis=vec3(0);
+    lighting += diffuse*shadow(FragPos);
     //calculate highlight for bloom post processing
     float luminance = dot(lighting, luminanceDot);
     highLight = vec4(lighting*pow(luminance, 2), 1);

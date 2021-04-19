@@ -1,5 +1,6 @@
 package graphics.occlusion;
 
+import disuguisedphoenix.Main;
 import graphics.objects.FrameBufferObject;
 import graphics.objects.TimerQuery;
 import graphics.postprocessing.QuadRenderer;
@@ -69,6 +70,7 @@ public class SSAOEffect {
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getDepthTexture());
             ssaoShader.bind();
             ssaoShader.loadMatrix("projMatrixInv", new Matrix4f(projMatrix).invert());
+            ssaoShader.loadFloat("farPlane", Main.FAR_PLANE);
             Vector4f uvProjScale = projMatrix.transform(new Vector4f(1, 0, -1, 1));
             float projScale = uvProjScale.x / uvProjScale.w;
             projScale = projScale * 0.5f + 0.5f;

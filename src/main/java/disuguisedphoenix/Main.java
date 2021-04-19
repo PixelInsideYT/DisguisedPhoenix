@@ -5,6 +5,7 @@ import disuguisedphoenix.terrain.Island;
 import disuguisedphoenix.terrain.PopulatedIsland;
 import disuguisedphoenix.terrain.World;
 import static org.lwjgl.nuklear.Nuklear.*;
+import static org.lwjgl.opengl.GL46.*;
 import static org.lwjgl.system.MemoryStack.*;
 import engine.collision.CollisionShape;
 import engine.input.InputManager;
@@ -38,6 +39,7 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.nuklear.*;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL45;
+import org.lwjgl.opengl.GL46;
 import org.lwjgl.opengl.GLUtil;
 import org.lwjgl.system.MemoryStack;
 
@@ -58,6 +60,8 @@ public class Main {
     public static int inViewObjects = 0;
     public static int drawCalls = 0;
     public static int facesDrawn = 0;
+    private static final float NEEDED_SIZE_PER_LENGTH_UNIT=0.005f;
+    public static final float FAR_PLANE = 10000f;
 
     private static Model model;
 
@@ -78,14 +82,20 @@ public class Main {
     private static Vector3f lightPos = new Vector3f(0, 1, 0);
     private static Vector3f lightColor = new Vector3f();
 
+    private static boolean couldBeVisible(Entity e, Vector3f cameraPos){
+        float size = e.getScale()*e.getModel().radius;
+        float distance = e.getPosition().distance(cameraPos);
+        return size>distance*NEEDED_SIZE_PER_LENGTH_UNIT;
+    }
+
     public static void main(String[] args) {
-         ModelFileHandler.regenerateModels("/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/ModelBuilder.info");
+     //    ModelFileHandler.regenerateModels("/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/ModelBuilder.info");
         //TODO: refactor rendering into a modular pipeline
         long startUpTime = System.currentTimeMillis();
-        Display display = new Display("Disguised Phoenix", 480, 360);
+        Display display = new Display("Disguised Phoenix", 1920, 1080);
         display.setClearColor(new Vector3f(0f));
-        GL11.glEnable(GL45.GL_DEBUG_OUTPUT);
-        GLUtil.setupDebugMessageCallback();
+       // GL11.glEnable(GL45.GL_DEBUG_OUTPUT);
+       // GLUtil.setupDebugMessageCallback();
         model = createSphere();
         MouseInputMap mim = new MouseInputMap();
         ParticleManager pm = new ParticleManager();
@@ -96,7 +106,7 @@ public class Main {
         worldsEntity.addAll(ea.getAllEntities(new PopulatedIsland(new Vector3f(0), 1000)));
         worldsEntity.forEach(e -> placeEntity(e));
         //  for (int i = 0; i < 1; i++) world.addIsland(1000);
-        Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(0, radius + 100, 0), mim);
+        Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(0, radius +scale/6, 0), mim);
         ShaderFactory shaderFactory = new ShaderFactory("testVSMultiDraw.glsl", "testFS.glsl").withAttributes("posAndWobble", "colorAndShininess");
         shaderFactory.withUniforms("projMatrix", "noiseMap", "time", "viewMatrix", "transformationMatrixUniform", "useInputTransformationMatrix");
         Shader shader = shaderFactory.configureSampler("noiseMap", 0).built();
@@ -106,7 +116,7 @@ public class Main {
         int width = display.getWidth();
         int height = display.getHeight();
         float aspectRatio = width / (float) height;
-        projMatrix.perspective((float) Math.toRadians(70), aspectRatio, 1f, 100000);
+        projMatrix.perspective((float) Math.toRadians(70), aspectRatio, 1f, FAR_PLANE);
         InputManager input = new InputManager(display.getWindowId());
         KeyboardInputMap kim = new KeyboardInputMap().addMapping("forward", GLFW_KEY_W).addMapping("backward", GLFW_KEY_S).addMapping("turnLeft", GLFW_KEY_A).addMapping("turnRight", GLFW_KEY_D).addMapping("accel", GLFW_KEY_SPACE);
         KeyboardInputMap freeFlightCam = new KeyboardInputMap().addMapping("forward", GLFW_KEY_W).addMapping("backward", GLFW_KEY_S).addMapping("goLeft", GLFW_KEY_A).addMapping("goRight", GLFW_KEY_D).addMapping("up", GLFW_KEY_SPACE).addMapping("down", GLFW_KEY_LEFT_SHIFT).addMapping("fastFlight", GLFW_KEY_LEFT_CONTROL);
@@ -148,7 +158,7 @@ public class Main {
         float avgFPS = 0;
         int frameCounter = 0;
         display.setResizeListener((width1, height1, aspectRatio1) -> {
-            projMatrix.identity().perspective((float) Math.toRadians(70), aspectRatio1, 1f, 100000);
+            projMatrix.identity().perspective((float) Math.toRadians(70), aspectRatio1, 1f, FAR_PLANE);
             fbo.resize(width1, height1);
             deferredResult.resize(width1, height1);
             ssao.resize(width1, height1);
@@ -231,7 +241,8 @@ public class Main {
             cullingHelper.set(cullingMatrix.set(projMatrix).mul(viewMatrix));
             multiRenderer.prepareRenderer(world.getVisibleEntities(projMatrix, viewMatrix, ffc.getPosition()));
             multiRenderer.render();
-            multiRenderer.prepareRenderer(worldsEntity.parallelStream().filter(e->Maths.isInsideFrustum(cullingHelper,e)).collect(Collectors.toList()));
+            final Vector3f camPos = ffc.getPosition();
+            multiRenderer.prepareRenderer(worldsEntity.parallelStream().filter(e->Maths.isInsideFrustum(cullingHelper,e)&&couldBeVisible(e,camPos)).collect(Collectors.toList()));
             multiRenderer.render();
             fbo.unbind();
             shader.unbind();
@@ -258,7 +269,7 @@ public class Main {
             glActiveTexture(GL_TEXTURE3);
             glBindTexture(GL_TEXTURE_2D, ssao.getSSAOTexture());
             glActiveTexture(GL_TEXTURE4);
-            glBindTexture(GL_TEXTURE_2D, shadows.getShadowTexture());
+            glBindTexture(GL_TEXTURE_2D_ARRAY, shadows.getShadowTexture());
             lightColor = postProcessPipeline.calculateLightColor(lightPos, ffc.getPosition());
             lightColor.set(1f);
             quadRenderer.renderDeferredLightingPass(ffc.getViewMatrix(), projMatrix, lightPos, lightColor, ssao.isEnabled(),shadows.getShadowProjViewMatrix());
@@ -269,7 +280,7 @@ public class Main {
             OpenGLState.disableDepthTest();
             deferredResult.unbind();
             lightTimer.waitOnQuery();
-            postProcessPipeline.applyPostProcessing(display, viewMatrix,shadows.getShadowProjViewMatrix(), deferredResult, fbo,shadows.getShadowTexture(), lightPos, ffc);
+            postProcessPipeline.applyPostProcessing(display, shadows.getShadowProjViewMatrix(), deferredResult, fbo,shadows.getShadowTexture(), lightPos, ffc);
          /*  OpenGLState.enableWireframe();
             shader.bind();
             shader.loadInt("useInputTransformationMatrix", 0);

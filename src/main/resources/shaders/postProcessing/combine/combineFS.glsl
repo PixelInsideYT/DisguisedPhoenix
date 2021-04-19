@@ -2,7 +2,6 @@
 
 uniform sampler2D colorTexture;
 uniform sampler2D bloomTexture;
-uniform sampler2D godRaysTexture;
 
 in vec2 uv;
 out vec4 result;

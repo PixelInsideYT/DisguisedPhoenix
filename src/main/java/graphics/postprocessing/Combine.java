@@ -25,14 +25,12 @@ public class Combine {
         return combinedResult.getTextureID(0);
     }
 
-    public void render(int lightingTexture, int bloomTexture, int godRaysTexture) {
+    public void render(int lightingTexture, int bloomTexture) {
         combinedResult.bind();
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, lightingTexture);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, bloomTexture);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, godRaysTexture);
         shader.bind();
         renderer.renderOnlyQuad();
         shader.unbind();
