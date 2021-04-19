@@ -81,4 +81,7 @@ public class World {
 return islands.parallelStream().filter(island -> island.couldHeightCollide(pos)).map(populatedIsland -> populatedIsland.island).collect(Collectors.toList());
     }
 
+    public EntityAdder getEntityAdder() {
+        return adder;
+    }
 }

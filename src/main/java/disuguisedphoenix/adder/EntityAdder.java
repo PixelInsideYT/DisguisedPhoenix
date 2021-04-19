@@ -40,16 +40,41 @@ public class EntityAdder {
     Random rnd;
 
     public EntityAdder(ParticleManager pm) {
+        System.err.println("called entity Adder constructor");
         ShaderFactory creationFactory = new ShaderFactory("creationVS.glsl", "creationFS.glsl");
         creationFactory.addShaderStage(ShaderFactory.GEOMETRY_SHADER, "creationGS.glsl");
         creationFactory.withUniforms("projMatrix", "viewMatrix", "transformationMatrix", "builtProgress", "modelHeight");
         creationShader = creationFactory.withAttributes("pos", "color").built();
         this.pm = pm;
         fillModelNameList(new File("."));
+        List<String> distinctList=modelNames.stream().distinct().collect(Collectors.toList());
+        modelNames.clear();
+        modelNames.addAll(Arrays.asList("misc/tutorialCrystal.modelFile",
+                "misc/rock.modelFile",
+                "misc/fox.modelFile",
+                "lowPolyTree/tree2.modelFile",
+                "lowPolyTree/bendyTree.modelFile",
+                "lowPolyTree/vc.modelFile",
+                "lowPolyTree/ballTree.modelFile",
+                "bush/mountain_ash_with_berries_3.modelFile",
+                "bush/mountain_ash_with_berries_2.modelFile",
+                "bush/mountain_ash_1.modelFile",
+                "bush/mountain_ash_with_berries_1.modelFile",
+                "bush/mountain_ash_3.modelFile",
+                "bush/mountain_ash_2.modelFile",
+                "desertPlants/cactus02.modelFile",
+                "desertPlants/cactus01.modelFile",
+                "desertPlants/aloe.modelFile",
+                "desertPlants/cactus03.modelFile",
+                "plants/glockenblume.modelFile",
+                "plants/flowerTest1.modelFile",
+                "plants/mushroom.modelFile",
+                "plants/grass.modelFile"));
         rnd = new Random();
     }
 
-    public void fillModelNameList(File startDir) {
+    private void fillModelNameList(File startDir) {
+        String fileSeprerator = File.separator;
         File[] faFiles = startDir.listFiles();
         for (File file : faFiles) {
             if (file.getName().endsWith(".modelFile")) {
@@ -58,7 +83,7 @@ public class EntityAdder {
                     if (file.getName().contains(s)) isBlocked = true;
                 }
                 String absPath = file.getAbsolutePath();
-                String filename = absPath.substring(absPath.indexOf("models/") + "models/".length());
+                String filename = absPath.substring(absPath.indexOf("models"+fileSeprerator) + ("models"+fileSeprerator).length());
                 if (!isBlocked) {
                     modelNames.add(filename);
                 }

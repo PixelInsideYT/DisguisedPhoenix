@@ -4,9 +4,6 @@ import disuguisedphoenix.adder.EntityAdder;
 import disuguisedphoenix.terrain.Island;
 import disuguisedphoenix.terrain.PopulatedIsland;
 import disuguisedphoenix.terrain.World;
-import static org.lwjgl.nuklear.Nuklear.*;
-import static org.lwjgl.opengl.GL46.*;
-import static org.lwjgl.system.MemoryStack.*;
 import engine.collision.CollisionShape;
 import engine.input.InputManager;
 import engine.input.KeyboardInputMap;
@@ -27,7 +24,10 @@ import graphics.occlusion.SSAOEffect;
 import graphics.occlusion.ShadowEffect;
 import graphics.particles.ParticleManager;
 import graphics.particles.PointSeekingEmitter;
-import graphics.postprocessing.*;
+import graphics.postprocessing.GaussianBlur;
+import graphics.postprocessing.HIZGenerator;
+import graphics.postprocessing.Pipeline;
+import graphics.postprocessing.QuadRenderer;
 import graphics.renderer.MultiIndirectRenderer;
 import graphics.renderer.TestRenderer;
 import graphics.shaders.Shader;
@@ -35,16 +35,8 @@ import graphics.shaders.ShaderFactory;
 import graphics.world.Model;
 import graphics.world.RenderInfo;
 import org.joml.*;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.nuklear.*;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL45;
-import org.lwjgl.opengl.GL46;
-import org.lwjgl.opengl.GLUtil;
-import org.lwjgl.system.MemoryStack;
 
 import java.lang.Math;
-import java.nio.IntBuffer;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,7 +44,7 @@ import java.util.Random;
 import java.util.stream.Collectors;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL46.*;
 
 public class Main {
 
@@ -60,8 +52,8 @@ public class Main {
     public static int inViewObjects = 0;
     public static int drawCalls = 0;
     public static int facesDrawn = 0;
-    private static final float NEEDED_SIZE_PER_LENGTH_UNIT=0.005f;
-    public static final float FAR_PLANE = 10000f;
+    private static final float NEEDED_SIZE_PER_LENGTH_UNIT = 0.005f;
+    public static final float FAR_PLANE = 100000f;
 
     private static Model model;
 
@@ -82,31 +74,31 @@ public class Main {
     private static Vector3f lightPos = new Vector3f(0, 1, 0);
     private static Vector3f lightColor = new Vector3f();
 
-    private static boolean couldBeVisible(Entity e, Vector3f cameraPos){
-        float size = e.getScale()*e.getModel().radius;
+    private static boolean couldBeVisible(Entity e, Vector3f cameraPos) {
+        float size = e.getScale() * e.getModel().radius;
         float distance = e.getPosition().distance(cameraPos);
-        return size>distance*NEEDED_SIZE_PER_LENGTH_UNIT;
+        return size > distance * NEEDED_SIZE_PER_LENGTH_UNIT;
     }
 
     public static void main(String[] args) {
-     //    ModelFileHandler.regenerateModels("/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/ModelBuilder.info");
+        //    ModelFileHandler.regenerateModels("/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/ModelBuilder.info");
         //TODO: refactor rendering into a modular pipeline
         long startUpTime = System.currentTimeMillis();
         Display display = new Display("Disguised Phoenix", 1920, 1080);
         display.setClearColor(new Vector3f(0f));
-       // GL11.glEnable(GL45.GL_DEBUG_OUTPUT);
-       // GLUtil.setupDebugMessageCallback();
+        // GL11.glEnable(GL45.GL_DEBUG_OUTPUT);
+        // GLUtil.setupDebugMessageCallback();
         model = createSphere();
         MouseInputMap mim = new MouseInputMap();
         ParticleManager pm = new ParticleManager();
-        EntityAdder ea = new EntityAdder(pm);
+        World world = new World(pm);
+        EntityAdder ea = world.getEntityAdder();
         MultiIndirectRenderer multiRenderer = new MultiIndirectRenderer();
         ModelFileHandler.loadModelsForMultiDraw(multiRenderer.persistantMatrixVbo, ea.modelNames.toArray(String[]::new));
-        World world = new World(pm);
         worldsEntity.addAll(ea.getAllEntities(new PopulatedIsland(new Vector3f(0), 1000)));
         worldsEntity.forEach(e -> placeEntity(e));
         //  for (int i = 0; i < 1; i++) world.addIsland(1000);
-        Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(0, radius +scale/6, 0), mim);
+        Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(0, radius + scale / 6, 0), mim);
         ShaderFactory shaderFactory = new ShaderFactory("testVSMultiDraw.glsl", "testFS.glsl").withAttributes("posAndWobble", "colorAndShininess");
         shaderFactory.withUniforms("projMatrix", "noiseMap", "time", "viewMatrix", "transformationMatrixUniform", "useInputTransformationMatrix");
         Shader shader = shaderFactory.configureSampler("noiseMap", 0).built();
@@ -168,19 +160,19 @@ public class Main {
         TimerQuery lightTimer = new TimerQuery("Lighting Pass");
         Matrix4f cullingMatrix = new Matrix4f();
         FrustumIntersection cullingHelper = new FrustumIntersection();
-        NuklearBinding nuklearBinding=new NuklearBinding(input,display);
+        NuklearBinding nuklearBinding = new NuklearBinding(input, display);
         nuklearBinding.registerGui(postProcessPipeline.getAtmosphere());
         flightCamera.getPosition().set(player.position);
         while (!display.shouldClose() && !input.isKeyDown(GLFW_KEY_ESCAPE)) {
             float dt = zeitgeist.getDelta();
-           // lightAngle += lightSpeed * dt;
-           lightAngle=1f;
+            // lightAngle += lightSpeed * dt;
+            lightAngle = 1f;
             lightPos.z = (float) Math.cos(lightAngle) * lightRadius;
             lightPos.y = (float) Math.sin(lightAngle) * lightRadius;
             long startFrame = System.nanoTime();
             time += dt;
             display.pollEvents();
-           // nuklearBinding.pollInputs();
+            // nuklearBinding.pollInputs();
             if (input.isKeyDown(GLFW_KEY_O) && System.currentTimeMillis() - lastSwitchWireframe > 100) {
                 wireframe = !wireframe;
                 lastSwitchWireframe = System.currentTimeMillis();
@@ -210,7 +202,7 @@ public class Main {
             Camera ffc = player.cam;
             if (!freeFlightCamActivated) {
                 //player.move(world.getPossibleTerrainCollisions(player), dt, world.getPossibleCollisions(player));
-               // player.move(world.getPossibleTerrainCollisions(player), dt, worldsEntity, worldTris);
+                // player.move(world.getPossibleTerrainCollisions(player), dt, worldsEntity, worldTris);
                 //flightCamera.getPosition().set(player.cam.getPosition());
 
             } else {
@@ -218,7 +210,7 @@ public class Main {
                 ffc.update(dt);
             }
             Matrix4f viewMatrix = ffc.getViewMatrix();
-            viewMatrix=flightCamera.getViewMatrix();
+            viewMatrix = flightCamera.getViewMatrix();
             world.update(dt);
             input.updateInputMaps();
             vertexTimer.startQuery();
@@ -242,11 +234,11 @@ public class Main {
             multiRenderer.prepareRenderer(world.getVisibleEntities(projMatrix, viewMatrix, ffc.getPosition()));
             multiRenderer.render();
             final Vector3f camPos = ffc.getPosition();
-            multiRenderer.prepareRenderer(worldsEntity.parallelStream().filter(e->Maths.isInsideFrustum(cullingHelper,e)&&couldBeVisible(e,camPos)).collect(Collectors.toList()));
+            multiRenderer.prepareRenderer(worldsEntity.parallelStream().filter(e -> Maths.isInsideFrustum(cullingHelper, e) && couldBeVisible(e, camPos)).collect(Collectors.toList()));
             multiRenderer.render();
             fbo.unbind();
             shader.unbind();
-            shadows.render(viewMatrix,(float) Math.toRadians(70), aspectRatio,time,lightPos,multiRenderer);
+            shadows.render(viewMatrix, (float) Math.toRadians(70), aspectRatio, time, lightPos, multiRenderer);
             vertexTimer.waitOnQuery();
             OpenGLState.enableAlphaBlending();
             display.clear();
@@ -272,7 +264,7 @@ public class Main {
             glBindTexture(GL_TEXTURE_2D_ARRAY, shadows.getShadowTexture());
             lightColor = postProcessPipeline.calculateLightColor(lightPos, ffc.getPosition());
             lightColor.set(1f);
-            quadRenderer.renderDeferredLightingPass(ffc.getViewMatrix(), projMatrix, lightPos, lightColor, ssao.isEnabled(),shadows.getShadowProjViewMatrix());
+            quadRenderer.renderDeferredLightingPass(ffc.getViewMatrix(), projMatrix, lightPos, lightColor, ssao.isEnabled(), shadows.getShadowProjViewMatrix());
             OpenGLState.enableDepthTest();
             OpenGLState.enableAlphaBlending();
             pm.render(projMatrix, viewMatrix);
@@ -280,7 +272,7 @@ public class Main {
             OpenGLState.disableDepthTest();
             deferredResult.unbind();
             lightTimer.waitOnQuery();
-            postProcessPipeline.applyPostProcessing(display, shadows.getShadowProjViewMatrix(), deferredResult, fbo,shadows.getShadowTexture(), lightPos, ffc);
+            postProcessPipeline.applyPostProcessing(display, shadows.getShadowProjViewMatrix(), deferredResult, fbo, shadows.getShadowTexture(), lightPos, ffc);
          /*  OpenGLState.enableWireframe();
             shader.bind();
             shader.loadInt("useInputTransformationMatrix", 0);
@@ -303,7 +295,7 @@ public class Main {
             });
             shader.unbind();
             OpenGLState.disableWireframe();*/
-           // nuklearBinding.renderGUI(display.getWidth(),display.getHeight());
+            // nuklearBinding.renderGUI(display.getWidth(),display.getHeight());
             display.flipBuffers();
             avgFPS += zeitgeist.getFPS();
             display.setFrameTitle("Disguised Phoenix: " + " FPS: " + zeitgeist.getFPS() + ", In frustum objects: " + inViewObjects + ", drawcalls: " + drawCalls + " faces: " + df.format(facesDrawn));
@@ -346,7 +338,7 @@ public class Main {
     private static void placeEntity(Entity e) {
         Vector3f pos = e.position;
         Random r = new Random();
-        pos.set(r.nextFloat() * 2f - 1f, r.nextFloat() *2f-1f, r.nextFloat() * 2f - 1f).normalize(radius);
+        pos.set(r.nextFloat() * 2f - 1f, r.nextFloat() * 2f - 1f, r.nextFloat() * 2f - 1f).normalize(radius);
         pos.mul(1 + SimplexNoise.noise(pos.x * noiseScale, pos.y * noiseScale, pos.z * noiseScale) * change);
         Vector3f eulerAngles = new Vector3f();
         Quaternionf qf = new Quaternionf();

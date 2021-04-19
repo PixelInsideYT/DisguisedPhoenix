@@ -1,4 +1,4 @@
-#version 150
+#version 430
 #VAR numInScatterPoints
 #VAR numOpticalDepthPoints
 in vec2 uv;
@@ -6,7 +6,7 @@ in vec3 viewDir;
 out vec4 color;
 
 const float G_SCATTERING=-0.99f;
-const float mieStrength = 10f;
+const float mieStrength = 10.0f;
 
 uniform sampler2D originalTexture;
 uniform sampler2D depthTexture;
@@ -126,7 +126,7 @@ vec3 mieFog(vec3 rayOrigin, vec3 rayDir, vec3 originalColor, float maxTravel){
         float distanceFromLight = shadowMapPos.z;
         float shadowMapValue = texture(shadowTexture, vec3(uvShadowMap,index)).r;
         if (shadowMapValue>distanceFromLight){
-            accumFog += ComputeScattering(dot(rayDir,-dirToSun))*vec3(1f);
+            accumFog += ComputeScattering(dot(rayDir,-dirToSun))*vec3(1.0);
         }
         inScatterPoint += rayDir * stepSize;
     }

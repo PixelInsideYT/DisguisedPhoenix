@@ -149,7 +149,6 @@ public class ModelFileHandler {
     public static MeshInformation loadModelToMeshInfo(String name) {
         InputStream stream = ModelFileHandler.class.getClassLoader().getResourceAsStream("models/" + name);
         ByteBuffer buffer;
-        Model rt = null;
         try {
             buffer = ByteBuffer.wrap(readAllBytes(stream)).order(ByteOrder.nativeOrder());
             stream.close();
