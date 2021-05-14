@@ -65,14 +65,10 @@ public class Main {
 
     private static List<CollisionShape> worldTris = new ArrayList<>();
 
-    //NEXT Commit:
-    // - improved free flight cam to support round world
-    // - improved entity adder
-    private static float lightSpeed = 0.25f;
     private static float lightAngle = 0;
     private static float lightRadius = 2 * radius;
     private static Vector3f lightPos = new Vector3f(0, 1, 0);
-    private static Vector3f lightColor = new Vector3f();
+    private static Vector3f lightColor = new Vector3f(1f);
 
     private static boolean couldBeVisible(Entity e, Vector3f cameraPos) {
         float size = e.getScale() * e.getModel().radius;
@@ -85,7 +81,6 @@ public class Main {
         //TODO: refactor rendering into a modular pipeline
         long startUpTime = System.currentTimeMillis();
         Display display = new Display("Disguised Phoenix", 1920, 1080);
-        display.setClearColor(new Vector3f(0f));
         // GL11.glEnable(GL45.GL_DEBUG_OUTPUT);
         // GLUtil.setupDebugMessageCallback();
         model = createSphere();
@@ -160,7 +155,6 @@ public class Main {
         Matrix4f cullingMatrix = new Matrix4f();
         FrustumIntersection cullingHelper = new FrustumIntersection();
         NuklearBinding nuklearBinding = new NuklearBinding(input, display);
-        nuklearBinding.registerGui(postProcessPipeline.getAtmosphere());
         flightCamera.getPosition().set(player.position);
         while (!display.shouldClose() && !input.isKeyDown(GLFW_KEY_ESCAPE)) {
             float dt = zeitgeist.getDelta();
@@ -217,7 +211,7 @@ public class Main {
             OpenGLState.enableDepthTest();
             OpenGLState.disableAlphaBlending();
             fbo.bind();
-            glClearColor(0f, 0f, 0f, 0.0f);
+            glClearColor(0.1f, 0.1f, 0.9f, 0.0f);
             fbo.clear();
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, noiseTexture);
@@ -261,8 +255,6 @@ public class Main {
             glBindTexture(GL_TEXTURE_2D, ssao.getSSAOTexture());
             glActiveTexture(GL_TEXTURE4);
             glBindTexture(GL_TEXTURE_2D_ARRAY, shadows.getShadowTexture());
-            lightColor = postProcessPipeline.calculateLightColor(lightPos, ffc.getPosition());
-            lightColor.set(1f);
             quadRenderer.renderDeferredLightingPass(ffc.getViewMatrix(), projMatrix, lightPos, lightColor, ssao.isEnabled(), shadows.getShadowProjViewMatrix());
             OpenGLState.enableDepthTest();
             OpenGLState.enableAlphaBlending();
@@ -271,7 +263,7 @@ public class Main {
             OpenGLState.disableDepthTest();
             deferredResult.unbind();
             lightTimer.waitOnQuery();
-            postProcessPipeline.applyPostProcessing(display, shadows.getShadowProjViewMatrix(), deferredResult, fbo, shadows.getShadowTexture(), lightPos, ffc);
+            postProcessPipeline.applyPostProcessing(display, deferredResult, fbo, shadows.getShadowTexture(), lightPos, ffc);
          /*  OpenGLState.enableWireframe();
             shader.bind();
             shader.loadInt("useInputTransformationMatrix", 0);
@@ -311,7 +303,6 @@ public class Main {
             ssao.ssaoTimer.printResults();
         shadows.shadowTimer.printResults();
         nuklearBinding.cleanUp();
-        postProcessPipeline.printTimers();
         System.out.println("AVG FPS: " + (avgFPS / (float) frameCounter));
         TextureLoader.cleanUpAllTextures();
         FrameBufferObject.cleanUpAllFbos();
