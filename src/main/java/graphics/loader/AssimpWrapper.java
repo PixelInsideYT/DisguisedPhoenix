@@ -60,7 +60,6 @@ public class AssimpWrapper {
     }
 
     public static MeshInformation[] loadModelToMeshInfo(String name) {
-        System.out.println(name);
         AIScene scene = Assimp.aiImportFile(name, loadFlags);
         if (scene == null || (scene.mFlags() & Assimp.AI_SCENE_FLAGS_INCOMPLETE) == 1 || (scene.mFlags() & Assimp.AI_SCENE_FLAGS_VALIDATION_WARNING) == 1 || scene.mRootNode() == null) {
             System.err.println("ERROR::ASSIMP: " + Assimp.aiGetErrorString());
@@ -228,7 +227,7 @@ public class AssimpWrapper {
                 modelIndicies.add(modelVerticies.indexOf(pos));
             }
         }
-        //  MeshOptimizer.optimize(modelVerticies,modelIndicies);
+        MeshOptimizer.optimize(modelVerticies,modelIndicies);
         float[] vaoVerticies = new float[modelVerticies.size() * 3];
         float[] vaoColor = new float[modelVerticies.size() * 3];
         int vertexPointer = 0;

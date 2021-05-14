@@ -2,6 +2,7 @@ package graphics.occlusion;
 
 import disuguisedphoenix.Main;
 import graphics.objects.FrameBufferObject;
+import graphics.objects.TimerQuery;
 import graphics.renderer.MultiIndirectRenderer;
 import graphics.shaders.Shader;
 import graphics.shaders.ShaderFactory;
@@ -16,10 +17,12 @@ public class ShadowEffect {
     private static final float[] CASCADE_DISTANCE = {0.05f,0.02f,0.5f,1f};
 
     protected FrameBufferObject shadowMap;
+    public TimerQuery shadowTimer;
     private ShadowCascade[] cascades =new ShadowCascade[SHADOWS_CASCADES];
     private Shader shadowShader;
 
     public ShadowEffect() {
+        shadowTimer = new TimerQuery("Cascading Shadows");
         for(int i=0;i<SHADOWS_CASCADES;i++){
             cascades[i]=new ShadowCascade();
         }
@@ -33,6 +36,7 @@ public class ShadowEffect {
     }
 
     public void render(Matrix4f viewMatrix, float fov, float aspect,float time, Vector3f lightPos, MultiIndirectRenderer renderer) {
+        shadowTimer.startQuery();
         float near = 1f;
         for(int i=0;i<SHADOWS_CASCADES;i++) {
             cascades[i].update(viewMatrix, near, CASCADE_DISTANCE[i]* Main.FAR_PLANE, fov, aspect, lightPos);
@@ -46,6 +50,7 @@ public class ShadowEffect {
         renderer.render();
         shadowMap.unbind();
         shadowShader.unbind();
+        shadowTimer.waitOnQuery();
     }
 
 

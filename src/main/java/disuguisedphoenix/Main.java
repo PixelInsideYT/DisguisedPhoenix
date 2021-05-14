@@ -53,7 +53,7 @@ public class Main {
     public static int drawCalls = 0;
     public static int facesDrawn = 0;
     private static final float NEEDED_SIZE_PER_LENGTH_UNIT = 0.005f;
-    public static final float FAR_PLANE = 100000f;
+    public static final float FAR_PLANE = 10000f;
 
     private static Model model;
 
@@ -81,7 +81,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        //    ModelFileHandler.regenerateModels("/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/ModelBuilder.info");
+        //ModelFileHandler.regenerateModels("/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/ModelBuilder.info");
         //TODO: refactor rendering into a modular pipeline
         long startUpTime = System.currentTimeMillis();
         Display display = new Display("Disguised Phoenix", 1920, 1080);
@@ -143,7 +143,6 @@ public class Main {
         QuadRenderer quadRenderer = new QuadRenderer();
         GaussianBlur blur = new GaussianBlur(quadRenderer);
         SSAOEffect ssao = new SSAOEffect(quadRenderer, width, height, projMatrix);
-        ssao.disable();
         ShadowEffect shadows = new ShadowEffect();
         HIZGenerator hizGen = new HIZGenerator(quadRenderer);
         Pipeline postProcessPipeline = new Pipeline(width, height, projMatrix, quadRenderer, blur);
@@ -238,8 +237,8 @@ public class Main {
             multiRenderer.render();
             fbo.unbind();
             shader.unbind();
-            shadows.render(viewMatrix, (float) Math.toRadians(70), aspectRatio, time, lightPos, multiRenderer);
             vertexTimer.waitOnQuery();
+            shadows.render(viewMatrix, (float) Math.toRadians(70), aspectRatio, time, lightPos, multiRenderer);
             OpenGLState.enableAlphaBlending();
             display.clear();
             OpenGLState.disableWireframe();
@@ -310,6 +309,7 @@ public class Main {
         lightTimer.printResults();
         if (ssao.isEnabled())
             ssao.ssaoTimer.printResults();
+        shadows.shadowTimer.printResults();
         nuklearBinding.cleanUp();
         postProcessPipeline.printTimers();
         System.out.println("AVG FPS: " + (avgFPS / (float) frameCounter));
