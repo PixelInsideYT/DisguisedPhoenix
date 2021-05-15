@@ -8,6 +8,7 @@ uniform sampler2D colorAndGeometryCheckTexture;
 uniform sampler2D ambientOcclusionTexture;
 uniform sampler2DArray shadowMapTexture;
 
+uniform int shadowsEnabled;
 uniform mat4 projMatrixInv;
 uniform mat4 shadowReprojectionMatrix[4];
 uniform float zFar;
@@ -41,6 +42,9 @@ vec3 viewPosFromDepth(vec2 TexCoord, float depth) {
     viewSpacePosition /= viewSpacePosition.w;
     return viewSpacePosition.xyz;
 }
+
+const vec3[4] distanceColor=vec3[](vec3(0.1),vec3(1,0,0),vec3(0,1,0),vec3(0,0,1));
+
 float shadow(vec3 position){
     float shadow =1;
     int index =0;
@@ -94,8 +98,11 @@ void main() {
     float attenuation = 1.0 / (dist * dist);
     // diffuse  *= attenuation;
     // specular *= attenuation;
-    vec3 cascadeVis=vec3(0);
-    lighting += diffuse*shadow(FragPos);
+    float shadowMul = 1f;
+    if(shadowsEnabled==1){
+       shadowMul=shadow(FragPos);
+    }
+    lighting += diffuse*shadowMul;
     //calculate highlight for bloom post processing
     float luminance = dot(lighting, luminanceDot);
     highLight = vec4(lighting*pow(luminance, 2), 1);

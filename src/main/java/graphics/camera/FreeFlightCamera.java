@@ -11,8 +11,8 @@ public class FreeFlightCamera extends Camera {
     private final InputMap otherMovement;
 
 
-    private static final float NORMAL_SPEED = 500;
-    private static final float FAST_SPEED = 5000;
+    private static final float NORMAL_SPEED = 5;
+    private static final float FAST_SPEED = 50;
 
     private Vector3f lookDirection = new Vector3f(0, 0, 1);
 

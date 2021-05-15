@@ -53,12 +53,14 @@ public class Main {
     public static int drawCalls = 0;
     public static int facesDrawn = 0;
     private static final float NEEDED_SIZE_PER_LENGTH_UNIT = 0.005f;
-    public static final float FAR_PLANE = 10000f;
+    public static final float FAR_PLANE = 500f;
+    public static final float NEAR_PLANE = 0.05f;
+
 
     private static Model model;
 
     private static List<Entity> worldsEntity = new ArrayList<>();
-    public static float scale = 60000;
+    public static float scale = 600;
     public static float radius = (float) Math.sqrt(Math.pow(scale / 2f, 2) * 3);
 
     //get models on itch and cgtrader
@@ -70,7 +72,7 @@ public class Main {
     private static Vector3f lightPos = new Vector3f(0, 1, 0);
     private static Vector3f lightColor = new Vector3f(1f);
 
-    private static boolean couldBeVisible(Entity e, Vector3f cameraPos) {
+    public static boolean couldBeVisible(Entity e, Vector3f cameraPos) {
         float size = e.getScale() * e.getModel().radius;
         float distance = e.getPosition().distance(cameraPos);
         return size > distance * NEEDED_SIZE_PER_LENGTH_UNIT;
@@ -82,7 +84,7 @@ public class Main {
         long startUpTime = System.currentTimeMillis();
         Display display = new Display("Disguised Phoenix", 1920, 1080);
         // GL11.glEnable(GL45.GL_DEBUG_OUTPUT);
-        // GLUtil.setupDebugMessageCallback();
+        //GLUtil.setupDebugMessageCallback();
         model = createSphere();
         MouseInputMap mim = new MouseInputMap();
         ParticleManager pm = new ParticleManager();
@@ -93,7 +95,7 @@ public class Main {
         worldsEntity.addAll(ea.getAllEntities(new PopulatedIsland(new Vector3f(0), 1000)));
         worldsEntity.forEach(e -> placeEntity(e));
         //  for (int i = 0; i < 1; i++) world.addIsland(1000);
-        Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(0, radius + scale / 6, 0), mim);
+        Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(0, radius, 0), mim);
         ShaderFactory shaderFactory = new ShaderFactory("testVSMultiDraw.glsl", "testFS.glsl").withAttributes("posAndWobble", "colorAndShininess");
         shaderFactory.withUniforms("projMatrix", "noiseMap", "time", "viewMatrix", "transformationMatrixUniform", "useInputTransformationMatrix");
         Shader shader = shaderFactory.configureSampler("noiseMap", 0).built();
@@ -103,7 +105,7 @@ public class Main {
         int width = display.getWidth();
         int height = display.getHeight();
         float aspectRatio = width / (float) height;
-        projMatrix.perspective((float) Math.toRadians(70), aspectRatio, 1f, FAR_PLANE);
+        projMatrix.perspective((float) Math.toRadians(70), aspectRatio, NEAR_PLANE, FAR_PLANE);
         InputManager input = new InputManager(display.getWindowId());
         KeyboardInputMap kim = new KeyboardInputMap().addMapping("forward", GLFW_KEY_W).addMapping("backward", GLFW_KEY_S).addMapping("turnLeft", GLFW_KEY_A).addMapping("turnRight", GLFW_KEY_D).addMapping("accel", GLFW_KEY_SPACE);
         KeyboardInputMap freeFlightCam = new KeyboardInputMap().addMapping("forward", GLFW_KEY_W).addMapping("backward", GLFW_KEY_S).addMapping("goLeft", GLFW_KEY_A).addMapping("goRight", GLFW_KEY_D).addMapping("up", GLFW_KEY_SPACE).addMapping("down", GLFW_KEY_LEFT_SHIFT).addMapping("fastFlight", GLFW_KEY_LEFT_CONTROL);
@@ -138,13 +140,15 @@ public class Main {
         QuadRenderer quadRenderer = new QuadRenderer();
         GaussianBlur blur = new GaussianBlur(quadRenderer);
         SSAOEffect ssao = new SSAOEffect(quadRenderer, width, height, projMatrix);
+        ssao.disable();
         ShadowEffect shadows = new ShadowEffect();
+        shadows.disable();
         HIZGenerator hizGen = new HIZGenerator(quadRenderer);
         Pipeline postProcessPipeline = new Pipeline(width, height, projMatrix, quadRenderer, blur);
         float avgFPS = 0;
         int frameCounter = 0;
         display.setResizeListener((width1, height1, aspectRatio1) -> {
-            projMatrix.identity().perspective((float) Math.toRadians(70), aspectRatio1, 1f, FAR_PLANE);
+            projMatrix.identity().perspective((float) Math.toRadians(70), aspectRatio1, NEAR_PLANE, FAR_PLANE);
             fbo.resize(width1, height1);
             deferredResult.resize(width1, height1);
             ssao.resize(width1, height1);
@@ -156,13 +160,14 @@ public class Main {
         FrustumIntersection cullingHelper = new FrustumIntersection();
         NuklearBinding nuklearBinding = new NuklearBinding(input, display);
         flightCamera.getPosition().set(player.position);
+        float summedMS = 0f;
         while (!display.shouldClose() && !input.isKeyDown(GLFW_KEY_ESCAPE)) {
+            long startFrame = System.currentTimeMillis();
             float dt = zeitgeist.getDelta();
             // lightAngle += lightSpeed * dt;
             lightAngle = 1f;
             lightPos.z = (float) Math.cos(lightAngle) * lightRadius;
             lightPos.y = (float) Math.sin(lightAngle) * lightRadius;
-            long startFrame = System.nanoTime();
             time += dt;
             display.pollEvents();
             // nuklearBinding.pollInputs();
@@ -232,7 +237,7 @@ public class Main {
             fbo.unbind();
             shader.unbind();
             vertexTimer.waitOnQuery();
-            shadows.render(viewMatrix, (float) Math.toRadians(70), aspectRatio, time, lightPos, multiRenderer);
+            shadows.render(viewMatrix, NEAR_PLANE, FAR_PLANE, (float) Math.toRadians(70), aspectRatio, time, lightPos, worldsEntity, multiRenderer);
             OpenGLState.enableAlphaBlending();
             display.clear();
             OpenGLState.disableWireframe();
@@ -255,7 +260,7 @@ public class Main {
             glBindTexture(GL_TEXTURE_2D, ssao.getSSAOTexture());
             glActiveTexture(GL_TEXTURE4);
             glBindTexture(GL_TEXTURE_2D_ARRAY, shadows.getShadowTexture());
-            quadRenderer.renderDeferredLightingPass(ffc.getViewMatrix(), projMatrix, lightPos, lightColor, ssao.isEnabled(), shadows.getShadowProjViewMatrix());
+            quadRenderer.renderDeferredLightingPass(ffc.getViewMatrix(), projMatrix, lightPos, lightColor, ssao.isEnabled(), shadows.isEnabled(), shadows.getShadowProjViewMatrix());
             OpenGLState.enableDepthTest();
             OpenGLState.enableAlphaBlending();
             pm.render(projMatrix, viewMatrix);
@@ -264,28 +269,6 @@ public class Main {
             deferredResult.unbind();
             lightTimer.waitOnQuery();
             postProcessPipeline.applyPostProcessing(display, deferredResult, fbo, shadows.getShadowTexture(), lightPos, ffc);
-         /*  OpenGLState.enableWireframe();
-            shader.bind();
-            shader.loadInt("useInputTransformationMatrix", 0);
-            worldsEntity.forEach(entity -> {
-                Collider collider = entity.getCollider();
-                if (collider != null) {
-                    collider.allTheShapes.stream().forEach(i -> {
-                        if (i instanceof ConvexShape) {
-                            ConvexShape cs = (ConvexShape) i;
-                            if (cs.canBeRenderd()) {
-                                Vao toRender = cs.getModel();
-                                toRender.bind();
-                                shader.loadMatrix("transformationMatrixUniform", cs.getTransformation());
-                                GL11.glDrawElements(GL11.GL_TRIANGLES, toRender.getIndiciesLength(), GL11.GL_UNSIGNED_INT, 0);
-                                toRender.unbind();
-                            }
-                        }
-                    });
-                }
-            });
-            shader.unbind();
-            OpenGLState.disableWireframe();*/
             // nuklearBinding.renderGUI(display.getWidth(),display.getHeight());
             display.flipBuffers();
             avgFPS += zeitgeist.getFPS();
@@ -296,14 +279,17 @@ public class Main {
             drawCalls = 0;
             zeitgeist.sleep();
             frameCounter++;
+            summedMS += (System.currentTimeMillis() - startFrame);
         }
         vertexTimer.printResults();
         lightTimer.printResults();
         if (ssao.isEnabled())
             ssao.ssaoTimer.printResults();
-        shadows.shadowTimer.printResults();
+        if (shadows.isEnabled())
+            shadows.shadowTimer.printResults();
         nuklearBinding.cleanUp();
         System.out.println("AVG FPS: " + (avgFPS / (float) frameCounter));
+        System.out.println("AVG MS: " + (summedMS / (float) frameCounter));
         TextureLoader.cleanUpAllTextures();
         FrameBufferObject.cleanUpAllFbos();
         Vao.cleanUpAllVaos();
@@ -323,7 +309,7 @@ public class Main {
         return String.format("%." + decimalPlaces + "f", v);
     }
 
-    private static float noiseScale = 1f / radius;
+    private static float noiseScale = 0f;
     private static float change = 0.1f;
 
     private static void placeEntity(Entity e) {

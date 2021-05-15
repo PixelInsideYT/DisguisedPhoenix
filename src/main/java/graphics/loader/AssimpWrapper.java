@@ -227,7 +227,7 @@ public class AssimpWrapper {
                 modelIndicies.add(modelVerticies.indexOf(pos));
             }
         }
-        MeshOptimizer.optimize(modelVerticies,modelIndicies);
+       // MeshOptimizer.optimize(modelVerticies,modelIndicies);
         float[] vaoVerticies = new float[modelVerticies.size() * 3];
         float[] vaoColor = new float[modelVerticies.size() * 3];
         int vertexPointer = 0;

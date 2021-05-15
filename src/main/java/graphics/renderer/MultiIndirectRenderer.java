@@ -34,6 +34,7 @@ public class MultiIndirectRenderer {
     private final LockManger lockManger;
     Map<Vao, int[]> renderCommands;
 
+    public List<Entity> currentEntities = new ArrayList<>();
 
     public MultiIndirectRenderer() {
         persistantMatrixVbo = new BufferObject(GL_ARRAY_BUFFER);
@@ -47,6 +48,8 @@ public class MultiIndirectRenderer {
     }
 
     public void prepareRenderer(List<Entity> entities) {
+        currentEntities.clear();
+        currentEntities.addAll(entities);
         //sort entities according to Vao and model (remeber one vao has multiple models)
         renderCommands.clear();
         Map<Vao, Map<RenderInfo, List<Matrix4f>>> vaoSortedEntities = new HashMap<>();
@@ -57,7 +60,6 @@ public class MultiIndirectRenderer {
                 List<Matrix4f> entityTransformation = instanceMap.computeIfAbsent(entityRenderInfo, k -> new ArrayList<>());
                 entityTransformation.add(e.getTransformationMatrix());
                 Main.inViewObjects++;
-
                 Main.facesDrawn += entityRenderInfo.indiciesCount / 3;
             }
         }

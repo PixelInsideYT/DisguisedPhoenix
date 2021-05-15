@@ -11,8 +11,8 @@ const float TWO_PI = 6.2831853071795864;
 
 uniform sampler2D camera_positions;
 
-uniform float kontrast = 5;
-uniform float sigma = 5;
+uniform float kontrast = 1;
+uniform float sigma = 1;
 uniform float beta = 0.0005;
 const float epsilon = 0.0001;
 
@@ -91,5 +91,4 @@ void main(void){
     occlusion -= dFdy(occlusion) * ((px.y & 1) - 0.5);//*  when_lt(abs(dFdy(pos.z)), 0.02);
 
     ao_out = vec4(occlusion, packKey(pos.z), 1);
-    //ao_out.r = -pos.z/10000;
 }

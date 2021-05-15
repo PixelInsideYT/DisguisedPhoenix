@@ -62,10 +62,10 @@ public class FrameBufferObject {
         this.depthPointer = createDepthTextureAttachment(mipMapped);
         return this;
     }
-    public FrameBufferObject addLayeredDepthTextureAttachment(int splits, int size) {
+    public FrameBufferObject addLayeredDepthTextureAttachment(int texture, int layer) {
         this.hasDepthAttachment = true;
         this.hasDepthTexture = true;
-        this.depthPointer = createLayeredDepthTexture(splits,size);
+        this.depthPointer = addLayeredTexture(texture,layer);
         return this;
     }
     public void blitToFbo(FrameBufferObject out) {
@@ -190,11 +190,8 @@ public class FrameBufferObject {
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, texture, 0);
         return texture;
     }
-    private int createLayeredDepthTexture(int splits, int size) {
-        int texture = glGenTextures();
-        glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
-        glTexStorage3D(GL_TEXTURE_2D_ARRAY,1,GL_DEPTH_COMPONENT32F,size,size,splits);
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, texture, 0);
+    private int addLayeredTexture(int texture, int layer) {
+        glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, texture, 0,layer);
         return texture;
     }
     public static void cleanUpAllFbos() {

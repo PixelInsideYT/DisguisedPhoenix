@@ -124,7 +124,7 @@ private static final float[] depthCascades = new float[]{0.02f*Main.FAR_PLANE,0.
         glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL46.GL_TEXTURE_2D_ARRAY, shadowMap);
         atmosphereShader.load3DVector("dirToSun", new Vector3f(lightPos).normalize());
-        atmosphereShader.loadFloat("zNear", 1f);
+        atmosphereShader.loadFloat("zNear", Main.NEAR_PLANE);
         atmosphereShader.loadFloat("zFar", Main.FAR_PLANE);
         scatteringStrength=scatterStrengthBuffer.get(0);
         atmosphereRadius=atmosphereRadiusBuffer.get(0);

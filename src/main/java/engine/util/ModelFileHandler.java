@@ -281,6 +281,7 @@ public class ModelFileHandler {
         int indiciesArrayOffset = 0;
         int vertexArrayOffset = 0;
         float modelHeight = Arrays.stream(model).map(m -> m.height).max(Float::compare).get();
+        float height = 0f;
         for (MeshInformation mi : model) {
             String answer = null;
             if (nameToWobbleInfoMap != null) answer = nameToWobbleInfoMap.get(mi.meshName);
@@ -295,6 +296,10 @@ public class ModelFileHandler {
             }
             String[] answerSplit = answer.split(":");
             int type = Integer.parseInt(answerSplit[0]);
+
+            for(int i=0;i<mi.getVertexCount();i++){
+                height=Math.max(height,mi.vertexPositions[i * 3 + 1]);
+            }
             float maxWobble = Float.parseFloat(answerSplit[1]);
             for (int i = 0; i < mi.getVertexCount(); i++) {
                 vertexPositions[vertexArrayOffset + i * 4] = mi.vertexPositions[i * 3];
@@ -312,6 +317,11 @@ public class ModelFileHandler {
             }
             indiciesArrayOffset += mi.indicies.length;
             indiciesOffset += mi.getVertexCount();
+        }
+        for(int i=0;i<vertexPositions.length/4;i++){
+            vertexPositions[i * 4]/=height;
+            vertexPositions[i * 4+1]/=height;
+            vertexPositions[i * 4+2]/=height;
         }
         return new MeshInformation(modelName.substring(0, modelName.lastIndexOf(".")), null, vertexPositions, colors, indicies);
     }

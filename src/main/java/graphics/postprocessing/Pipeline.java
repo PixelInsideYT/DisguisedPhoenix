@@ -28,10 +28,10 @@ public class Pipeline {
     }
 
     public void applyPostProcessing(Display display,  FrameBufferObject deferredResult, FrameBufferObject deferred,int shadowTexture, Vector3f lightPos, Camera ffc) {
-        bloom.render(deferredResult.getTextureID(1));
-        combine.render(deferredResult.getTextureID(0), bloom.getTexture());
+        //bloom.render(deferredResult.getTextureID(1));
+        //combine.render(deferredResult.getTextureID(0), bloom.getTexture());
         display.setViewport();
-        fxaa.render(combine.getCombinedResult());
+        fxaa.render(deferredResult.getTextureID(0));
     }
 
     public void resize(int width, int height) {

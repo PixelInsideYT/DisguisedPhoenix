@@ -39,13 +39,7 @@ public class SSAOEffect {
         ssaoFactory.configureShaderConstant("samples", 13).configureSampler("camera_positions", 0);
         ssaoShader = ssaoFactory.built();
         ssaoShader.bind();
-        ssaoShader.loadMatrix("projMatrixInv", new Matrix4f(projMatrix).invert());
-        Vector4f uvProjScale = projMatrix.transform(new Vector4f(1, 0, -1, 1));
-        float projScale = uvProjScale.x / uvProjScale.w;
-        projScale = projScale * 0.5f + 0.5f;
-        projScale *= (width + height) / 2f;
-        ssaoShader.loadFloat("projScale", projScale);
-        ssaoShader.loadFloat("radius", 100);
+        ssaoShader.loadFloat("radius", 0.05f);
         ssaoShader.unbind();
         ShaderFactory blurFactory = new ShaderFactory("postProcessing/quadVS.glsl", "postProcessing/ssao/SSAOBlur.glsl").withAttributes("pos");
         blurFactory.withUniforms("ao_in", "axis_f", "filter_scale", "edge_sharpness").configureSampler("ao_in", 0);
@@ -71,11 +65,7 @@ public class SSAOEffect {
             ssaoShader.bind();
             ssaoShader.loadMatrix("projMatrixInv", new Matrix4f(projMatrix).invert());
             ssaoShader.loadFloat("farPlane", Main.FAR_PLANE);
-            Vector4f uvProjScale = projMatrix.transform(new Vector4f(1, 0, -1, 1));
-            float projScale = uvProjScale.x / uvProjScale.w;
-            projScale = projScale * 0.5f + 0.5f;
-            projScale *= (width + height) / 2f;
-            ssaoShader.loadFloat("projScale", projScale);
+            ssaoShader.loadFloat("projScale", calculateProjectionScale(projMatrix));
             renderer.renderOnlyQuad();
             blurSSAO();
             ssaoTimer.waitOnQuery();
@@ -108,5 +98,13 @@ public class SSAOEffect {
     public void resize(int width, int height) {
         fbo.resize(width, height);
         helperFbo.resize(width, height);
+    }
+
+    private float calculateProjectionScale(Matrix4f projMatrix){
+        Vector4f uvProjScale = projMatrix.transform(new Vector4f(0, 1, -1, 1));
+        float projScale = uvProjScale.y / uvProjScale.w;
+        projScale = projScale * 0.5f + 0.5f;
+        projScale *= Math.max(width , height);
+        return projScale;
     }
 }
