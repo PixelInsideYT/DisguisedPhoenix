@@ -13,7 +13,7 @@ uniform sampler2D camera_positions;
 
 uniform float kontrast = 1;
 uniform float sigma = 1;
-uniform float beta = 0.0005;
+uniform float beta = 0.005;
 const float epsilon = 0.0001;
 
 
