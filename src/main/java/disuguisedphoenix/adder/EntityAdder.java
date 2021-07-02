@@ -64,12 +64,12 @@ public class EntityAdder {
                 "bush/mountain_ash_2.modelFile",
                 "desertPlants/cactus02.modelFile",
                 "desertPlants/cactus01.modelFile",
-                "desertPlants/aloe.modelFile",
-                "desertPlants/cactus03.modelFile",
                 "plants/glockenblume.modelFile",
                 "plants/flowerTest1.modelFile",
                 "plants/mushroom.modelFile",
-                "plants/grass.modelFile"));
+                "desertPlants/aloe.modelFile",
+                "plants/grass.modelFile"
+        ));
         rnd = new Random();
     }
 
@@ -155,7 +155,7 @@ public class EntityAdder {
             Model model = ModelFileHandler.getModel(modelNames.get(activated));
             float modelAreaEstimate = (float) Math.PI * model.radiusXZ * model.radiusXZ;
             float count = terrainAreaEstimate / modelAreaEstimate/modelNames.size();
-            if (count > 10000) count = 10000;
+            if (count > 100000) count = 100000;
             return IntStream.range(0, (int) count).mapToObj(i -> generateEntiy(terrain, model, 0, 6f, 0, 1f)).collect(Collectors.toList());
         }
         return new ArrayList<>();

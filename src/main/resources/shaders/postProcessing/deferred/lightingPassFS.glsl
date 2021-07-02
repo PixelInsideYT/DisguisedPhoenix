@@ -43,15 +43,16 @@ vec3 viewPosFromDepth(vec2 TexCoord, float depth) {
     return viewSpacePosition.xyz;
 }
 
-const vec3[4] distanceColor=vec3[](vec3(0.1),vec3(1,0,0),vec3(0,1,0),vec3(0,0,1));
+const vec3[4] distanceColor=vec3[](vec3(1,1,0),vec3(1,0,0),vec3(0,1,0),vec3(0,0,1));
 
-float shadow(vec3 position){
+float shadow(vec3 position,inout vec3 shadowColor){
     float shadow =1;
     int index =0;
     float linearDepth = -position.z/zFar;
     for(int i=0;i<4;i++){
         if(linearDepth<splitRange[i]){
             index=i;
+            shadowColor = distanceColor[index];
             break;
         }
     }
@@ -99,8 +100,9 @@ void main() {
     // diffuse  *= attenuation;
     // specular *= attenuation;
     float shadowMul = 1f;
+    vec3 shadowColor = vec3(0);
     if(shadowsEnabled==1){
-       shadowMul=shadow(FragPos);
+       shadowMul=shadow(FragPos,shadowColor);
     }
     lighting += diffuse*shadowMul;
     //calculate highlight for bloom post processing
@@ -108,4 +110,5 @@ void main() {
     highLight = vec4(lighting*pow(luminance, 2), 1);
     //highLight = vec4 (vec3(0.0),1.0);
     FragColor = vec4(lighting, 1);
+   // FragColor.rgb = shadowColor;
 }

@@ -1,5 +1,6 @@
 package engine.util;
 
+import com.google.gson.Gson;
 import engine.collision.Collider;
 import engine.collision.CollisionShape;
 import engine.collision.ConvexShape;
@@ -18,6 +19,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toCollection;
 
 public class ModelFileHandler {
 
@@ -46,37 +51,35 @@ public class ModelFileHandler {
     public static void main(String[] args) {
         JFileChooser jfc = new JFileChooser(new File("/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models"));
         int returnValue = jfc.showOpenDialog(null);
+        Gson gson = new Gson();
         while (returnValue == JFileChooser.APPROVE_OPTION) {
             File selectedFile = jfc.getSelectedFile();
-            if(selectedFile.getAbsolutePath().endsWith(".info")){
+            if (selectedFile.getAbsolutePath().endsWith(".info")) {
                 try {
                     String content = Files.readString(selectedFile.toPath());
-                    String[] modelConfigsString = content.split(">");
-                    for(String mc:modelConfigsString){
-                        if(mc.length()>0&&mc.split("\n").length>0){
-                            ModelConfig mco = ModelConfig.load(mc);
-                            generateModelFile(mco.relativePath,mco.relativeColliderPath,mco.wobbleInfo,false);
-                        }
-                    }
+                    ModelConfig[] modelConfigs = gson.fromJson(content, ModelConfig[].class);
+                    for (ModelConfig mco : modelConfigs)
+                        generateModelFile(mco.relativePath, mco.relativeColliderPath, mco.wobbleInfo, mco.modelHeight, false);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            }else{
-            int val = JOptionPane.showConfirmDialog(null, "Should a collision shape be added?");
-            String colliderFileName = null;
-            if (val == JOptionPane.YES_OPTION) {
-                jfc.showOpenDialog(null);
-                colliderFileName = jfc.getSelectedFile().getAbsolutePath();
-            }
-            generateModelFile(selectedFile.getPath(), colliderFileName, new HashMap<>(),false);
+            } else {
+                int val = JOptionPane.showConfirmDialog(null, "Should a collision shape be added?");
+                String colliderFileName = null;
+                if (val == JOptionPane.YES_OPTION) {
+                    jfc.showOpenDialog(null);
+                    colliderFileName = jfc.getSelectedFile().getAbsolutePath();
+                }
+                float targetHeight = Float.parseFloat(JOptionPane.showInputDialog("Choose model height in meters"));
+                generateModelFile(selectedFile.getPath(), colliderFileName, new HashMap<>(), targetHeight,false);
             }
             returnValue = jfc.showOpenDialog(null);
         }
+       List<ModelConfig> distinctConfig= modelConfigs.stream().distinct().collect(Collectors.toList());
         try {
-            PrintWriter pi = new PrintWriter(new File("/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/ModelBuilder.info"),"UTF-8");
-            for(ModelConfig ci:modelConfigs){
-                ci.writeToFile(pi);
-            }
+            PrintWriter pi = new PrintWriter(new File("/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/ModelBuilder.info"), "UTF-8");
+            String toSave = gson.toJson(distinctConfig);
+            pi.write(toSave);
             pi.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -86,16 +89,13 @@ public class ModelFileHandler {
 
     }
 
-    public static void regenerateModels(String modelInfoFile){
+    public static void regenerateModels(String modelInfoFile) {
+        Gson gson = new Gson();
         try {
             String content = Files.readString(new File(modelInfoFile).toPath());
-            String[] modelConfigsString = content.split(">");
-            for(String mc:modelConfigsString){
-                if(mc.length()>0&&mc.split("\n").length>0){
-                    ModelConfig mco = ModelConfig.load(mc);
-                    generateModelFile(mco.relativePath,mco.relativeColliderPath,mco.wobbleInfo,false);
-                }
-            }
+            ModelConfig[] modelConfigs = gson.fromJson(content, ModelConfig[].class);
+            for (ModelConfig mco : modelConfigs)
+                generateModelFile(mco.relativePath, mco.relativeColliderPath, mco.wobbleInfo, mco.modelHeight, false);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -264,7 +264,7 @@ public class ModelFileHandler {
     }
 
 
-    public static MeshInformation combineMeshesToOne(String modelName, Map<String, String> nameToWobbleInfoMap, boolean putZero) {
+    public static MeshInformation combineMeshesToOne(String modelName, Map<String, String> nameToWobbleInfoMap, float targetHeight, boolean putZero) {
         //load model
         MeshInformation[] model = AssimpWrapper.loadModelToMeshInfo(modelName);
         int combinedVerticiesCount = 0, combinedIndiciesCount = 0;
@@ -286,19 +286,19 @@ public class ModelFileHandler {
             String answer = null;
             if (nameToWobbleInfoMap != null) answer = nameToWobbleInfoMap.get(mi.meshName);
             if (answer == null) {
-                if(!putZero) {
+                if (!putZero) {
                     answer = JOptionPane.showInputDialog("How much should: " + mi.meshName + " be affected by wind?\nFormat [ 0; 3 ]:<wobble>\n0: constant wobble\n1: linear wobble from [0;radiusXZPlane]\n2: linear wobble from [0;height]\n3: linear wobble from [0;height+radiusXZPlane]");
-                }else {
-                    answer="0:0";
+                } else {
+                    answer = "0:0";
                 }
 
-                nameToWobbleInfoMap.put(mi.meshName,answer);
+                nameToWobbleInfoMap.put(mi.meshName, answer);
             }
             String[] answerSplit = answer.split(":");
             int type = Integer.parseInt(answerSplit[0]);
 
-            for(int i=0;i<mi.getVertexCount();i++){
-                height=Math.max(height,mi.vertexPositions[i * 3 + 1]);
+            for (int i = 0; i < mi.getVertexCount(); i++) {
+                height = Math.max(height, mi.vertexPositions[i * 3 + 1]);
             }
             float maxWobble = Float.parseFloat(answerSplit[1]);
             for (int i = 0; i < mi.getVertexCount(); i++) {
@@ -318,16 +318,17 @@ public class ModelFileHandler {
             indiciesArrayOffset += mi.indicies.length;
             indiciesOffset += mi.getVertexCount();
         }
-        for(int i=0;i<vertexPositions.length/4;i++){
-            vertexPositions[i * 4]/=height;
-            vertexPositions[i * 4+1]/=height;
-            vertexPositions[i * 4+2]/=height;
+        float heightScale = targetHeight / height;
+        for (int i = 0; i < vertexPositions.length / 4; i++) {
+            vertexPositions[i * 4] *= heightScale;
+            vertexPositions[i * 4 + 1] *= heightScale;
+            vertexPositions[i * 4 + 2] *= heightScale;
         }
         return new MeshInformation(modelName.substring(0, modelName.lastIndexOf(".")), null, vertexPositions, colors, indicies);
     }
 
-    public static void generateModelFile(String name, String colliderFileName, Map<String, String> nameToWobbleMap,boolean putZero) {
-        MeshInformation combined = combineMeshesToOne(name, nameToWobbleMap,putZero);
+    public static void generateModelFile(String name, String colliderFileName, Map<String, String> nameToWobbleMap, float height, boolean putZero) {
+        MeshInformation combined = combineMeshesToOne(name, nameToWobbleMap, height, putZero);
         Collider collider = null;
         if (colliderFileName != null)
             collider = AssimpWrapper.loadCollider(colliderFileName);
@@ -366,7 +367,7 @@ public class ModelFileHandler {
         }
         writeColliderToBuffer(collider, buffer);
         saveByteBuffer(buffer, name.substring(0, name.lastIndexOf(".")) + ".modelFile");
-        modelConfigs.add(new ModelConfig(name,colliderFileName,nameToWobbleMap));
+        modelConfigs.add(new ModelConfig(name, colliderFileName, nameToWobbleMap, height));
     }
 
     private static void saveByteBuffer(ByteBuffer buffer, String name) {
@@ -505,41 +506,24 @@ public class ModelFileHandler {
 
 }
 
-class ModelConfig {
+class ModelConfig extends Object{
 
     String relativePath;
     String relativeColliderPath;
     Map<String, String> wobbleInfo;
+    float modelHeight;
 
-    public ModelConfig(String relativePath, String relativeColliderPath, Map<String, String> wobbleInfo) {
+    public ModelConfig(String relativePath, String relativeColliderPath, Map<String, String> wobbleInfo, float modelHeight) {
         this.relativePath = relativePath;
         this.relativeColliderPath = relativeColliderPath;
         this.wobbleInfo = wobbleInfo;
+        this.modelHeight = modelHeight;
     }
 
-    public static ModelConfig load(String s) {
-        int startIndex = s.startsWith("\n")?1:0;
-        String[] components = s.split("\n");
-        Map<String, String> wobbleInfo = new HashMap<>();
-        for (String i : components[startIndex+2].split("\\|")) {
-            if (i.length() > 0) {
-                String[] wi = i.split("~");
-               wobbleInfo.put(wi[0], wi[1]);
-            }
-        }
-        return new ModelConfig(components[startIndex], components[startIndex+1].equals("null") ? null : components[startIndex+1], wobbleInfo);
-    }
-
-    //a file config is split by '>'
-    public void writeToFile(PrintWriter out) {
-        out.println(relativePath);
-        out.println(relativeColliderPath != null ? relativeColliderPath : "null");
-        Iterator<String> itr= wobbleInfo.keySet().iterator();
-        while(itr.hasNext()){
-            String key = itr.next();
-            out.print(key + "~" + wobbleInfo.get(key) + (itr.hasNext()? "|":""));
-        }
-        out.println(">");
+    public boolean equals(Object other){
+        if(other instanceof ModelConfig)
+        return relativePath.equals(((ModelConfig)other).relativePath);
+        return false;
     }
 
 }

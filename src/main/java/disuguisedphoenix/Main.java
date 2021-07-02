@@ -140,9 +140,7 @@ public class Main {
         QuadRenderer quadRenderer = new QuadRenderer();
         GaussianBlur blur = new GaussianBlur(quadRenderer);
         SSAOEffect ssao = new SSAOEffect(quadRenderer, width, height, projMatrix);
-        ssao.disable();
         ShadowEffect shadows = new ShadowEffect();
-        shadows.disable();
         HIZGenerator hizGen = new HIZGenerator(quadRenderer);
         Pipeline postProcessPipeline = new Pipeline(width, height, projMatrix, quadRenderer, blur);
         float avgFPS = 0;
@@ -285,8 +283,7 @@ public class Main {
         lightTimer.printResults();
         if (ssao.isEnabled())
             ssao.ssaoTimer.printResults();
-        if (shadows.isEnabled())
-            shadows.shadowTimer.printResults();
+            shadows.print();
         nuklearBinding.cleanUp();
         System.out.println("AVG FPS: " + (avgFPS / (float) frameCounter));
         System.out.println("AVG MS: " + (summedMS / (float) frameCounter));

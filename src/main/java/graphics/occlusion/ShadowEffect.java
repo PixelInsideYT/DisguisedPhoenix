@@ -24,7 +24,7 @@ import static org.lwjgl.opengl.GL42.glTexStorage3D;
 
 public class ShadowEffect {
 
-    private static final int SHADOW_RESOLUTION = 1024;
+    private static final int SHADOW_RESOLUTION = 2048;
     private static final int SHADOWS_CASCADES = 4;
     private static final float[] CASCADE_DISTANCE = {0.02f, 0.05f, 0.5f, 1f};
 
@@ -34,7 +34,7 @@ public class ShadowEffect {
     public TimerQuery shadowTimer;
     private Shader shadowShader;
 
-    private boolean enabled = false;
+    private boolean enabled = true;
 
     public ShadowEffect() {
         generate2DTextureArray();
@@ -100,6 +100,12 @@ public class ShadowEffect {
         textureArray = glGenTextures();
         glBindTexture(GL_TEXTURE_2D_ARRAY, textureArray);
         glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT32F, SHADOW_RESOLUTION, SHADOW_RESOLUTION, SHADOWS_CASCADES);
+    }
+
+    public void print(){
+        if(isEnabled()){
+            shadowTimer.printResults();
+        }
     }
 
 }
