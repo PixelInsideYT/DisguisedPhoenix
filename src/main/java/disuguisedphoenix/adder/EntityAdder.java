@@ -62,6 +62,7 @@ public class EntityAdder {
                 "bush/mountain_ash_with_berries_1.modelFile",
                 "bush/mountain_ash_3.modelFile",
                 "bush/mountain_ash_2.modelFile",
+                "lowPolyTree/braum_gross.modelFile",
                 "desertPlants/cactus02.modelFile",
                 "desertPlants/cactus01.modelFile",
                 "plants/glockenblume.modelFile",
