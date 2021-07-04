@@ -1,10 +1,12 @@
 package disuguisedphoenix.adder;
 
+import com.google.gson.Gson;
 import disuguisedphoenix.Entity;
 import disuguisedphoenix.terrain.Island;
 import disuguisedphoenix.terrain.PopulatedIsland;
 import disuguisedphoenix.terrain.World;
 import engine.util.Maths;
+import engine.util.ModelConfig;
 import engine.util.ModelFileHandler;
 import graphics.particles.ParticleManager;
 import graphics.shaders.Shader;
@@ -16,6 +18,7 @@ import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 
 import java.io.File;
+import java.io.InputStreamReader;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -40,7 +43,6 @@ public class EntityAdder {
     Random rnd;
 
     public EntityAdder(ParticleManager pm) {
-        System.err.println("called entity Adder constructor");
         ShaderFactory creationFactory = new ShaderFactory("creationVS.glsl", "creationFS.glsl");
         creationFactory.addShaderStage(ShaderFactory.GEOMETRY_SHADER, "creationGS.glsl");
         creationFactory.withUniforms("projMatrix", "viewMatrix", "transformationMatrix", "builtProgress", "modelHeight");
@@ -49,28 +51,10 @@ public class EntityAdder {
         fillModelNameList(new File("."));
         List<String> distinctList=modelNames.stream().distinct().collect(Collectors.toList());
         modelNames.clear();
-        modelNames.addAll(Arrays.asList("misc/tutorialCrystal.modelFile",
-                "misc/rock.modelFile",
-                "misc/fox.modelFile",
-                "lowPolyTree/tree2.modelFile",
-                "lowPolyTree/bendyTree.modelFile",
-                "lowPolyTree/vc.modelFile",
-                "lowPolyTree/ballTree.modelFile",
-                "bush/mountain_ash_with_berries_3.modelFile",
-                "bush/mountain_ash_with_berries_2.modelFile",
-                "bush/mountain_ash_1.modelFile",
-                "bush/mountain_ash_with_berries_1.modelFile",
-                "bush/mountain_ash_3.modelFile",
-                "bush/mountain_ash_2.modelFile",
-                "lowPolyTree/braum_gross.modelFile",
-                "desertPlants/cactus02.modelFile",
-                "desertPlants/cactus01.modelFile",
-                "plants/glockenblume.modelFile",
-                "plants/flowerTest1.modelFile",
-                "plants/mushroom.modelFile",
-                "desertPlants/aloe.modelFile",
-                "plants/grass.modelFile"
-        ));
+        ModelConfig[] modelConfigs = new Gson().fromJson(new InputStreamReader(EntityAdder.class.getResourceAsStream("/models/ModelBuilder.info")),ModelConfig[].class);
+        modelNames.addAll(Arrays.stream(modelConfigs)
+                .map(modelConfig -> modelConfig.modelFilePath)
+                .collect(Collectors.toList()));
         rnd = new Random();
     }
 

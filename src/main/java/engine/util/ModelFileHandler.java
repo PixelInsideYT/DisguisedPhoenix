@@ -1,6 +1,7 @@
 package engine.util;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import engine.collision.Collider;
 import engine.collision.CollisionShape;
 import engine.collision.ConvexShape;
@@ -27,6 +28,9 @@ import static java.util.stream.Collectors.toCollection;
 public class ModelFileHandler {
 
     private static final Map<String, Model> alreadyLoadedModels = new HashMap<>();
+    private static final String RESOURCE_PATH = "/src/main/resources";
+    private static final String MODEL_DIRECTORY = "/models/";
+private static String workingDir;
 
     //loads a model file
     // joins all the meshes into one
@@ -47,11 +51,12 @@ public class ModelFileHandler {
     // name wobbletype map
 
     private static List<ModelConfig> modelConfigs = new ArrayList<>();
+    private static Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     public static void main(String[] args) {
-        JFileChooser jfc = new JFileChooser(new File("/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models"));
+        workingDir = System.getProperty("user.dir");
+        JFileChooser jfc = new JFileChooser(new File(workingDir+RESOURCE_PATH+MODEL_DIRECTORY));
         int returnValue = jfc.showOpenDialog(null);
-        Gson gson = new Gson();
         while (returnValue == JFileChooser.APPROVE_OPTION) {
             File selectedFile = jfc.getSelectedFile();
             if (selectedFile.getAbsolutePath().endsWith(".info")) {
@@ -71,13 +76,13 @@ public class ModelFileHandler {
                     colliderFileName = jfc.getSelectedFile().getAbsolutePath();
                 }
                 float targetHeight = Float.parseFloat(JOptionPane.showInputDialog("Choose model height in meters"));
-                generateModelFile(selectedFile.getPath(), colliderFileName, new HashMap<>(), targetHeight,false);
+                generateModelFile(selectedFile.getPath().replace(workingDir+RESOURCE_PATH+MODEL_DIRECTORY,""), colliderFileName!=null?colliderFileName.replace(workingDir+RESOURCE_PATH+MODEL_DIRECTORY,""):null, new HashMap<>(), targetHeight,false);
             }
             returnValue = jfc.showOpenDialog(null);
         }
        List<ModelConfig> distinctConfig= modelConfigs.stream().distinct().collect(Collectors.toList());
         try {
-            PrintWriter pi = new PrintWriter(new File("/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/ModelBuilder.info"), "UTF-8");
+           PrintWriter pi = new PrintWriter(workingDir+RESOURCE_PATH+MODEL_DIRECTORY+"/ModelBuilder.info", "UTF-8");
             String toSave = gson.toJson(distinctConfig);
             pi.write(toSave);
             pi.close();
@@ -90,7 +95,6 @@ public class ModelFileHandler {
     }
 
     public static void regenerateModels(String modelInfoFile) {
-        Gson gson = new Gson();
         try {
             String content = Files.readString(new File(modelInfoFile).toPath());
             ModelConfig[] modelConfigs = gson.fromJson(content, ModelConfig[].class);
@@ -266,7 +270,7 @@ public class ModelFileHandler {
 
     public static MeshInformation combineMeshesToOne(String modelName, Map<String, String> nameToWobbleInfoMap, float targetHeight, boolean putZero) {
         //load model
-        MeshInformation[] model = AssimpWrapper.loadModelToMeshInfo(modelName);
+        MeshInformation[] model = AssimpWrapper.loadModelToMeshInfo(workingDir+RESOURCE_PATH+MODEL_DIRECTORY+modelName);
         int combinedVerticiesCount = 0, combinedIndiciesCount = 0;
         for (MeshInformation mi : model) {
             combinedIndiciesCount += mi.indicies.length;
@@ -331,7 +335,7 @@ public class ModelFileHandler {
         MeshInformation combined = combineMeshesToOne(name, nameToWobbleMap, height, putZero);
         Collider collider = null;
         if (colliderFileName != null)
-            collider = AssimpWrapper.loadCollider(colliderFileName);
+            collider = AssimpWrapper.loadCollider(workingDir+RESOURCE_PATH+MODEL_DIRECTORY+"/"+colliderFileName);
         int headerSize = (4 + 2 * (collider != null ? collider.getAllTheShapes().size() + 1 : 0)) * Integer.BYTES;
         int meshSize = (combined.vertexPositions.length + combined.colors.length) * Float.BYTES + combined.indicies.length * Integer.BYTES;
         int colliderSize = calculateColliderSize(collider);
@@ -366,8 +370,9 @@ public class ModelFileHandler {
             buffer.putInt(i);
         }
         writeColliderToBuffer(collider, buffer);
-        saveByteBuffer(buffer, name.substring(0, name.lastIndexOf(".")) + ".modelFile");
-        modelConfigs.add(new ModelConfig(name, colliderFileName, nameToWobbleMap, height));
+        String modelFilePath = name.substring(0, name.lastIndexOf(".")) + ".modelFile";
+        saveByteBuffer(buffer, workingDir+RESOURCE_PATH+MODEL_DIRECTORY+"/"+modelFilePath);
+        modelConfigs.add(new ModelConfig(modelFilePath,name, colliderFileName, nameToWobbleMap, height));
     }
 
     private static void saveByteBuffer(ByteBuffer buffer, String name) {
@@ -502,28 +507,6 @@ public class ModelFileHandler {
         }
 
         return result;
-    }
-
-}
-
-class ModelConfig extends Object{
-
-    String relativePath;
-    String relativeColliderPath;
-    Map<String, String> wobbleInfo;
-    float modelHeight;
-
-    public ModelConfig(String relativePath, String relativeColliderPath, Map<String, String> wobbleInfo, float modelHeight) {
-        this.relativePath = relativePath;
-        this.relativeColliderPath = relativeColliderPath;
-        this.wobbleInfo = wobbleInfo;
-        this.modelHeight = modelHeight;
-    }
-
-    public boolean equals(Object other){
-        if(other instanceof ModelConfig)
-        return relativePath.equals(((ModelConfig)other).relativePath);
-        return false;
     }
 
 }

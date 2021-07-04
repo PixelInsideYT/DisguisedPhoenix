@@ -1,1 +1,193 @@
-[{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/bush/mountain_ash_1.fbx","wobbleInfo":{"Icosphere":"2:0.5"},"modelHeight":0.5},{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/bush/mountain_ash_2.fbx","wobbleInfo":{"Icosphere.011":"2:0.5"},"modelHeight":0.5},{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/bush/mountain_ash_3.fbx","wobbleInfo":{"Icosphere.016":"2:0.5"},"modelHeight":0.5},{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/bush/mountain_ash_with_berries_1.fbx","wobbleInfo":{"Icosphere.001":"2:0.5"},"modelHeight":0.5},{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/bush/mountain_ash_with_berries_2.fbx","wobbleInfo":{"Icosphere.002":"2:0.5"},"modelHeight":0.5},{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/bush/mountain_ash_with_berries_3.fbx","wobbleInfo":{"Icosphere.003":"2:0.5"},"modelHeight":0.5},{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/desertPlants/aloe.obj","wobbleInfo":{"Aloe._01_aloe.001":"2:0.5"},"modelHeight":0.1},{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/desertPlants/cactus01.obj","relativeColliderPath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/desertPlants/cactus01.obj","wobbleInfo":{"Cactus_01_cactus01":"0:0"},"modelHeight":1.5},{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/desertPlants/cactus02.obj","relativeColliderPath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/desertPlants/cactus02.obj","wobbleInfo":{"Cactuss_02_cactus02":"0:0"},"modelHeight":1.0},{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/lowPolyTree/ballTree.fbx","relativeColliderPath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/lowPolyTree/ballTreeCollider.fbx","wobbleInfo":{"Plane.001":"0:0","Plane.003":"0:0"},"modelHeight":15.0},{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/lowPolyTree/bendyTree.fbx","relativeColliderPath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/lowPolyTree/bendyTreeCollider.fbx","wobbleInfo":{"Plane_Plane.001":"0:1","Plane_Plane.004":"0:0"},"modelHeight":3.0},{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/lowPolyTree/tree2.fbx","relativeColliderPath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/lowPolyTree/tree2Collider.fbx","wobbleInfo":{"Icosphere.001":"0:1","Icosphere.002":"0:1"},"modelHeight":10.0},{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/lowPolyTree/vc.fbx","relativeColliderPath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/lowPolyTree/vc.fbx","wobbleInfo":{"Icosphere.003":"0:1","Circle_Circle.001":"0:0"},"modelHeight":20.0},{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/misc/birb.fbx","relativeColliderPath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/misc/birbCollider.fbx","wobbleInfo":{"Plane":"0:0"},"modelHeight":0.1},{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/misc/fox.fbx","relativeColliderPath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/misc/fox.fbx","wobbleInfo":{"untitled":"0:0"},"modelHeight":0.6},{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/misc/rock.fbx","relativeColliderPath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/misc/rock.fbx","wobbleInfo":{"Cube_Cube.001":"0:0"},"modelHeight":0.5},{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/misc/tutorialCrystal.fbx","relativeColliderPath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/misc/tutorialCrystal.fbx","wobbleInfo":{"Cylinder.002":"0:0","Cylinder.003":"0:0","Cylinder.006":"0:0","Cylinder.007":"0:0","Cylinder.004":"0:0","Cylinder.005":"0:0","Cylinder.008":"0:0"},"modelHeight":1.0},{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/plants/flowerTest1.fbx","relativeColliderPath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/plants/flowerTest1Collider.fbx","wobbleInfo":{"Cylinder.012":"2:0.5"},"modelHeight":0.5},{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/plants/glockenblume.fbx","relativeColliderPath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/plants/glockenblume.fbx","wobbleInfo":{"Cone":"2:0.5","Plane.002":"2:0.5","Plane.004":"2:0.5","Circle.002":"2:0.5"},"modelHeight":0.2},{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/plants/grass.fbx","wobbleInfo":{"Plane.005":"2:0.5"},"modelHeight":0.1},{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/plants/mushroom.fbx","relativeColliderPath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/plants/mushroom.fbx","wobbleInfo":{"Circle.001":"0:0"},"modelHeight":0.3},{"relativePath":"/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/desertPlants/aloe.obj","wobbleInfo":{"Aloe._01_aloe.001":"0:0"},"modelHeight":0.2}]
+[
+  {
+    "modelFilePath": "bush/mountain_ash_1.modelFile",
+    "relativePath": "bush/mountain_ash_1.fbx",
+    "wobbleInfo": {
+      "Icosphere": "0:0"
+    },
+    "modelHeight": 1.5
+  },
+  {
+    "modelFilePath": "bush/mountain_ash_2.modelFile",
+    "relativePath": "bush/mountain_ash_2.fbx",
+    "wobbleInfo": {
+      "Icosphere.011": "0:0"
+    },
+    "modelHeight": 2.0
+  },
+  {
+    "modelFilePath": "bush/mountain_ash_3.modelFile",
+    "relativePath": "bush/mountain_ash_3.fbx",
+    "wobbleInfo": {
+      "Icosphere.016": "0:0"
+    },
+    "modelHeight": 2.0
+  },
+  {
+    "modelFilePath": "bush/mountain_ash_with_berries_1.modelFile",
+    "relativePath": "bush/mountain_ash_with_berries_1.fbx",
+    "wobbleInfo": {
+      "Icosphere.001": "0:0"
+    },
+    "modelHeight": 2.0
+  },
+  {
+    "modelFilePath": "bush/mountain_ash_with_berries_2.modelFile",
+    "relativePath": "bush/mountain_ash_with_berries_2.fbx",
+    "wobbleInfo": {
+      "Icosphere.002": "0:0"
+    },
+    "modelHeight": 2.0
+  },
+  {
+    "modelFilePath": "bush/mountain_ash_with_berries_3.modelFile",
+    "relativePath": "bush/mountain_ash_with_berries_3.fbx",
+    "wobbleInfo": {
+      "Icosphere.003": "0:0"
+    },
+    "modelHeight": 2.0
+  },
+  {
+    "modelFilePath": "desertPlants/cactus01.modelFile",
+    "relativePath": "desertPlants/cactus01.obj",
+    "wobbleInfo": {
+      "Cactus_01_cactus01": "0:0"
+    },
+    "modelHeight": 1.0
+  },
+  {
+    "modelFilePath": "desertPlants/cactus02.modelFile",
+    "relativePath": "desertPlants/cactus02.obj",
+    "wobbleInfo": {
+      "Cactuss_02_cactus02": "0:0"
+    },
+    "modelHeight": 2.0
+  },
+  {
+    "modelFilePath": "lowPolyTree/ballTree.modelFile",
+    "relativePath": "lowPolyTree/ballTree.fbx",
+    "relativeColliderPath": "lowPolyTree/ballTreeCollider.fbx",
+    "wobbleInfo": {
+      "Plane.001": "0:0",
+      "Plane.003": "0:0"
+    },
+    "modelHeight": 15.0
+  },
+  {
+    "modelFilePath": "lowPolyTree/bendyTree.modelFile",
+    "relativePath": "lowPolyTree/bendyTree.fbx",
+    "relativeColliderPath": "lowPolyTree/bendyTreeCollider.fbx",
+    "wobbleInfo": {
+      "Plane_Plane.001": "0:0",
+      "Plane_Plane.004": "0:0"
+    },
+    "modelHeight": 5.0
+  },
+  {
+    "modelFilePath": "lowPolyTree/braum_gross.modelFile",
+    "relativePath": "lowPolyTree/braum_gross.fbx",
+    "wobbleInfo": {
+      "x.001": "0:0"
+    },
+    "modelHeight": 30.0
+  },
+  {
+    "modelFilePath": "lowPolyTree/tree2.modelFile",
+    "relativePath": "lowPolyTree/tree2.fbx",
+    "relativeColliderPath": "lowPolyTree/tree2Collider.fbx",
+    "wobbleInfo": {
+      "Icosphere.001": "0:0",
+      "Icosphere.002": "0:0"
+    },
+    "modelHeight": 15.0
+  },
+  {
+    "modelFilePath": "lowPolyTree/vc.modelFile",
+    "relativePath": "lowPolyTree/vc.fbx",
+    "relativeColliderPath": "lowPolyTree/vc.fbx",
+    "wobbleInfo": {
+      "Icosphere.003": "0:0",
+      "Circle_Circle.001": "0:0"
+    },
+    "modelHeight": 20.0
+  },
+  {
+    "modelFilePath": "misc/birb.modelFile",
+    "relativePath": "misc/birb.fbx",
+    "relativeColliderPath": "misc/birb.fbx",
+    "wobbleInfo": {
+      "Plane": "0:0"
+    },
+    "modelHeight": 0.05
+  },
+  {
+    "modelFilePath": "misc/fox.modelFile",
+    "relativePath": "misc/fox.fbx",
+    "relativeColliderPath": "misc/fox.fbx",
+    "wobbleInfo": {
+      "untitled": "0:0"
+    },
+    "modelHeight": 0.7
+  },
+  {
+    "modelFilePath": "misc/rock.modelFile",
+    "relativePath": "misc/rock.fbx",
+    "relativeColliderPath": "misc/rock.fbx",
+    "wobbleInfo": {
+      "Cube_Cube.001": "0:0"
+    },
+    "modelHeight": 0.3
+  },
+  {
+    "modelFilePath": "misc/tutorialCrystal.modelFile",
+    "relativePath": "misc/tutorialCrystal.fbx",
+    "relativeColliderPath": "misc/tutorialCrystal.fbx",
+    "wobbleInfo": {
+      "Cylinder.002": "0:0",
+      "Cylinder.003": "0:0",
+      "Cylinder.006": "0:0",
+      "Cylinder.007": "0:0",
+      "Cylinder.004": "0:0",
+      "Cylinder.005": "0:0",
+      "Cylinder.008": "0:0"
+    },
+    "modelHeight": 1.0
+  },
+  {
+    "modelFilePath": "plants/flowerTest1.modelFile",
+    "relativePath": "plants/flowerTest1.fbx",
+    "relativeColliderPath": "plants/flowerTest1Collider.fbx",
+    "wobbleInfo": {
+      "Cylinder.012": "2:0.5"
+    },
+    "modelHeight": 0.5
+  },
+  {
+    "modelFilePath": "plants/glockenblume.modelFile",
+    "relativePath": "plants/glockenblume.fbx",
+    "wobbleInfo": {
+      "Cone": "0:0",
+      "Plane.002": "0:0",
+      "Plane.004": "0:0",
+      "Circle.002": "0:0"
+    },
+    "modelHeight": 0.5
+  },
+  {
+    "modelFilePath": "plants/grass.modelFile",
+    "relativePath": "plants/grass.fbx",
+    "wobbleInfo": {
+      "Plane.005": "2:0.2"
+    },
+    "modelHeight": 0.3
+  },
+  {
+    "modelFilePath": "plants/mushroom.modelFile",
+    "relativePath": "plants/mushroom.fbx",
+    "relativeColliderPath": "plants/mushroom.fbx",
+    "wobbleInfo": {
+      "Circle.001": "0:0"
+    },
+    "modelHeight": 0.2
+  }
+]
