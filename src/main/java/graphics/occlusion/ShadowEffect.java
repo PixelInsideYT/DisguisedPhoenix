@@ -26,7 +26,7 @@ public class ShadowEffect {
 
     private static final int SHADOW_RESOLUTION = 2048;
     private static final int SHADOWS_CASCADES = 4;
-    private static final float[] CASCADE_DISTANCE = {0.02f, 0.05f, 0.5f, 1f};
+    public static final float[] CASCADE_DISTANCE = {0.01f, 0.05f, 0.25f, 1f};
 
     int textureArray;
     protected FrameBufferObject[] shadowMap = new FrameBufferObject[SHADOWS_CASCADES];

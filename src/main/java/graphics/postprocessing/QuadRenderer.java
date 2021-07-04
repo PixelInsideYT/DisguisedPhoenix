@@ -2,6 +2,7 @@ package graphics.postprocessing;
 
 import disuguisedphoenix.Main;
 import graphics.objects.Vao;
+import graphics.occlusion.ShadowEffect;
 import graphics.shaders.Shader;
 import graphics.shaders.ShaderFactory;
 import org.joml.Matrix4f;
@@ -31,6 +32,7 @@ public class QuadRenderer {
         ShaderFactory gResolveFactory = new ShaderFactory("postProcessing/quadVS.glsl", "postProcessing/deferred/lightingPassFS.glsl").withAttributes("pos");
         gResolveFactory.withUniforms("depthTexture", "shadowMapTexture","zFar","normalAndSpecularTexture", "colorAndGeometryCheckTexture", "ambientOcclusionTexture", "projMatrixInv", "lightPos","lightColor", "ssaoEnabled","shadowsEnabled");
         gResolveFactory.withUniformArray("shadowReprojectionMatrix",4);
+        gResolveFactory.withUniformArray("splitRange",4);
         gResolveFactory.configureSampler("depthTexture", 0).configureSampler("normalAndSpecularTexture", 1).
                 configureSampler("colorAndGeometryCheckTexture", 2).configureSampler("ambientOcclusionTexture", 3).configureSampler("shadowMapTexture",4);
         shader = gResolveFactory.built();
@@ -47,6 +49,7 @@ public class QuadRenderer {
         shader.load3DVector("lightColor",lightColor);
         shader.loadFloat("zFar",Main.FAR_PLANE);
         shader.loadMatrix("projMatrixInv", new Matrix4f(projMatrix).invert());
+        shader.loadFloatArray("splitRange", ShadowEffect.CASCADE_DISTANCE);
         Matrix4f[] shadowReporjectionMatrix = new Matrix4f[shadowReproject.length];
         for(int i=0;i<shadowReporjectionMatrix.length;i++) {
            shadowReporjectionMatrix[i]=new Matrix4f (shadowReproject[i]).mul(new Matrix4f(viewMatrix).invert());
