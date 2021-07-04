@@ -30,9 +30,9 @@ public class QuadRenderer {
         });
         quad.unbind();
         ShaderFactory gResolveFactory = new ShaderFactory("postProcessing/quadVS.glsl", "postProcessing/deferred/lightingPassFS.glsl").withAttributes("pos");
-        gResolveFactory.withUniforms("depthTexture", "shadowMapTexture","zFar","normalAndSpecularTexture", "colorAndGeometryCheckTexture", "ambientOcclusionTexture", "projMatrixInv", "lightPos","lightColor", "ssaoEnabled","shadowsEnabled");
+        gResolveFactory.withUniforms("depthTexture","splitRange", "shadowMapTexture","zFar","normalAndSpecularTexture", "colorAndGeometryCheckTexture", "ambientOcclusionTexture", "projMatrixInv", "lightPos","lightColor", "ssaoEnabled","shadowsEnabled");
         gResolveFactory.withUniformArray("shadowReprojectionMatrix",4);
-        gResolveFactory.withUniformArray("splitRange",4);
+        //gResolveFactory.withUniformArray("splitRange",4);
         gResolveFactory.configureSampler("depthTexture", 0).configureSampler("normalAndSpecularTexture", 1).
                 configureSampler("colorAndGeometryCheckTexture", 2).configureSampler("ambientOcclusionTexture", 3).configureSampler("shadowMapTexture",4);
         shader = gResolveFactory.built();
