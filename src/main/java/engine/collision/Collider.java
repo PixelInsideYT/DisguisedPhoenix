@@ -1,6 +1,6 @@
 package engine.collision;
 
-import graphics.objects.Vao;
+import graphics.core.objects.Vao;
 import org.joml.Matrix4f;
 
 import java.util.ArrayList;
@@ -30,10 +30,6 @@ public class Collider {
         allTheShapes.add(shape);
     }
 
-    public void setBoundingBox(CollisionShape b) {
-        this.boundingBox = b;
-    }
-
     public List<CollisionShape> getAllTheShapes() {
         return allTheShapes;
     }
@@ -44,6 +40,10 @@ public class Collider {
 
     public CollisionShape getBoundingBox() {
         return boundingBox;
+    }
+
+    public void setBoundingBox(CollisionShape b) {
+        this.boundingBox = b;
     }
 
     public Vao getBoundingBoxModel() {

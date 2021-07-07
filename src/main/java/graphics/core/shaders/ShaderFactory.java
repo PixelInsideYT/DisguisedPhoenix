@@ -1,7 +1,6 @@
-package graphics.shaders;
+package graphics.core.shaders;
 
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL40;
 
 import java.io.BufferedReader;
@@ -16,7 +15,7 @@ public class ShaderFactory {
     public static final int TESSELATION_CONTROL_SHADER = 2;
     public static final int TESSELATION_EVALUATION_SHADER = 3;
     public static final int FRAGMENT_SHADER = 4;
-//TODO: bind textures to name not to int
+    //TODO: bind textures to name not to int
     int shaderProgram;
     private String[] shaderSources = new String[5];
     private List<String> uniformNames = new ArrayList<>();
@@ -29,6 +28,41 @@ public class ShaderFactory {
     public ShaderFactory(String vsName, String fsName) {
         shaderSources[VERTEX_SHADER] = loadShaderCode(vsName);
         shaderSources[FRAGMENT_SHADER] = loadShaderCode(fsName);
+    }
+
+    public static String loadShaderCode(String name) {
+        StringBuilder shaderSource = new StringBuilder();
+        try {
+            InputStreamReader isr = new InputStreamReader(
+                    ShaderFactory.class.getClassLoader().getResourceAsStream("shaders/" + name));
+            BufferedReader reader = new BufferedReader(isr);
+            String line;
+            while ((line = reader.readLine()) != null) {
+                shaderSource.append(line).append("//\n");
+            }
+            reader.close();
+        } catch (Exception e) {
+            System.err.println("Could not read file. " + name);
+            e.printStackTrace();
+            System.exit(-1);
+        }
+        return shaderSource.toString();
+    }
+
+    private static int convertOwnConventionToOpenGL(int in) {
+        switch (in) {
+            case 0:
+                return GL_VERTEX_SHADER;
+            case 1:
+                return GL40.GL_GEOMETRY_SHADER;
+            case 2:
+                return GL40.GL_TESS_CONTROL_SHADER;
+            case 3:
+                return GL40.GL_TESS_EVALUATION_SHADER;
+            case 4:
+                return GL_FRAGMENT_SHADER;
+        }
+        return -1;
     }
 
     public ShaderFactory addShaderStage(int shaderType, String shaderPath) {
@@ -78,10 +112,9 @@ public class ShaderFactory {
         return this;
     }
 
-
-    public ShaderFactory withUniformArray(String arrayName,int count){
-        for(int i=0;i<count;i++){
-            uniformNames.add(arrayName+"["+i+"]");
+    public ShaderFactory withUniformArray(String arrayName, int count) {
+        for (int i = 0; i < count; i++) {
+            uniformNames.add(arrayName + "[" + i + "]");
         }
         return this;
     }
@@ -92,24 +125,8 @@ public class ShaderFactory {
         return this;
     }
 
-    public static String loadShaderCode(String name) {
-        StringBuilder shaderSource = new StringBuilder();
-        try {
-            InputStreamReader isr = new InputStreamReader(
-                    ShaderFactory.class.getClassLoader().getResourceAsStream("shaders/" + name));
-            BufferedReader reader = new BufferedReader(isr);
-            String line;
-            while ((line = reader.readLine()) != null) {
-                shaderSource.append(line).append("//\n");
-            }
-            reader.close();
-        } catch (Exception e) {
-            System.err.println("Could not read file. " + name);
-            e.printStackTrace();
-            System.exit(-1);
-        }
-        return shaderSource.toString();
-    }
+
+    //Shader Building
 
     public Shader built() {
         shaderProgram = glCreateProgram();
@@ -118,7 +135,7 @@ public class ShaderFactory {
         List<Integer> compiledSources = compileAllShaders();
         compiledSources.forEach(i -> glAttachShader(shaderProgram, i));
         attributeLocationMap.keySet().forEach(name -> glBindAttribLocation(shaderProgram, attributeLocationMap.get(name), name));
-        if(attributeLocationMap.keySet().size()==0){
+        if (attributeLocationMap.keySet().size() == 0) {
             System.err.println("WARNING: Your shader has no input Variables!");
         }
         glLinkProgram(shaderProgram);
@@ -128,21 +145,18 @@ public class ShaderFactory {
             System.exit(-1);
         }
         //load Uniforms
-        for(String u:uniformNames){
-            uniformLocationMap.put(u,loadUniform(u));
+        for (String u : uniformNames) {
+            uniformLocationMap.put(u, loadUniform(u));
         }
-        Shader shader = new Shader(shaderProgram,uniformLocationMap);
+        Shader shader = new Shader(shaderProgram, uniformLocationMap);
         shader.bind();
         //load texture locations
-        for(String name:samplerTextureIdMap.keySet()){
+        for (String name : samplerTextureIdMap.keySet()) {
             glUniform1i(uniformLocationMap.get(name), samplerTextureIdMap.get(name));
         }
         deleteUnusedSources(compiledSources);
         return shader;
     }
-
-
-    //Shader Building
 
     private int loadUniform(String name) {
         int id = glGetUniformLocation(shaderProgram, name);
@@ -165,10 +179,10 @@ public class ShaderFactory {
 
     private String setShaderConstants(String sourceCode) {
         String withShaderConstants = sourceCode;
-        for(String name:shaderConstants.keySet()){
-            if(withShaderConstants.contains("#VAR "+name)) {
-                withShaderConstants = withShaderConstants.replaceAll("#VAR "+name,"#define "+name+shaderConstants.get(name));
-                System.out.println("Info: Shadervalue "+name+" is:"+shaderConstants.get(name));
+        for (String name : shaderConstants.keySet()) {
+            if (withShaderConstants.contains("#VAR " + name)) {
+                withShaderConstants = withShaderConstants.replaceAll("#VAR " + name, "#define " + name + shaderConstants.get(name));
+                System.out.println("Info: Shadervalue " + name + " is:" + shaderConstants.get(name));
             }
         }
         return withShaderConstants;
@@ -185,22 +199,6 @@ public class ShaderFactory {
             System.exit(-1);
         }
         return shader;
-    }
-
-    private static int convertOwnConventionToOpenGL(int in) {
-        switch (in) {
-            case 0:
-                return GL_VERTEX_SHADER;
-            case 1:
-                return GL40.GL_GEOMETRY_SHADER;
-            case 2:
-                return GL40.GL_TESS_CONTROL_SHADER;
-            case 3:
-                return GL40.GL_TESS_EVALUATION_SHADER;
-            case 4:
-                return GL_FRAGMENT_SHADER;
-        }
-        return -1;
     }
 
     private void deleteUnusedSources(List<Integer> shaderIds) {

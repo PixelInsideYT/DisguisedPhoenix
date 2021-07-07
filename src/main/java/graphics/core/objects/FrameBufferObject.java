@@ -1,9 +1,7 @@
-package graphics.objects;
+package graphics.core.objects;
 
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
-import org.lwjgl.opengl.GL32;
-import org.lwjgl.opengl.GL46;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -11,18 +9,15 @@ import java.util.List;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30.*;
-import static org.lwjgl.opengl.GL32.*;
-import static org.lwjgl.opengl.GL46.*;
+import static org.lwjgl.opengl.GL32.glFramebufferTexture;
 
 public class FrameBufferObject {
 
     private static final List<FrameBufferObject> allFbos = new ArrayList<>();
-
-    private int width;
-    private int height;
-
     private final int fbo;
     private final List<Integer> colorTextures = new ArrayList<>();
+    private int width;
+    private int height;
     private boolean hasDepthAttachment = false;
     private boolean hasDepthTexture = false;
     private boolean isMipMappedDepth = false;
@@ -35,13 +30,17 @@ public class FrameBufferObject {
         allFbos.add(this);
     }
 
+    public static void cleanUpAllFbos() {
+        allFbos.forEach(FrameBufferObject::cleanUp);
+    }
+
     public FrameBufferObject addTextureAttachment(int attachment) {
         return this.addTextureAttachment(GL_RGBA8, GL_UNSIGNED_BYTE, GL_RGBA, attachment);
     }
 
-     public FrameBufferObject addUnclampedTexture(int attachment){
-         return this.addTextureAttachment(GL_RGBA16F, GL_FLOAT, GL_RGBA, attachment);
-     }
+    public FrameBufferObject addUnclampedTexture(int attachment) {
+        return this.addTextureAttachment(GL_RGBA16F, GL_FLOAT, GL_RGBA, attachment);
+    }
 
     private FrameBufferObject addTextureAttachment(int type, int precision, int format, int attachment) {
         int newTexture = createTextureAttachment(type, precision, format, GL_COLOR_ATTACHMENT0 + attachment);
@@ -62,12 +61,14 @@ public class FrameBufferObject {
         this.depthPointer = createDepthTextureAttachment(mipMapped);
         return this;
     }
+
     public FrameBufferObject addLayeredDepthTextureAttachment(int texture, int layer) {
         this.hasDepthAttachment = true;
         this.hasDepthTexture = true;
-        this.depthPointer = addLayeredTexture(texture,layer);
+        this.depthPointer = addLayeredTexture(texture, layer);
         return this;
     }
+
     public void blitToFbo(FrameBufferObject out) {
         blit(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT, out.fbo, out.getBufferWidth(), out.getBufferHeight());
     }
@@ -142,13 +143,13 @@ public class FrameBufferObject {
         // generate name for frame buffer
         glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
         // create the framebuffer
-        if(attachmentCount!=0) {
+        if (attachmentCount != 0) {
             int[] attachments = new int[attachmentCount];
             for (int i = 0; i < attachmentCount; i++) {
                 attachments[i] = GL_COLOR_ATTACHMENT0 + i;
             }
             glDrawBuffers(attachments);
-        }else {
+        } else {
             glDrawBuffers(GL_NONE);
         }
         return frameBuffer;
@@ -190,12 +191,10 @@ public class FrameBufferObject {
         glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, texture, 0);
         return texture;
     }
+
     private int addLayeredTexture(int texture, int layer) {
-        glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, texture, 0,layer);
+        glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, texture, 0, layer);
         return texture;
-    }
-    public static void cleanUpAllFbos() {
-        allFbos.forEach(FrameBufferObject::cleanUp);
     }
 
     public int getBufferHeight() {

@@ -1,6 +1,6 @@
 package disuguisedphoenix;
 
-import graphics.world.Model;
+import graphics.modelinfo.Model;
 import org.joml.Vector3f;
 
 import java.util.List;
@@ -16,7 +16,7 @@ public class RotatingEntity extends Entity {
 
     public void update(float dt, List<Entity> posCollisions) {
         rotY += 0.3f * (float) Math.PI * dt;
-        super.update(dt, posCollisions,null);
+        super.update(dt, posCollisions, null);
     }
 
 }

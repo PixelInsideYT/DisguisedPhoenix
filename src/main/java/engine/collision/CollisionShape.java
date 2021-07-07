@@ -74,11 +74,11 @@ public class CollisionShape {
         return min;
     }
 
-    public int getCornerPointCount(){
+    public int getCornerPointCount() {
         return cornerPoints.length;
     }
 
-    public final Vector3f[] getCornerPoints(){
+    public final Vector3f[] getCornerPoints() {
         return cornerPoints;
     }
 

@@ -1,10 +1,10 @@
-package graphics.renderer;
+package graphics.core.renderer;
 
 import disuguisedphoenix.Entity;
 import disuguisedphoenix.Main;
-import graphics.objects.Vao;
-import graphics.shaders.Shader;
-import graphics.world.Model;
+import graphics.core.objects.Vao;
+import graphics.core.shaders.Shader;
+import graphics.modelinfo.Model;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
@@ -26,6 +26,7 @@ public class TestRenderer {
         shader.bind();
         shader.loadMatrix("projMatrix", projMatrix);
         shader.loadMatrix("viewMatrix", camMatrix);
+        shader.loadInt("useInputTransformationMatrix",0);
     }
 
     public void render(Model model, Matrix4f... modelMatrixArray) {
@@ -35,7 +36,7 @@ public class TestRenderer {
             shader.loadMatrix("transformationMatrixUniform", modelMatrix);
             glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, model.renderInfo.indexOffset * 4, model.renderInfo.vertexOffset);
             Main.inViewObjects++;
-            Main.inViewVerticies+=indiciesLength;
+            Main.inViewVerticies += indiciesLength;
             Main.drawCalls++;
             Main.facesDrawn += indiciesLength / 3;
         }
@@ -51,7 +52,7 @@ public class TestRenderer {
                 shader.loadMatrix("transformationMatrixUniform", e.getTransformationMatrix());
                 glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, model.renderInfo.indexOffset * 4, model.renderInfo.vertexOffset);
                 Main.inViewObjects++;
-                Main.inViewVerticies+=indiciesLength;
+                Main.inViewVerticies += indiciesLength;
                 Main.drawCalls++;
                 Main.facesDrawn += indiciesLength / 3;
             }

@@ -189,5 +189,13 @@
       "Circle.001": "0:0"
     },
     "modelHeight": 0.2
+  },
+  {
+    "modelFilePath": "cube.modelFile",
+    "relativePath": "cube.fbx",
+    "wobbleInfo": {
+      "Cube": "0:0"
+    },
+    "modelHeight": 1.0
   }
 ]

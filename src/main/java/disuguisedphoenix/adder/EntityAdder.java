@@ -3,23 +3,21 @@ package disuguisedphoenix.adder;
 import com.google.gson.Gson;
 import disuguisedphoenix.Entity;
 import disuguisedphoenix.terrain.Island;
-import disuguisedphoenix.terrain.PopulatedIsland;
-import disuguisedphoenix.terrain.World;
 import engine.util.Maths;
 import engine.util.ModelConfig;
 import engine.util.ModelFileHandler;
+import graphics.core.shaders.Shader;
+import graphics.core.shaders.ShaderFactory;
+import graphics.modelinfo.Model;
 import graphics.particles.ParticleManager;
-import graphics.shaders.Shader;
-import graphics.shaders.ShaderFactory;
-import graphics.world.Model;
 import org.joml.FrustumIntersection;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 
-import java.io.File;
 import java.io.InputStreamReader;
 import java.util.*;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -28,19 +26,15 @@ import static org.lwjgl.opengl.GL40.glDrawElementsBaseVertex;
 
 public class EntityAdder {
 
-    private final Shader creationShader;
-
     private static final float PARTICLES_PER_SECOND_PER_AREA_UNIT = 0.0005f;
     private static final float BUILT_SPEED = 0.1f;
-
-    private int activated = 0;
-
-    public List<String> modelNames = new ArrayList<>();
-
+    private final Shader creationShader;
     private final ParticleManager pm;
+    public List<String> modelNames = new ArrayList<>();
+    Random rnd;
+    private int activated = 0;
     private List<GrowState> toAddEntities = new ArrayList<>();
     private String[] exclude = new String[]{"birb", "lightPentagon", "cube"};
-    Random rnd;
 
     public EntityAdder(ParticleManager pm) {
         ShaderFactory creationFactory = new ShaderFactory("creationVS.glsl", "creationFS.glsl");
@@ -48,34 +42,27 @@ public class EntityAdder {
         creationFactory.withUniforms("projMatrix", "viewMatrix", "transformationMatrix", "builtProgress", "modelHeight");
         creationShader = creationFactory.withAttributes("pos", "color").built();
         this.pm = pm;
-        fillModelNameList(new File("."));
-        List<String> distinctList=modelNames.stream().distinct().collect(Collectors.toList());
-        modelNames.clear();
-        ModelConfig[] modelConfigs = new Gson().fromJson(new InputStreamReader(EntityAdder.class.getResourceAsStream("/models/ModelBuilder.info")),ModelConfig[].class);
-        modelNames.addAll(Arrays.stream(modelConfigs)
-                .map(modelConfig -> modelConfig.modelFilePath)
-                .collect(Collectors.toList()));
+        modelNames.addAll(getModelNameList().stream().filter(e -> {
+            for (String ex : exclude) {
+                if (e.contains(ex)) return false;
+            }
+            return true;
+        }).collect(Collectors.toList()));
         rnd = new Random();
     }
 
-    private void fillModelNameList(File startDir) {
-        String fileSeprerator = File.separator;
-        File[] faFiles = startDir.listFiles();
-        for (File file : faFiles) {
-            if (file.getName().endsWith(".modelFile")) {
-                boolean isBlocked = false;
-                for (String s : exclude) {
-                    if (file.getName().contains(s)) isBlocked = true;
-                }
-                String absPath = file.getAbsolutePath();
-                String filename = absPath.substring(absPath.indexOf("models"+fileSeprerator) + ("models"+fileSeprerator).length());
-                if (!isBlocked) {
-                    modelNames.add(filename);
-                }
-            }
-            if (file.isDirectory()) {
-                fillModelNameList(file);
-            }
+    public static List<String> getModelNameList() {
+        ModelConfig[] modelConfigs = new Gson().fromJson(new InputStreamReader(EntityAdder.class.getResourceAsStream("/models/ModelBuilder.info")), ModelConfig[].class);
+        return Arrays.stream(modelConfigs)
+                .map(modelConfig -> modelConfig.modelFilePath)
+                .collect(Collectors.toList());
+    }
+
+    private static void addGrowStateToRenderMap(GrowState entity, Map<Model, List<GrowState>> modelMap, FrustumIntersection fi) {
+        if (entity.isReachedBySeeker() && Maths.isInsideFrustum(fi, entity.growingEntity)) {
+            Model m = entity.growingEntity.getModel();
+            modelMap.computeIfAbsent(m, k -> new ArrayList<>());
+            modelMap.get(m).add(entity);
         }
     }
 
@@ -98,7 +85,7 @@ public class EntityAdder {
             creationShader.loadMatrix("viewMatrix", camMatrix);
             Map<Model, List<GrowState>> renderMap = new HashMap<>();
             toAddEntities.forEach(e -> addGrowStateToRenderMap(e, renderMap, fi));
-            for (Map.Entry<Model,List<GrowState>> m : renderMap.entrySet()) {
+            for (Map.Entry<Model, List<GrowState>> m : renderMap.entrySet()) {
                 render(m.getKey(), m.getValue());
             }
             creationShader.unbind();
@@ -121,55 +108,41 @@ public class EntityAdder {
         model.renderInfo.actualVao.unbind();
     }
 
-
-    public void generateNextEntities(Vector3f playerPos, World world, List<PopulatedIsland> islands) {
-        for (PopulatedIsland island : islands) {
-            List<Entity> spawningEntities = generateEntitiesFor(island.island);
-            for (Entity e : spawningEntities) {
-                GrowState gr = new GrowState(world, island, 100, playerPos, e, pm);
-                toAddEntities.add(gr);
-            }
-        }
-        activated++;
-    }
-
-    private List<Entity> generateEntitiesFor(Island terrain) {
-        //float terrainAreaEstimate = terrain.getSize() * terrain.getSize();
-        float terrainAreaEstimate = 4 * (float) Math.PI * radius*radius;
+    private List<Entity> generateEntitiesFor(float xRange, float xOffset, float yRange, float yOffset, float zRange, float zOffset, float terrainAreaEstimate, UnaryOperator<Vector3f> placementFunction) {
         if (activated < modelNames.size()) {
             Model model = ModelFileHandler.getModel(modelNames.get(activated));
             float modelAreaEstimate = (float) Math.PI * model.radiusXZ * model.radiusXZ;
-            float count = terrainAreaEstimate / modelAreaEstimate/modelNames.size();
+            float count = terrainAreaEstimate / modelAreaEstimate / modelNames.size();
             if (count > 100000) count = 100000;
-            return IntStream.range(0, (int) count).mapToObj(i -> generateEntiy(terrain, model, 0, 6f, 0, 1f)).collect(Collectors.toList());
+            return IntStream.range(0, (int) count).mapToObj(i -> generateEntity(xRange, xOffset, yRange, yOffset, zRange, zOffset, placementFunction, model, 6f, 1f)).collect(Collectors.toList());
         }
         return new ArrayList<>();
     }
 
-    private Entity generateEntiy(Island terrain, Model modelFile, float rotRandomX, float rotRandomY, float rotRandomZ, float scale) {
-
-        float x = rnd.nextFloat() * terrain.getSize() + terrain.position.x;
-        float z = rnd.nextFloat() * terrain.getSize() + terrain.position.z;
-        float h = terrain.getHeightOfTerrain(x, terrain.position.y, z);
-        float scaleDiffrence = (rnd.nextFloat() * 2f - 1) * 0.5f + 1.0f;
-        return new Entity(modelFile, new Vector3f(x, h, z), rnd.nextFloat() * rotRandomX, rnd.nextFloat() * rotRandomY, rnd.nextFloat() * rotRandomZ, scale*scaleDiffrence);
+    private Entity generateEntity(float xRange, float xOffset, float yRange, float yOffset, float zRange, float zOffset, UnaryOperator<Vector3f> placementFunction, Model modelFile, float rotRandomZ, float scale) {
+        Vector3f position = new Vector3f(rnd.nextFloat() * xRange + xOffset, rnd.nextFloat() * yRange + yOffset, rnd.nextFloat() * zRange + zOffset);
+        float scaleDifference = (rnd.nextFloat() * 2f - 1) * 0.5f + 1.0f;
+        return new Entity(modelFile, placementFunction.apply(position), 0, 0, rnd.nextFloat() * rotRandomZ, scale * scaleDifference);
     }
 
-    public List<Entity> getAllEntities(PopulatedIsland flyingIslands) {
+    public List<Entity> getAllEntities(Island island) {
         List<Entity> rt = new ArrayList<>();
         activated = 0;
+        float areaEstimate = island.getSize() * island.getSize();
         for (int i = 0; i < modelNames.size(); i++) {
-            rt.addAll(generateEntitiesFor(flyingIslands.island));
+            rt.addAll(generateEntitiesFor(island.getSize(), 0, 0, 0, island.getSize(), 0, areaEstimate, island::placeVectorOnTerrain));
             activated++;
         }
         return rt;
     }
 
-    private static void addGrowStateToRenderMap(GrowState entity, Map<Model, List<GrowState>> modelMap, FrustumIntersection fi) {
-        if (entity.isReachedBySeeker() && Maths.isInsideFrustum(fi, entity.growingEntity)) {
-            Model m = entity.growingEntity.getModel();
-            modelMap.computeIfAbsent(m, k -> new ArrayList<>());
-            modelMap.get(m).add(entity);
+    public List<Entity> getAllEntities(float areaEstimate, UnaryOperator<Vector3f> placementFunction) {
+        List<Entity> rt = new ArrayList<>();
+        activated = 0;
+        for (int i = 0; i < modelNames.size(); i++) {
+            rt.addAll(generateEntitiesFor(2f, -1, 2f, -1f, 2f, -1f, areaEstimate, placementFunction));
+            activated++;
         }
+        return rt;
     }
 }

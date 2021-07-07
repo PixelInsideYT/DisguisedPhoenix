@@ -1,47 +1,34 @@
 package disuguisedphoenix;
 
 import disuguisedphoenix.adder.EntityAdder;
-import disuguisedphoenix.terrain.Island;
-import disuguisedphoenix.terrain.PopulatedIsland;
+import disuguisedphoenix.rendering.MasterRenderer;
 import disuguisedphoenix.terrain.World;
 import engine.collision.CollisionShape;
 import engine.input.InputManager;
 import engine.input.KeyboardInputMap;
 import engine.input.MouseInputMap;
-import engine.util.Maths;
 import engine.util.ModelFileHandler;
 import engine.util.Zeitgeist;
 import graphics.camera.Camera;
 import graphics.camera.FreeFlightCamera;
-import graphics.context.Display;
+import graphics.core.context.Display;
+import graphics.core.objects.FrameBufferObject;
+import graphics.core.objects.OpenGLState;
+import graphics.core.objects.Vao;
+import graphics.core.renderer.MultiIndirectRenderer;
+import graphics.core.shaders.Shader;
 import graphics.gui.NuklearBinding;
 import graphics.loader.TextureLoader;
-import graphics.objects.FrameBufferObject;
-import graphics.objects.OpenGLState;
-import graphics.objects.TimerQuery;
-import graphics.objects.Vao;
-import graphics.occlusion.SSAOEffect;
-import graphics.occlusion.ShadowEffect;
+import graphics.modelinfo.Model;
+import graphics.modelinfo.RenderInfo;
 import graphics.particles.ParticleManager;
-import graphics.particles.PointSeekingEmitter;
-import graphics.postprocessing.GaussianBlur;
-import graphics.postprocessing.HIZGenerator;
-import graphics.postprocessing.Pipeline;
-import graphics.postprocessing.QuadRenderer;
-import graphics.renderer.MultiIndirectRenderer;
-import graphics.renderer.TestRenderer;
-import graphics.shaders.Shader;
-import graphics.shaders.ShaderFactory;
-import graphics.world.Model;
-import graphics.world.RenderInfo;
-import org.joml.*;
+import org.joml.Matrix4f;
+import org.joml.SimplexNoise;
+import org.joml.Vector3f;
 
-import java.lang.Math;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-import java.util.stream.Collectors;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46.*;
@@ -52,34 +39,21 @@ public class Main {
     public static int inViewObjects = 0;
     public static int drawCalls = 0;
     public static int facesDrawn = 0;
-    private static final float NEEDED_SIZE_PER_LENGTH_UNIT = 0.005f;
-    public static final float FAR_PLANE = 500f;
-    public static final float NEAR_PLANE = 0.05f;
-
-
-    private static Model model;
-
-    private static List<Entity> worldsEntity = new ArrayList<>();
     public static float scale = 600;
     public static float radius = (float) Math.sqrt(Math.pow(scale / 2f, 2) * 3);
+    private static Model model;
 
     //get models on itch and cgtrader
-
     private static List<CollisionShape> worldTris = new ArrayList<>();
 
     private static float lightAngle = 0;
     private static float lightRadius = 2 * radius;
     private static Vector3f lightPos = new Vector3f(0, 1, 0);
     private static Vector3f lightColor = new Vector3f(1f);
-
-    public static boolean couldBeVisible(Entity e, Vector3f cameraPos) {
-        float size = e.getScale() * e.getModel().radius;
-        float distance = e.getPosition().distance(cameraPos);
-        return size > distance * NEEDED_SIZE_PER_LENGTH_UNIT;
-    }
+    private static float noiseScale = 0.01f;
+    private static float change = 0.1f;
 
     public static void main(String[] args) {
-        //ModelFileHandler.regenerateModels("/home/linus/IdeaProjects/DisguisedPhoenix/src/main/resources/models/ModelBuilder.info");
         //TODO: refactor rendering into a modular pipeline
         long startUpTime = System.currentTimeMillis();
         Display display = new Display("Disguised Phoenix", 1920, 1080);
@@ -88,24 +62,17 @@ public class Main {
         model = createSphere();
         MouseInputMap mim = new MouseInputMap();
         ParticleManager pm = new ParticleManager();
-        World world = new World(pm);
-        EntityAdder ea = world.getEntityAdder();
-        MultiIndirectRenderer multiRenderer = new MultiIndirectRenderer();
-        ModelFileHandler.loadModelsForMultiDraw(multiRenderer.persistantMatrixVbo, ea.modelNames.toArray(String[]::new));
-        worldsEntity.addAll(ea.getAllEntities(new PopulatedIsland(new Vector3f(0), 1000)));
-        worldsEntity.forEach(e -> placeEntity(e));
-        //  for (int i = 0; i < 1; i++) world.addIsland(1000);
-        Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(0, radius, 0), mim);
-        ShaderFactory shaderFactory = new ShaderFactory("testVSMultiDraw.glsl", "testFS.glsl").withAttributes("posAndWobble", "colorAndShininess");
-        shaderFactory.withUniforms("projMatrix", "noiseMap", "time", "viewMatrix", "transformationMatrixUniform", "useInputTransformationMatrix");
-        Shader shader = shaderFactory.configureSampler("noiseMap", 0).built();
-        int noiseTexture = TextureLoader.loadTexture("misc/noiseMap.png", GL_REPEAT, GL_LINEAR);
-        TestRenderer renderer = new TestRenderer(shader);
-        Matrix4f projMatrix = new Matrix4f();
         int width = display.getWidth();
         int height = display.getHeight();
         float aspectRatio = width / (float) height;
-        projMatrix.perspective((float) Math.toRadians(70), aspectRatio, NEAR_PLANE, FAR_PLANE);
+        MasterRenderer masterRenderer = new MasterRenderer(width,height,aspectRatio);
+        ModelFileHandler.loadModelsForMultiDraw(masterRenderer.multiIndirectRenderer.persistantMatrixVbo, EntityAdder.getModelNameList().toArray(String[]::new));
+        World world = new World(pm, 4f * radius);
+        EntityAdder ea = world.getEntityAdder();
+        ea.getAllEntities(4f * 3.141592f * radius * radius, Main::getPositionOnEarthFromDirection).forEach(e -> world.placeUprightEntity(e, e.position));
+        List<String> modelNames = ea.modelNames;
+        modelNames.add("cube.modelFile");
+        Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(0, radius, 0), mim);
         InputManager input = new InputManager(display.getWindowId());
         KeyboardInputMap kim = new KeyboardInputMap().addMapping("forward", GLFW_KEY_W).addMapping("backward", GLFW_KEY_S).addMapping("turnLeft", GLFW_KEY_A).addMapping("turnRight", GLFW_KEY_D).addMapping("accel", GLFW_KEY_SPACE);
         KeyboardInputMap freeFlightCam = new KeyboardInputMap().addMapping("forward", GLFW_KEY_W).addMapping("backward", GLFW_KEY_S).addMapping("goLeft", GLFW_KEY_A).addMapping("goRight", GLFW_KEY_D).addMapping("up", GLFW_KEY_SPACE).addMapping("down", GLFW_KEY_LEFT_SHIFT).addMapping("fastFlight", GLFW_KEY_LEFT_CONTROL);
@@ -113,52 +80,27 @@ public class Main {
         input.addInputMapping(freeFlightCam);
         input.addInputMapping(mim);
         FreeFlightCamera flightCamera = new FreeFlightCamera(mim, freeFlightCam);
+        FreeFlightCamera flightCamera2 = new FreeFlightCamera(mim, freeFlightCam);
         player.movement = kim;
         OpenGLState.enableDepthTest();
         OpenGLState.setAlphaBlending(GL_ONE_MINUS_SRC_ALPHA);
         System.err.println("STARTUP TIME: " + (System.currentTimeMillis() - startUpTime) / 1000f);
-        //  display.activateWireframe();
         Zeitgeist zeitgeist = new Zeitgeist();
         boolean wireframe = false;
-        boolean collisionBoxes = false;
         boolean freeFlightCamActivated = false;
-        long lastSwitchWireframe = System.currentTimeMillis();
-        long lastSwitchCollision = System.currentTimeMillis();
-        long lastSwitchCam = System.currentTimeMillis();
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, noiseTexture);
         float time = 1f;
         DecimalFormat df = new DecimalFormat("###,###,###");
-        FrameBufferObject fbo = new FrameBufferObject(width, height, 2)
-                //normal and specular
-                .addTextureAttachment(0)
-                //color and geometry info
-                .addTextureAttachment(1)
-                //depth
-                .addDepthTextureAttachment(true);
-        FrameBufferObject deferredResult = new FrameBufferObject(width, height, 2).addTextureAttachment(0).addTextureAttachment(1).unbind();
-        QuadRenderer quadRenderer = new QuadRenderer();
-        GaussianBlur blur = new GaussianBlur(quadRenderer);
-        SSAOEffect ssao = new SSAOEffect(quadRenderer, width, height, projMatrix);
-        ShadowEffect shadows = new ShadowEffect();
-        HIZGenerator hizGen = new HIZGenerator(quadRenderer);
-        Pipeline postProcessPipeline = new Pipeline(width, height, projMatrix, quadRenderer, blur);
         float avgFPS = 0;
         int frameCounter = 0;
         display.setResizeListener((width1, height1, aspectRatio1) -> {
-            projMatrix.identity().perspective((float) Math.toRadians(70), aspectRatio1, NEAR_PLANE, FAR_PLANE);
-            fbo.resize(width1, height1);
-            deferredResult.resize(width1, height1);
-            ssao.resize(width1, height1);
-            postProcessPipeline.resize(width1, height1);
+            masterRenderer.resize(width1,height,aspectRatio);
         });
-        TimerQuery vertexTimer = new TimerQuery("Geometry Pass");
-        TimerQuery lightTimer = new TimerQuery("Lighting Pass");
-        Matrix4f cullingMatrix = new Matrix4f();
-        FrustumIntersection cullingHelper = new FrustumIntersection();
         NuklearBinding nuklearBinding = new NuklearBinding(input, display);
         flightCamera.getPosition().set(player.position);
         float summedMS = 0f;
+        input.hideMouseCursor();
+        float switchCameraTimer = 0f;
+        float captureMouseTimer = 0f;
         while (!display.shouldClose() && !input.isKeyDown(GLFW_KEY_ESCAPE)) {
             long startFrame = System.currentTimeMillis();
             float dt = zeitgeist.getDelta();
@@ -169,107 +111,34 @@ public class Main {
             time += dt;
             display.pollEvents();
             // nuklearBinding.pollInputs();
-            if (input.isKeyDown(GLFW_KEY_O) && System.currentTimeMillis() - lastSwitchWireframe > 100) {
-                wireframe = !wireframe;
-                lastSwitchWireframe = System.currentTimeMillis();
-                //world.addNextEntities(player.position);
-                //world.addAllEntities();
+            if (input.isKeyDown(GLFW_KEY_P)&&captureMouseTimer<0) {
+                input.toggleCursor();
+                captureMouseTimer=0.25f;
             }
-            if (input.isKeyDown(GLFW_KEY_P)) {
-                PointSeekingEmitter entitySeeker = new PointSeekingEmitter(player.position, new Vector3f(player.position).add(new Vector3f(player.forward).mul(700)), 15, 700f, 30, world);
-                pm.addParticleEmitter(entitySeeker);
-            }
-            if (input.isKeyDown(GLFW_KEY_L) && System.currentTimeMillis() - lastSwitchCollision > 100) {
-                collisionBoxes = !collisionBoxes;
-                lastSwitchCollision = System.currentTimeMillis();
-            }
-            if (input.isKeyDown(GLFW_KEY_C) && System.currentTimeMillis() - lastSwitchCam > 100) {
+            if (input.isKeyDown(GLFW_KEY_C) && switchCameraTimer < 0) {
                 freeFlightCamActivated = !freeFlightCamActivated;
-                if (freeFlightCamActivated) input.hideMouseCursor();
-                else input.showMouseCursor();
-                lastSwitchCam = System.currentTimeMillis();
+                switchCameraTimer = 0.25f;
             }
+            switchCameraTimer -= dt;
+            captureMouseTimer-=dt;
             if (wireframe) {
                 OpenGLState.enableWireframe();
             } else {
                 OpenGLState.disableWireframe();
             }
             pm.update(dt);
-            Camera ffc = player.cam;
+            Camera ffc;
             if (!freeFlightCamActivated) {
-                //player.move(world.getPossibleTerrainCollisions(player), dt, world.getPossibleCollisions(player));
-                // player.move(world.getPossibleTerrainCollisions(player), dt, worldsEntity, worldTris);
-                //flightCamera.getPosition().set(player.cam.getPosition());
-
+                ffc = flightCamera2;
             } else {
                 ffc = flightCamera;
-                ffc.update(dt);
             }
+            ffc.update(dt);
             Matrix4f viewMatrix = ffc.getViewMatrix();
-            viewMatrix = flightCamera.getViewMatrix();
             world.update(dt);
             input.updateInputMaps();
-            vertexTimer.startQuery();
-            OpenGLState.enableBackFaceCulling();
-            OpenGLState.enableDepthTest();
-            OpenGLState.disableAlphaBlending();
-            fbo.bind();
-            glClearColor(0.1f, 0.1f, 0.9f, 0.0f);
-            fbo.clear();
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, noiseTexture);
-            world.renderAdder(projMatrix, viewMatrix);
-            renderer.begin(viewMatrix, projMatrix);
-            shader.loadInt("useInputTransformationMatrix", 0);
-            shader.loadFloat("time", time);
-            renderer.render(model, new Matrix4f());
-            renderer.render(player.getModel(), player.getTransformationMatrix());
-            world.render(renderer, projMatrix, viewMatrix, ffc.getPosition());
-            shader.loadInt("useInputTransformationMatrix", 1);
-            cullingHelper.set(cullingMatrix.set(projMatrix).mul(viewMatrix));
-            multiRenderer.prepareRenderer(world.getVisibleEntities(projMatrix, viewMatrix, ffc.getPosition()));
-            multiRenderer.render();
-            final Vector3f camPos = ffc.getPosition();
-            multiRenderer.prepareRenderer(worldsEntity.parallelStream().filter(e -> Maths.isInsideFrustum(cullingHelper, e) && couldBeVisible(e, camPos)).collect(Collectors.toList()));
-            multiRenderer.render();
-            fbo.unbind();
-            shader.unbind();
-            vertexTimer.waitOnQuery();
-            shadows.render(viewMatrix, NEAR_PLANE, FAR_PLANE, (float) Math.toRadians(70), aspectRatio, time, lightPos, worldsEntity, multiRenderer);
-            OpenGLState.enableAlphaBlending();
-            display.clear();
-            OpenGLState.disableWireframe();
-            hizGen.generateHiZMipMap(fbo);
-            OpenGLState.disableDepthTest();
-           /* computeTimer.startQuery();
-            postProcessPipeline.computeDOFEffect(fbo.getDepthTexture());
-            computeTimer.waitOnQuery();*/
-            fbo.blitDepth(deferredResult);
-            ssao.renderEffect(fbo, projMatrix);
-            lightTimer.startQuery();
-            deferredResult.bind();
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, fbo.getDepthTexture());
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, fbo.getTextureID(0));
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, fbo.getTextureID(1));
-            glActiveTexture(GL_TEXTURE3);
-            glBindTexture(GL_TEXTURE_2D, ssao.getSSAOTexture());
-            glActiveTexture(GL_TEXTURE4);
-            glBindTexture(GL_TEXTURE_2D_ARRAY, shadows.getShadowTexture());
-            quadRenderer.renderDeferredLightingPass(ffc.getViewMatrix(), projMatrix, lightPos, lightColor, ssao.isEnabled(), shadows.isEnabled(), shadows.getShadowProjViewMatrix());
-            OpenGLState.enableDepthTest();
-            OpenGLState.enableAlphaBlending();
-            pm.render(projMatrix, viewMatrix);
-            OpenGLState.disableAlphaBlending();
-            OpenGLState.disableDepthTest();
-            deferredResult.unbind();
-            lightTimer.waitOnQuery();
-            postProcessPipeline.applyPostProcessing(display, deferredResult, fbo, shadows.getShadowTexture(), lightPos, ffc);
-            // nuklearBinding.renderGUI(display.getWidth(),display.getHeight());
-            display.flipBuffers();
-            avgFPS += zeitgeist.getFPS();
+            masterRenderer.render(display,viewMatrix,time,world,ffc.getPosition(),lightPos,lightColor,model);
+           avgFPS += zeitgeist.getFPS();
             display.setFrameTitle("Disguised Phoenix: " + " FPS: " + zeitgeist.getFPS() + ", In frustum objects: " + inViewObjects + ", drawcalls: " + drawCalls + " faces: " + df.format(facesDrawn));
             inViewObjects = 0;
             inViewVerticies = 0;
@@ -279,11 +148,6 @@ public class Main {
             frameCounter++;
             summedMS += (System.currentTimeMillis() - startFrame);
         }
-        vertexTimer.printResults();
-        lightTimer.printResults();
-        if (ssao.isEnabled())
-            ssao.ssaoTimer.printResults();
-            shadows.print();
         nuklearBinding.cleanUp();
         System.out.println("AVG FPS: " + (avgFPS / (float) frameCounter));
         System.out.println("AVG MS: " + (summedMS / (float) frameCounter));
@@ -294,36 +158,9 @@ public class Main {
         display.destroy();
     }
 
-    private static Entity generateActivationSwitch(Island terrain) {
-        Random rnd = new Random();
-        float x = rnd.nextFloat() * terrain.getSize() + terrain.position.x;
-        float z = rnd.nextFloat() * terrain.getSize() + terrain.position.z;
-        float h = terrain.getHeightOfTerrain(x, terrain.position.y, z);
-        return new RotatingEntity(ModelFileHandler.getModel("cube.modelFile"), x, h + 50, z, 40);
+    public static Vector3f getPositionOnEarthFromDirection(Vector3f v) {
+        return v.normalize(radius).mul(1 + SimplexNoise.noise(v.x * noiseScale, v.y * noiseScale, v.z * noiseScale) * change);
     }
-
-    private static String format(float v, int decimalPlaces) {
-        return String.format("%." + decimalPlaces + "f", v);
-    }
-
-    private static float noiseScale = 0f;
-    private static float change = 0.1f;
-
-    private static void placeEntity(Entity e) {
-        Vector3f pos = e.position;
-        Random r = new Random();
-        pos.set(r.nextFloat() * 2f - 1f, r.nextFloat() * 2f - 1f, r.nextFloat() * 2f - 1f).normalize(radius);
-        pos.mul(1 + SimplexNoise.noise(pos.x * noiseScale, pos.y * noiseScale, pos.z * noiseScale) * change);
-        Vector3f eulerAngles = new Vector3f();
-        Quaternionf qf = new Quaternionf();
-        qf.rotateTo(new Vector3f(0, 1, 0), new Vector3f(pos).normalize());
-        qf.mul(new Quaternionf().rotateLocalY(r.nextFloat() * 7f), qf);
-        qf.getEulerAnglesXYZ(eulerAngles);
-        e.rotX = eulerAngles.x;
-        e.rotY = eulerAngles.y;
-        e.rotZ = eulerAngles.z;
-    }
-
 
     private static Model createSphere() {
         float scale = 100;
@@ -336,7 +173,7 @@ public class Main {
         sphereVerticies.addAll(createPlane(subdivisions, scale, 0, 0, 1));
         sphereVerticies.addAll(createPlane(subdivisions, scale, 0, 0, -1));
 
-        sphereVerticies.forEach(v -> v.normalize(radius).mul(1 + SimplexNoise.noise(v.x * noiseScale, v.y * noiseScale, v.z * noiseScale) * change));
+        sphereVerticies.forEach(Main::getPositionOnEarthFromDirection);
         List<Integer> sphereIndicies = createIndiecies(subdivisions, 0, true);
         for (int i = 1; i < 6; i++) {
             sphereIndicies.addAll(createIndiecies(subdivisions, indicyOffset * i, i % 2 == 0));

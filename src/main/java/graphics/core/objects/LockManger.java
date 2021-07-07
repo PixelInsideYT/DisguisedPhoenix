@@ -1,4 +1,4 @@
-package graphics.objects;
+package graphics.core.objects;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +14,7 @@ public class LockManger {
         toRemove.clear();
         for (LockObject lock : activeFences) {
             if (lock.overlaps(beginIndex, endIndex)) {
-                System.out.println("waited: "+lock.waitUntilFree()+" ticks");
+                System.out.println("waited: " + lock.waitUntilFree() + " ticks");
             }
             if (lock.isDone()) toRemove.add(lock);
         }

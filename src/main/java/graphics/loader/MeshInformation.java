@@ -1,7 +1,7 @@
 package graphics.loader;
 
 import engine.collision.Collider;
-import graphics.world.Material;
+import graphics.modelinfo.Material;
 import org.joml.Vector3f;
 
 public class MeshInformation {

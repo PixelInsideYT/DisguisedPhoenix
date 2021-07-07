@@ -1,15 +1,14 @@
 package graphics.particles;
 
 import disuguisedphoenix.Main;
-import graphics.objects.BufferObject;
-import graphics.objects.Vao;
-import graphics.shaders.Shader;
-import graphics.shaders.ShaderFactory;
+import graphics.core.objects.BufferObject;
+import graphics.core.objects.Vao;
+import graphics.core.shaders.Shader;
+import graphics.core.shaders.ShaderFactory;
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL31;
 
 import java.nio.FloatBuffer;
@@ -17,7 +16,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL20.GL_ARRAY_BUFFER;
 
 public class ParticleManager {
 
@@ -34,8 +33,8 @@ public class ParticleManager {
 
 
     public ParticleManager() {
-        ShaderFactory particleFactory = new ShaderFactory("particleVS.glsl","particleFS.glsl");
-        particleFactory.withAttributes("pos","transformationMatrix").setAttributeLocation("color",5);
+        ShaderFactory particleFactory = new ShaderFactory("particleVS.glsl", "particleFS.glsl");
+        particleFactory.withAttributes("pos", "transformationMatrix").setAttributeLocation("color", 5);
         shader = particleFactory.withUniforms("viewMatrix", "projMatrix").built();
         particleVao = new Vao();
         particleVao.addDataAttributes(0, 3, new float[]{0.5f, -0.5f, 0f, 0.5f, 0.5f, 0f, -0.5f, 0.5f, 0f, -0.5f, 0.5f, 0f, 0.5f, -0.5f, 0f, -0.5f, -0.5f, 0f});
@@ -82,8 +81,8 @@ public class ParticleManager {
             matrixAndColor.updateVbo(buffer);
             GL31.glDrawArraysInstanced(GL11.GL_TRIANGLE_STRIP, 0, 6, instances);
             Main.inViewObjects++;
-            Main.inViewVerticies+=6;
-            Main.facesDrawn+=2*instances;
+            Main.inViewVerticies += 6;
+            Main.facesDrawn += 2 * instances;
             particleOffset += instances;
             toRenderParticles -= instances;
         }

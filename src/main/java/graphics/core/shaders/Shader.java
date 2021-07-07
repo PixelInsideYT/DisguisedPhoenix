@@ -1,4 +1,4 @@
-package graphics.shaders;
+package graphics.core.shaders;
 
 
 import org.joml.*;
@@ -80,11 +80,13 @@ public class Shader {
             this.load3DVector(name + "[" + i + "]", array[i]);
         }
     }
+
     public void loadMatrix4fArray(String name, Matrix4f[] array) {
         for (int i = 0; i < array.length; i++) {
             this.loadMatrix(name + "[" + i + "]", array[i]);
         }
     }
+
     public void loadIVec2(String name, Vector2i vector) {
         GL20.glUniform2i(uniforms.get(name), vector.x, vector.y);
     }

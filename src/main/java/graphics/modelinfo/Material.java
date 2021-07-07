@@ -1,4 +1,4 @@
-package graphics.world;
+package graphics.modelinfo;
 
 import org.joml.Vector3f;
 
@@ -17,6 +17,7 @@ public class Material {
     public int diffuseTextureId;
     public BufferedImage diffuesTexture;
     public int normalsTextureTd;
+
     public Material(String name) {
         this.name = name;
         ambient = new Vector3f(0.2f);

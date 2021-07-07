@@ -7,13 +7,13 @@ import java.lang.Math;
 
 public class Maths {
 
-    private static final Vector3f tempVec=new Vector3f();
+    private static final Vector3f tempVec = new Vector3f();
 
     public static Vector2f raySphere(Vector3f center, float radius, Vector3f rayOrigin, Vector3f rayDir) {
         Vector3f offset = new Vector3f(rayOrigin).sub(center);
         float a = rayDir.dot(rayDir);
-        float b = 2 *offset.dot(rayDir);
-        float c = offset.dot( offset) - radius * radius;
+        float b = 2 * offset.dot(rayDir);
+        float c = offset.dot(offset) - radius * radius;
         float discriminant = b * b - 4 * a * c;
         if (discriminant > 0) {
             float s = (float) Math.sqrt(discriminant);
@@ -38,13 +38,13 @@ public class Maths {
         return new Vector2f((float) Math.cos(angle), (float) Math.sin(angle));
     }
 
-    public static boolean isInsideFrustum(FrustumIntersection cullingHelper,Vector3f pos, Vector3f ralativeCenter, float scale, float radius) {
-        Vector3f p = new Vector3f(pos).add(scale*ralativeCenter.x,scale*ralativeCenter.y,scale*ralativeCenter.z);
+    public static boolean isInsideFrustum(FrustumIntersection cullingHelper, Vector3f pos, Vector3f ralativeCenter, float scale, float radius) {
+        Vector3f p = new Vector3f(pos).add(scale * ralativeCenter.x, scale * ralativeCenter.y, scale * ralativeCenter.z);
         return cullingHelper.testSphere(p, radius * scale);
     }
 
-    public static boolean isInsideFrustum(FrustumIntersection cullingHelper, Entity e){
-        return isInsideFrustum(cullingHelper,e.getPosition(),e.getModel().relativeCenter,e.getScale(),e.getModel().radius);
+    public static boolean isInsideFrustum(FrustumIntersection cullingHelper, Entity e) {
+        return isInsideFrustum(cullingHelper, e.getPosition(), e.getModel().relativeCenter, e.getScale(), e.getModel().radius);
     }
 
     public static Matrix4f lookAt(Vector3f target, Vector3f position) {
@@ -56,6 +56,15 @@ public class Maths {
         lookingMat.setRow(1, new Vector4f(up, -position.dot(up)));
         lookingMat.setRow(2, new Vector4f(forward, -position.dot(forward)));
         return lookingMat;
+    }
+
+    public static float sdfBox(Vector3f boxPosition, float halfWidth, float halfHeight, float halfDepth, Vector3f point) {
+        Vector3f offset = new Vector3f(point).sub(boxPosition).absolute()
+                .sub(new Vector3f(halfWidth, halfHeight, halfDepth));
+        float unsignedDistance = new Vector3f(offset).max(new Vector3f(0)).length();
+        offset.min(new Vector3f(0));
+        float distanceInsideBox = offset.get(offset.maxComponent());
+        return unsignedDistance + distanceInsideBox;
     }
 
 }

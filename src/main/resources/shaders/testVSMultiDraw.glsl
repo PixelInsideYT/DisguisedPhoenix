@@ -18,10 +18,10 @@ out vec3 viewPos;
 
 void main(){
     mat4 transformationMatrix;
-    if(useInputTransformationMatrix==1){
+    if (useInputTransformationMatrix==1){
         transformationMatrix=transformationMatrixInput;
-    }else{
-       transformationMatrix=transformationMatrixUniform;
+    } else {
+        transformationMatrix=transformationMatrixUniform;
     }
     colorAndShininessPassed=colorAndShininess;
     vec4 aPos = transformationMatrix*vec4(posAndWobble.xyz, 1);

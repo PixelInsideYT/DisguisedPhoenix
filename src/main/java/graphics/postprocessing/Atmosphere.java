@@ -1,38 +1,38 @@
 package graphics.postprocessing;
 
 import disuguisedphoenix.Main;
+import disuguisedphoenix.rendering.MasterRenderer;
 import engine.util.Maths;
 import graphics.camera.Camera;
+import graphics.core.objects.FrameBufferObject;
+import graphics.core.objects.TimerQuery;
+import graphics.core.shaders.Shader;
+import graphics.core.shaders.ShaderFactory;
 import graphics.gui.Gui;
 import graphics.loader.TextureLoader;
-import graphics.objects.FrameBufferObject;
-import graphics.objects.TimerQuery;
-import graphics.shaders.Shader;
-import graphics.shaders.ShaderFactory;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.nuklear.*;
+import org.lwjgl.nuklear.NkContext;
+import org.lwjgl.nuklear.NkRect;
 import org.lwjgl.opengl.GL46;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 
 import static org.lwjgl.nuklear.Nuklear.*;
-import static org.lwjgl.nuklear.Nuklear.nk_end;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 
 public class Atmosphere implements Gui {
 
-    private static final String ATMOSPHERE_RADIUS="atmosphereRadius";
-    private static final String PLANET_RADIUS="planetRadius";
-    private static final String DENSITY_FALLOFF="densityFalloff";
+    private static final String ATMOSPHERE_RADIUS = "atmosphereRadius";
+    private static final String PLANET_RADIUS = "planetRadius";
+    private static final String DENSITY_FALLOFF = "densityFalloff";
 
-private static final float[] depthCascades = new float[]{0.02f*Main.FAR_PLANE,0.05f*Main.FAR_PLANE,0.5f*Main.FAR_PLANE,Main.FAR_PLANE};
+    private static final float[] depthCascades = new float[]{0.02f * MasterRenderer.FAR_PLANE, 0.05f * MasterRenderer.FAR_PLANE, 0.5f * MasterRenderer.FAR_PLANE, MasterRenderer.FAR_PLANE};
 
     private Shader atmosphereShader;
     private Shader lookupGenerator;
@@ -48,38 +48,15 @@ private static final float[] depthCascades = new float[]{0.02f*Main.FAR_PLANE,0.
     private int numOpticalDepthPoints = 10;
     private int blueNoiseTexture;
     private TimerQuery timer;
-
-    public Vector3f calculateLightColor(Vector3f lightPos, Vector3f cameraPosition) {
-        calculateScatterCoefficients();
-        Vector3f toSun = new Vector3f(lightPos).sub(cameraPosition).normalize();
-        Vector2f sphereTest = Maths.raySphere(new Vector3f(), atmosphereRadius, cameraPosition, toSun);
-        float sunRayDepth = calculateOpticalDepth(cameraPosition, toSun, sphereTest.y);
-        float transittanceR = (float) Math.exp(-(sunRayDepth) * scatterCoeffiecients.x);
-        float transittanceG = (float) Math.exp(-(sunRayDepth) * scatterCoeffiecients.y);
-        float transittanceB = (float) Math.exp(-(sunRayDepth) * scatterCoeffiecients.z);
-        return new Vector3f(transittanceR, transittanceG, transittanceB);
-    }
-
-    private float calculateOpticalDepth(Vector3f rayOrigin, Vector3f rayDir, float rayLength) {
-        Vector3f densitySamplePoint = new Vector3f(rayOrigin);
-        float stepSize = rayLength / (numOpticalDepthPoints - 1);
-        float opticalDepth = 0;
-        Vector3f scaledRayDir = new Vector3f(rayDir).mul(rayDir);
-        for (int i = 0; i < numOpticalDepthPoints; i++) {
-            float heightAboveSurface = densitySamplePoint.length() - planetRadius;
-            float height01 = Math.max(heightAboveSurface / (atmosphereRadius - planetRadius), 0f);
-            float localDensity = (float) Math.exp(-height01 * densityFalloff) * (1f - height01);
-            opticalDepth += localDensity * stepSize;
-            densitySamplePoint.add(scaledRayDir);
-        }
-        return opticalDepth;
-    }
+    private FloatBuffer densityFallOffBuffer = BufferUtils.createFloatBuffer(1).put(0, densityFalloff);
+    private FloatBuffer scatterStrengthBuffer = BufferUtils.createFloatBuffer(1).put(0, scatteringStrength);
+    private FloatBuffer atmosphereRadiusBuffer = BufferUtils.createFloatBuffer(1).put(0, atmosphereRadius);
 
     public Atmosphere(QuadRenderer renderer) {
         this.renderer = renderer;
         ShaderFactory atmosphereFactory = new ShaderFactory("postProcessing/atmosphere/atmosphereVS.glsl", "postProcessing/atmosphere/atmosphereFS.glsl").withAttributes("pos");
-        atmosphereFactory.withUniforms("originalTexture", "depthTexture", "noiseTexture", "lookUpTexture","shadowTexture","cascadeDepths", "camPos", ATMOSPHERE_RADIUS, "dirToSun", PLANET_RADIUS, DENSITY_FALLOFF, "scatterCoefficients", "invProjMatrix", "zNear", "zFar");
-        atmosphereFactory.withUniformArray("toShadowMapCoords",4);
+        atmosphereFactory.withUniforms("originalTexture", "depthTexture", "noiseTexture", "lookUpTexture", "shadowTexture", "cascadeDepths", "camPos", ATMOSPHERE_RADIUS, "dirToSun", PLANET_RADIUS, DENSITY_FALLOFF, "scatterCoefficients", "invProjMatrix", "zNear", "zFar");
+        atmosphereFactory.withUniformArray("toShadowMapCoords", 4);
         atmosphereFactory.configureSampler("originalTexture", 0);
         atmosphereFactory.configureSampler("depthTexture", 1);
         atmosphereFactory.configureSampler("noiseTexture", 2);
@@ -110,7 +87,33 @@ private static final float[] depthCascades = new float[]{0.02f*Main.FAR_PLANE,0.
         timer = new TimerQuery("Atmosphere");
     }
 
-    public void render(Camera camera, Matrix4f projMatrix,Matrix4f[] toShadowMap, int texture, int depthTexture,int shadowMap, Vector3f lightPos) {
+    public Vector3f calculateLightColor(Vector3f lightPos, Vector3f cameraPosition) {
+        calculateScatterCoefficients();
+        Vector3f toSun = new Vector3f(lightPos).sub(cameraPosition).normalize();
+        Vector2f sphereTest = Maths.raySphere(new Vector3f(), atmosphereRadius, cameraPosition, toSun);
+        float sunRayDepth = calculateOpticalDepth(cameraPosition, toSun, sphereTest.y);
+        float transittanceR = (float) Math.exp(-(sunRayDepth) * scatterCoeffiecients.x);
+        float transittanceG = (float) Math.exp(-(sunRayDepth) * scatterCoeffiecients.y);
+        float transittanceB = (float) Math.exp(-(sunRayDepth) * scatterCoeffiecients.z);
+        return new Vector3f(transittanceR, transittanceG, transittanceB);
+    }
+
+    private float calculateOpticalDepth(Vector3f rayOrigin, Vector3f rayDir, float rayLength) {
+        Vector3f densitySamplePoint = new Vector3f(rayOrigin);
+        float stepSize = rayLength / (numOpticalDepthPoints - 1);
+        float opticalDepth = 0;
+        Vector3f scaledRayDir = new Vector3f(rayDir).mul(rayDir);
+        for (int i = 0; i < numOpticalDepthPoints; i++) {
+            float heightAboveSurface = densitySamplePoint.length() - planetRadius;
+            float height01 = Math.max(heightAboveSurface / (atmosphereRadius - planetRadius), 0f);
+            float localDensity = (float) Math.exp(-height01 * densityFalloff) * (1f - height01);
+            opticalDepth += localDensity * stepSize;
+            densitySamplePoint.add(scaledRayDir);
+        }
+        return opticalDepth;
+    }
+
+    public void render(Camera camera, Matrix4f projMatrix, Matrix4f[] toShadowMap, int texture, int depthTexture, int shadowMap, Vector3f lightPos) {
         timer.startQuery();
         atmosphereShader.bind();
         glActiveTexture(GL_TEXTURE0);
@@ -124,14 +127,14 @@ private static final float[] depthCascades = new float[]{0.02f*Main.FAR_PLANE,0.
         glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL46.GL_TEXTURE_2D_ARRAY, shadowMap);
         atmosphereShader.load3DVector("dirToSun", new Vector3f(lightPos).normalize());
-        atmosphereShader.loadFloat("zNear", Main.NEAR_PLANE);
-        atmosphereShader.loadFloat("zFar", Main.FAR_PLANE);
-        scatteringStrength=scatterStrengthBuffer.get(0);
-        atmosphereRadius=atmosphereRadiusBuffer.get(0);
-        densityFalloff=densityFallOffBuffer.get(0);
+        atmosphereShader.loadFloat("zNear", MasterRenderer.NEAR_PLANE);
+        atmosphereShader.loadFloat("zFar", MasterRenderer.FAR_PLANE);
+        scatteringStrength = scatterStrengthBuffer.get(0);
+        atmosphereRadius = atmosphereRadiusBuffer.get(0);
+        densityFalloff = densityFallOffBuffer.get(0);
         calculateScatterCoefficients();
-        atmosphereShader.loadMatrix4fArray("toShadowMapCoords",toShadowMap);
-        atmosphereShader.loadFloatArray("cascadeDepths",depthCascades);
+        atmosphereShader.loadMatrix4fArray("toShadowMapCoords", toShadowMap);
+        atmosphereShader.loadFloatArray("cascadeDepths", depthCascades);
         atmosphereShader.load3DVector("scatterCoefficients", scatterCoeffiecients);
         atmosphereShader.loadFloat(ATMOSPHERE_RADIUS, atmosphereRadius);
         atmosphereShader.loadFloat(PLANET_RADIUS, planetRadius);
@@ -164,26 +167,23 @@ private static final float[] depthCascades = new float[]{0.02f*Main.FAR_PLANE,0.
         timer.printResults();
     }
 
-    private FloatBuffer densityFallOffBuffer = BufferUtils.createFloatBuffer(1).put(0, densityFalloff);
-        private FloatBuffer scatterStrengthBuffer = BufferUtils.createFloatBuffer(1).put(0, scatteringStrength);
-    private FloatBuffer atmosphereRadiusBuffer = BufferUtils.createFloatBuffer(1).put(0, atmosphereRadius);
-
-    public void show(NkContext ctx,float windowWidth,float windowHeight){
-        if(false){
-        int x=200;
-        int y=200;
-        try (MemoryStack stack = stackPush()) {
-            NkRect rect = NkRect.mallocStack(stack);
-            if (nk_begin(
-                    ctx, "Amtosphere Settings", nk_rect(x, y, 400, 250, rect),NK_WINDOW_TITLE)) {
-                nk_layout_row_dynamic(ctx, 25, 1);
-                nk_property_float(ctx, "DensityFalloff:", -10, densityFallOffBuffer, 10, 0.1f, 0.01f);
-                nk_property_float(ctx, "ScatterStrength:", 0, scatterStrengthBuffer, 5f, 0.1f, 0.01f);
-                nk_property_float(ctx, "AtmosphereRadius:", 1000, atmosphereRadiusBuffer, 1000000, 100, 100);
+    public void show(NkContext ctx, float windowWidth, float windowHeight) {
+        if (false) {
+            int x = 200;
+            int y = 200;
+            try (MemoryStack stack = stackPush()) {
+                NkRect rect = NkRect.mallocStack(stack);
+                if (nk_begin(
+                        ctx, "Amtosphere Settings", nk_rect(x, y, 400, 250, rect), NK_WINDOW_TITLE)) {
+                    nk_layout_row_dynamic(ctx, 25, 1);
+                    nk_property_float(ctx, "DensityFalloff:", -10, densityFallOffBuffer, 10, 0.1f, 0.01f);
+                    nk_property_float(ctx, "ScatterStrength:", 0, scatterStrengthBuffer, 5f, 0.1f, 0.01f);
+                    nk_property_float(ctx, "AtmosphereRadius:", 1000, atmosphereRadiusBuffer, 1000000, 100, 100);
+                }
+                nk_end(ctx);
             }
-            nk_end(ctx);
         }
-    }}
+    }
 
 
 }

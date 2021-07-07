@@ -1,7 +1,6 @@
 package disuguisedphoenix.adder;
 
 import disuguisedphoenix.Entity;
-import disuguisedphoenix.terrain.PopulatedIsland;
 import disuguisedphoenix.terrain.World;
 import graphics.particles.ParticleManager;
 import graphics.particles.PointSeekingEmitter;
@@ -15,15 +14,14 @@ public class GrowState {
     PointSeekingEmitter entitySeeker;
     UpwardsParticles growParticles;
     private boolean seekerReachedEntity = false;
-
-    public PopulatedIsland growingOn;
     private boolean addedToIsland = false;
+    private World world;
 
-    public GrowState(World world, PopulatedIsland growingOn, int particlesCount, Vector3f playerPos, Entity toGrow, ParticleManager pm) {
+    public GrowState(World world, int particlesCount, Vector3f playerPos, Entity toGrow, ParticleManager pm) {
         entitySeeker = new PointSeekingEmitter(playerPos, toGrow.getPosition(), 15, 700f, particlesCount, world);
         pm.addParticleEmitter(entitySeeker);
         buildProgress = -0.01f;
-        this.growingOn = growingOn;
+        this.world=world;
         this.growingEntity = toGrow;
     }
 
@@ -49,7 +47,7 @@ public class GrowState {
     public void addToIsland() {
         if (!addedToIsland) {
             addedToIsland = true;
-            growingOn.addEntity(growingEntity);
+            world.addEntity(growingEntity);
         }
     }
 

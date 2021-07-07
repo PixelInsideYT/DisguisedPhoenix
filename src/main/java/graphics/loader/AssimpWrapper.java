@@ -3,8 +3,8 @@ package graphics.loader;
 import engine.collision.Box;
 import engine.collision.Collider;
 import engine.collision.ConvexShape;
-import graphics.objects.Vao;
-import graphics.world.Material;
+import graphics.core.objects.Vao;
+import graphics.modelinfo.Material;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
@@ -22,8 +22,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 
 import static org.lwjgl.assimp.Assimp.*;
 
@@ -227,7 +227,7 @@ public class AssimpWrapper {
                 modelIndicies.add(modelVerticies.indexOf(pos));
             }
         }
-       // MeshOptimizer.optimize(modelVerticies,modelIndicies);
+        // MeshOptimizer.optimize(modelVerticies,modelIndicies);
         float[] vaoVerticies = new float[modelVerticies.size() * 3];
         float[] vaoColor = new float[modelVerticies.size() * 3];
         int vertexPointer = 0;

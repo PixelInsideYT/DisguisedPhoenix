@@ -2,11 +2,11 @@ package graphics.occlusion;
 
 import disuguisedphoenix.Entity;
 import engine.util.Maths;
-import graphics.objects.FrameBufferObject;
-import graphics.objects.TimerQuery;
-import graphics.renderer.MultiIndirectRenderer;
-import graphics.shaders.Shader;
-import graphics.shaders.ShaderFactory;
+import graphics.core.objects.FrameBufferObject;
+import graphics.core.objects.TimerQuery;
+import graphics.core.renderer.MultiIndirectRenderer;
+import graphics.core.shaders.Shader;
+import graphics.core.shaders.ShaderFactory;
 import org.joml.FrustumIntersection;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -24,17 +24,17 @@ import static org.lwjgl.opengl.GL42.glTexStorage3D;
 
 public class ShadowEffect {
 
+    public static final float[] CASCADE_DISTANCE = {0.01f, 0.05f, 0.25f, 1f};
     private static final int SHADOW_RESOLUTION = 2048;
     private static final int SHADOWS_CASCADES = 4;
-    public static final float[] CASCADE_DISTANCE = {0.01f, 0.05f, 0.25f, 1f};
-
-    int textureArray;
-    protected FrameBufferObject[] shadowMap = new FrameBufferObject[SHADOWS_CASCADES];
-    private ShadowCascade[] cascades = new ShadowCascade[SHADOWS_CASCADES];
     public TimerQuery shadowTimer;
+    protected FrameBufferObject[] shadowMap = new FrameBufferObject[SHADOWS_CASCADES];
+    int textureArray;
+    private ShadowCascade[] cascades = new ShadowCascade[SHADOWS_CASCADES];
     private Shader shadowShader;
 
     private boolean enabled = true;
+    private FrustumIntersection frustumIntersection = new FrustumIntersection();
 
     public ShadowEffect() {
         generate2DTextureArray();
@@ -50,9 +50,7 @@ public class ShadowEffect {
         shadowShader = shaderFactory.built();
     }
 
-    private FrustumIntersection frustumIntersection = new FrustumIntersection();
-
-    public void render(Matrix4f viewMatrix, float nearPlane, float farPlane, float fov, float aspect, float time, Vector3f lightPos, List<Entity> worldEntities, MultiIndirectRenderer renderer) {
+    public void render(Matrix4f viewMatrix, float nearPlane, float farPlane, float fov, float aspect, float time, Vector3f lightPos, MultiIndirectRenderer renderer) {
         if (isEnabled()) {
             List<List<Entity>> inCascade = new ArrayList<>();
             float near = nearPlane;
@@ -80,7 +78,7 @@ public class ShadowEffect {
     }
 
 
-    public int getShadowTexture() {
+    public int getShadowTextureArray() {
         return textureArray;
     }
 
@@ -102,8 +100,8 @@ public class ShadowEffect {
         glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT32F, SHADOW_RESOLUTION, SHADOW_RESOLUTION, SHADOWS_CASCADES);
     }
 
-    public void print(){
-        if(isEnabled()){
+    public void print() {
+        if (isEnabled()) {
             shadowTimer.printResults();
         }
     }

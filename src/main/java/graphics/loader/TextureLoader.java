@@ -54,7 +54,7 @@ public class TextureLoader {
             if (comp.get(0) == 4) {
                 format = GL_RGBA;
             }
-            if(comp.get(0)==1)format=GL_RED;
+            if (comp.get(0) == 1) format = GL_RED;
             int textureID = createTexture(texelWidth, texelHeight, image, wrap, filter, format);
             stbi_image_free(image);
             nameToIdMap.put(resource, textureID);
@@ -76,7 +76,7 @@ public class TextureLoader {
     }
 
 
-    public static int generateTexture(int width, int height, float[] data,int wrap, int filter,int precision,int type, int format){
+    public static int generateTexture(int width, int height, float[] data, int wrap, int filter, int precision, int type, int format) {
         int textureID = glGenTextures();
         glBindTexture(GL_TEXTURE_2D, textureID);
         glTexImage2D(GL_TEXTURE_2D, 0, type, width, height, 0, format, precision, data);

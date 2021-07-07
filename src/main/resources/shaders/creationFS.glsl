@@ -42,6 +42,6 @@ void main()  {
     vec4 FragColor=lineColor;
     FragColor += vec4(colorAndShininessPassed.rgb*sign(fillStatus), sign(max(fillStatus*fillStatus-barycentricMin, 0))*sign(fillStatus));
     if (FragColor.a < 0.01||discardHeight<0)discard;
-    colorAndGeometryCheck = vec4(FragColor.rgb,1.0);
-    normalAndShininess = vec3(encodeNormal(Normal),colorAndShininessPassed.a);
+    colorAndGeometryCheck = vec4(FragColor.rgb, 1.0);
+    normalAndShininess = vec3(encodeNormal(Normal), colorAndShininessPassed.a);
 }

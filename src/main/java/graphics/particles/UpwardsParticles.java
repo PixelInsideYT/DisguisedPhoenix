@@ -11,14 +11,14 @@ import java.util.Random;
 
 public class UpwardsParticles implements ParticleEmitter {
 
-    public Vector3f center;
     private final float ppSecond;
-    private float emitterTimeCount;
     private final float lifeLength = 4f;
     private final float particleSpeed;
-    private float emitTime;
     private final float spawnRadius;
+    public Vector3f center;
     Random rnd = new Random();
+    private float emitterTimeCount;
+    private float emitTime;
 
 
     public UpwardsParticles(Vector3f center, float spawnRadius, float travelDistance, float pps, float emitTime) {

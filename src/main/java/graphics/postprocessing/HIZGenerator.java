@@ -1,9 +1,9 @@
 package graphics.postprocessing;
 
-import graphics.objects.FrameBufferObject;
-import graphics.objects.OpenGLState;
-import graphics.shaders.Shader;
-import graphics.shaders.ShaderFactory;
+import graphics.core.objects.FrameBufferObject;
+import graphics.core.objects.OpenGLState;
+import graphics.core.shaders.Shader;
+import graphics.core.shaders.ShaderFactory;
 import org.joml.Vector2i;
 
 import static org.lwjgl.opengl.GL11.*;
@@ -14,21 +14,22 @@ public class HIZGenerator {
 
     private final Shader hizShader;
     private QuadRenderer renderer;
-    public HIZGenerator(QuadRenderer renderer){
+
+    public HIZGenerator(QuadRenderer renderer) {
         ShaderFactory hiZFactory = new ShaderFactory("postProcessing/quadVS.glsl", "postProcessing/hiZGen/HI-Z-generator.glsl").withAttributes("pos");
         hiZFactory.withUniforms("LastMip", "LastMipSize");
         hiZFactory.configureSampler("LastMip", 0);
         hizShader = hiZFactory.built();
-        this.renderer=renderer;
+        this.renderer = renderer;
     }
 
     public void generateHiZMipMap(FrameBufferObject fbo) {
         fbo.bind();
-        int numLevels =1+ (int) Math.floor(Math.log(Math.max(fbo.getBufferWidth(), fbo.getBufferHeight())) / Math.log(2));
+        int numLevels = 1 + (int) Math.floor(Math.log(Math.max(fbo.getBufferWidth(), fbo.getBufferHeight())) / Math.log(2));
         int currentWidth = fbo.getBufferWidth();
         int currentHeight = fbo.getBufferHeight();
         OpenGLState.enableDepthTest();
-        int depthTexture=fbo.getDepthTexture();
+        int depthTexture = fbo.getDepthTexture();
         glDepthFunc(GL_ALWAYS);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, depthTexture);

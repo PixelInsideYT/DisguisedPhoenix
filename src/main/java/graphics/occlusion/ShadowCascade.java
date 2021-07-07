@@ -1,6 +1,5 @@
 package graphics.occlusion;
 
-import graphics.objects.FrameBufferObject;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -22,11 +21,11 @@ public class ShadowCascade {
         lightViewMatrix = new Matrix4f();
     }
 
-    protected void update(Matrix4f viewMatrix, float near,float far, float fov,float aspect, Vector3f lightPos) {
+    protected void update(Matrix4f viewMatrix, float near, float far, float fov, float aspect, Vector3f lightPos) {
         // Calculate frustum corners in world space
         float maxZ = Float.MIN_VALUE;
         float minZ = Float.MAX_VALUE;
-        Matrix4f projViewMatrix = new Matrix4f().perspective(fov,aspect,near,far).mul(viewMatrix);
+        Matrix4f projViewMatrix = new Matrix4f().perspective(fov, aspect, near, far).mul(viewMatrix);
         for (int i = 0; i < frustumCorners.length; i++) {
             Vector3f corner = frustumCorners[i];
             projViewMatrix.frustumCorner(i, corner);
@@ -86,7 +85,7 @@ public class ShadowCascade {
         return offset.mul(lightProjMatrix).mul(lightViewMatrix);
     }
 
-    public Matrix4f getViewProjMatrix(){
+    public Matrix4f getViewProjMatrix() {
         return new Matrix4f(lightProjMatrix).mul(lightViewMatrix);
     }
 

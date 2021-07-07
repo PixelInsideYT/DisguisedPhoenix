@@ -9,7 +9,8 @@ import java.nio.channels.ReadableByteChannel;
 
 public class LoaderUtil {
 
-    private LoaderUtil(){}
+    private LoaderUtil() {
+    }
 
     public static ByteBuffer ioResourceToByteBuffer(String resource, int bufferSize) {
         ByteBuffer buffer = null;

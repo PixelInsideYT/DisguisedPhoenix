@@ -1,4 +1,4 @@
-package graphics.world;
+package graphics.modelinfo;
 
 import engine.collision.Collider;
 import graphics.loader.MeshInformation;
@@ -20,7 +20,6 @@ public class Model {
         this.radius = radius;
         this.radiusXZ = radiusXZ;
         this.relativeCenter = relativeCenter;
-        System.out.println(relativeCenter);
     }
 
     public Model(RenderInfo info, Vector3f relativeCenter, float height, float radiusXZ, float radius, Collider collider) {
@@ -28,8 +27,8 @@ public class Model {
         this.collider = collider;
     }
 
-    public Model(RenderInfo info, MeshInformation meshInformation){
-        this(info,meshInformation.centerPoint,meshInformation.height,meshInformation.radiusXZPlane,meshInformation.radius,meshInformation.collider);
+    public Model(RenderInfo info, MeshInformation meshInformation) {
+        this(info, meshInformation.centerPoint, meshInformation.height, meshInformation.radiusXZPlane, meshInformation.radius, meshInformation.collider);
     }
 
 }

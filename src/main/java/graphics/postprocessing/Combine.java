@@ -1,8 +1,8 @@
 package graphics.postprocessing;
 
-import graphics.objects.FrameBufferObject;
-import graphics.shaders.Shader;
-import graphics.shaders.ShaderFactory;
+import graphics.core.objects.FrameBufferObject;
+import graphics.core.shaders.Shader;
+import graphics.core.shaders.ShaderFactory;
 
 import static org.lwjgl.opengl.GL13.*;
 

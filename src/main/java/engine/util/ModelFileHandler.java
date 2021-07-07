@@ -5,12 +5,12 @@ import com.google.gson.GsonBuilder;
 import engine.collision.Collider;
 import engine.collision.CollisionShape;
 import engine.collision.ConvexShape;
+import graphics.core.objects.BufferObject;
+import graphics.core.objects.Vao;
 import graphics.loader.AssimpWrapper;
 import graphics.loader.MeshInformation;
-import graphics.objects.BufferObject;
-import graphics.objects.Vao;
-import graphics.world.Model;
-import graphics.world.RenderInfo;
+import graphics.modelinfo.Model;
+import graphics.modelinfo.RenderInfo;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 
@@ -22,15 +22,12 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toCollection;
-
 public class ModelFileHandler {
 
     private static final Map<String, Model> alreadyLoadedModels = new HashMap<>();
     private static final String RESOURCE_PATH = "/src/main/resources";
     private static final String MODEL_DIRECTORY = "/models/";
-private static String workingDir;
+    private static String workingDir;
 
     //loads a model file
     // joins all the meshes into one
@@ -55,7 +52,7 @@ private static String workingDir;
 
     public static void main(String[] args) {
         workingDir = System.getProperty("user.dir");
-        JFileChooser jfc = new JFileChooser(new File(workingDir+RESOURCE_PATH+MODEL_DIRECTORY));
+        JFileChooser jfc = new JFileChooser(new File(workingDir + RESOURCE_PATH + MODEL_DIRECTORY));
         int returnValue = jfc.showOpenDialog(null);
         while (returnValue == JFileChooser.APPROVE_OPTION) {
             File selectedFile = jfc.getSelectedFile();
@@ -76,13 +73,13 @@ private static String workingDir;
                     colliderFileName = jfc.getSelectedFile().getAbsolutePath();
                 }
                 float targetHeight = Float.parseFloat(JOptionPane.showInputDialog("Choose model height in meters"));
-                generateModelFile(selectedFile.getPath().replace(workingDir+RESOURCE_PATH+MODEL_DIRECTORY,""), colliderFileName!=null?colliderFileName.replace(workingDir+RESOURCE_PATH+MODEL_DIRECTORY,""):null, new HashMap<>(), targetHeight,false);
+                generateModelFile(selectedFile.getPath().replace(workingDir + RESOURCE_PATH + MODEL_DIRECTORY, ""), colliderFileName != null ? colliderFileName.replace(workingDir + RESOURCE_PATH + MODEL_DIRECTORY, "") : null, new HashMap<>(), targetHeight, false);
             }
             returnValue = jfc.showOpenDialog(null);
         }
-       List<ModelConfig> distinctConfig= modelConfigs.stream().distinct().collect(Collectors.toList());
+        List<ModelConfig> distinctConfig = modelConfigs.stream().distinct().collect(Collectors.toList());
         try {
-           PrintWriter pi = new PrintWriter(workingDir+RESOURCE_PATH+MODEL_DIRECTORY+"/ModelBuilder.info", "UTF-8");
+            PrintWriter pi = new PrintWriter(workingDir + RESOURCE_PATH + MODEL_DIRECTORY + "/ModelBuilder.info", "UTF-8");
             String toSave = gson.toJson(distinctConfig);
             pi.write(toSave);
             pi.close();
@@ -270,7 +267,7 @@ private static String workingDir;
 
     public static MeshInformation combineMeshesToOne(String modelName, Map<String, String> nameToWobbleInfoMap, float targetHeight, boolean putZero) {
         //load model
-        MeshInformation[] model = AssimpWrapper.loadModelToMeshInfo(workingDir+RESOURCE_PATH+MODEL_DIRECTORY+modelName);
+        MeshInformation[] model = AssimpWrapper.loadModelToMeshInfo(workingDir + RESOURCE_PATH + MODEL_DIRECTORY + modelName);
         int combinedVerticiesCount = 0, combinedIndiciesCount = 0;
         for (MeshInformation mi : model) {
             combinedIndiciesCount += mi.indicies.length;
@@ -335,7 +332,7 @@ private static String workingDir;
         MeshInformation combined = combineMeshesToOne(name, nameToWobbleMap, height, putZero);
         Collider collider = null;
         if (colliderFileName != null)
-            collider = AssimpWrapper.loadCollider(workingDir+RESOURCE_PATH+MODEL_DIRECTORY+"/"+colliderFileName);
+            collider = AssimpWrapper.loadCollider(workingDir + RESOURCE_PATH + MODEL_DIRECTORY + "/" + colliderFileName);
         int headerSize = (4 + 2 * (collider != null ? collider.getAllTheShapes().size() + 1 : 0)) * Integer.BYTES;
         int meshSize = (combined.vertexPositions.length + combined.colors.length) * Float.BYTES + combined.indicies.length * Integer.BYTES;
         int colliderSize = calculateColliderSize(collider);
@@ -371,8 +368,8 @@ private static String workingDir;
         }
         writeColliderToBuffer(collider, buffer);
         String modelFilePath = name.substring(0, name.lastIndexOf(".")) + ".modelFile";
-        saveByteBuffer(buffer, workingDir+RESOURCE_PATH+MODEL_DIRECTORY+"/"+modelFilePath);
-        modelConfigs.add(new ModelConfig(modelFilePath,name, colliderFileName, nameToWobbleMap, height));
+        saveByteBuffer(buffer, workingDir + RESOURCE_PATH + MODEL_DIRECTORY + "/" + modelFilePath);
+        modelConfigs.add(new ModelConfig(modelFilePath, name, colliderFileName, nameToWobbleMap, height));
     }
 
     private static void saveByteBuffer(ByteBuffer buffer, String name) {

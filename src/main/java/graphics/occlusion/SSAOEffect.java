@@ -1,19 +1,19 @@
 package graphics.occlusion;
 
 import disuguisedphoenix.Main;
-import graphics.objects.FrameBufferObject;
-import graphics.objects.TimerQuery;
+import disuguisedphoenix.rendering.MasterRenderer;
+import graphics.core.objects.FrameBufferObject;
+import graphics.core.objects.TimerQuery;
+import graphics.core.shaders.Shader;
+import graphics.core.shaders.ShaderFactory;
 import graphics.postprocessing.QuadRenderer;
-import graphics.shaders.Shader;
-import graphics.shaders.ShaderFactory;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector4f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL30;
 
-import static org.lwjgl.opengl.GL30.*;
+import static org.lwjgl.opengl.GL30.glActiveTexture;
 
 public class SSAOEffect {
     private final int width;
@@ -55,7 +55,7 @@ public class SSAOEffect {
         return fbo.getTextureID(0);
     }
 
-    public void renderEffect(FrameBufferObject gBuffer, Matrix4f projMatrix) {
+    public void renderEffect(FrameBufferObject gBuffer, Matrix4f projMatrix, float farPlane) {
         if (enabled) {
             ssaoTimer.startQuery();
             fbo.bind();
@@ -64,7 +64,7 @@ public class SSAOEffect {
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getDepthTexture());
             ssaoShader.bind();
             ssaoShader.loadMatrix("projMatrixInv", new Matrix4f(projMatrix).invert());
-            ssaoShader.loadFloat("farPlane", Main.FAR_PLANE);
+            ssaoShader.loadFloat("farPlane", farPlane);
             ssaoShader.loadFloat("projScale", calculateProjectionScale(projMatrix));
             renderer.renderOnlyQuad();
             blurSSAO();
@@ -100,11 +100,11 @@ public class SSAOEffect {
         helperFbo.resize(width, height);
     }
 
-    private float calculateProjectionScale(Matrix4f projMatrix){
+    private float calculateProjectionScale(Matrix4f projMatrix) {
         Vector4f uvProjScale = projMatrix.transform(new Vector4f(0, 1, -1, 1));
         float projScale = uvProjScale.y / uvProjScale.w;
         projScale = projScale * 0.5f + 0.5f;
-        projScale *= Math.max(width , height);
+        projScale *= Math.max(width, height);
         return projScale;
     }
 }

@@ -1,4 +1,4 @@
-package graphics.objects;
+package graphics.core.objects;
 
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
@@ -13,7 +13,8 @@ import static org.lwjgl.opengl.GL33.glVertexAttribDivisor;
 public class Vao {
     private static final List<Vao> allVaos = new ArrayList<>();
 
-    int vaoId;int indicesLength;
+    int vaoId;
+    int indicesLength;
     List<Integer> attribNumbers = new ArrayList<>();
 
     public Vao() {

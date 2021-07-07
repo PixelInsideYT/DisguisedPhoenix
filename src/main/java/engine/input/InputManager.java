@@ -11,14 +11,6 @@ import java.util.List;
 public class InputManager {
 
     private static final int KEYBOARD_SIZE = 512;
-    protected GLFWJoystickCallback joystickListner = new GLFWJoystickCallback() {
-
-        @Override
-        public void invoke(int jid, int event) {
-            System.out.println(jid + "/" + GLFW.glfwGetJoystickName(jid) + " "
-                    + (event == GLFW.GLFW_CONNECTED ? "connected" : "disconnected"));
-        }
-    };
     private final long window;
     private final int[] keyStates = new int[KEYBOARD_SIZE];
     private final boolean[] activeKeys = new boolean[KEYBOARD_SIZE];
@@ -28,7 +20,14 @@ public class InputManager {
     private final List<GLFWCursorPosCallbackI> cursorPosCallbacks = new ArrayList<>();
     private final List<GLFWScrollCallbackI> scrollCallbacks = new ArrayList<>();
     private final List<GLFWMouseButtonCallbackI> mouseButtonCallbacks = new ArrayList<>();
+    protected GLFWJoystickCallback joystickListner = new GLFWJoystickCallback() {
 
+        @Override
+        public void invoke(int jid, int event) {
+            System.out.println(jid + "/" + GLFW.glfwGetJoystickName(jid) + " "
+                    + (event == GLFW.GLFW_CONNECTED ? "connected" : "disconnected"));
+        }
+    };
     protected GLFWKeyCallback keyboard = new GLFWKeyCallback() {
         @Override
         public void invoke(long window, int key, int scancode, int action, int mods) {
@@ -39,10 +38,26 @@ public class InputManager {
             keyCallbacks.forEach(c -> c.invoke(window, key, scancode, action, mods));
         }
     };
+    protected GLFWScrollCallback scrollCallback = new GLFWScrollCallback() {
+        @Override
+        public void invoke(long l, double v, double v1) {
+            scrollCallbacks.forEach(i -> i.invoke(l, v, v1));
+        }
+    };
+    protected GLFWCharCallback charCallback = new GLFWCharCallback() {
+        @Override
+        public void invoke(long l, int i) {
+            charCallbacks.forEach(callback -> callback.invoke(l, i));
+        }
+    };
+    protected GLFWMouseButtonCallback mouseButtonCallback = new GLFWMouseButtonCallback() {
+        @Override
+        public void invoke(long l, int i, int i1, int i2) {
+            mouseButtonCallbacks.forEach(cb -> cb.invoke(l, i, i1, i2));
+        }
+    };
     private float currentMouseX;
     private float currentMouseY;
-    private float lastMouseX;
-    private float lastMouseY;
     protected GLFWCursorPosCallback mousePosListener = new GLFWCursorPosCallback() {
         @Override
         public void invoke(long window, double xpos, double ypos) {
@@ -51,29 +66,8 @@ public class InputManager {
             cursorPosCallbacks.forEach(cb -> cb.invoke(window, xpos, ypos));
         }
     };
-
-
-    protected GLFWScrollCallback scrollCallback = new GLFWScrollCallback() {
-        @Override
-        public void invoke(long l, double v, double v1) {
-            scrollCallbacks.forEach(i -> i.invoke(l, v, v1));
-        }
-    };
-
-    protected GLFWCharCallback charCallback = new GLFWCharCallback() {
-        @Override
-        public void invoke(long l, int i) {
-            charCallbacks.forEach(callback -> callback.invoke(l, i));
-        }
-    };
-
-    protected GLFWMouseButtonCallback mouseButtonCallback = new GLFWMouseButtonCallback() {
-        @Override
-        public void invoke(long l, int i, int i1, int i2) {
-            mouseButtonCallbacks.forEach(cb -> cb.invoke(l, i, i1, i2));
-        }
-    };
-
+    private float lastMouseX;
+    private float lastMouseY;
     private int leftMouse;
     private int middleMouse;
     private int rightMouse;
@@ -181,12 +175,24 @@ public class InputManager {
         deviceInputs.removeAll(Arrays.asList(inputmaps));
     }
 
+    private boolean mouseCursorHidden = false;
     public void hideMouseCursor() {
         GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);
+        mouseCursorHidden=true;
     }
 
     public void showMouseCursor() {
         GLFW.glfwSetInputMode(window, GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
+        mouseCursorHidden=false;
     }
+
+    public void toggleCursor(){
+        if(mouseCursorHidden){
+            showMouseCursor();
+        }else{
+            hideMouseCursor();
+        }
+    }
+
 
 }

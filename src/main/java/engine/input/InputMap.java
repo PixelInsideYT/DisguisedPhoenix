@@ -5,10 +5,9 @@ import java.util.Map;
 
 public abstract class InputMap {
 
+    protected Map<String, Float> actionToValueMap = new HashMap<>();
     String deviceName;
     int deviceNumber;
-
-    protected Map<String, Float> actionToValueMap = new HashMap<>();
 
     public float getValueForAction(String action) {
         Float rt = actionToValueMap.get(action);

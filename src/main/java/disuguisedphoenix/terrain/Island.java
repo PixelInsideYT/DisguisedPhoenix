@@ -1,13 +1,12 @@
 package disuguisedphoenix.terrain;
 
 import engine.util.Maths;
-import graphics.objects.Vao;
-import graphics.world.Model;
-import graphics.world.RenderInfo;
-import org.joml.Matrix4f;
-import org.joml.SimplexNoise;
-import org.joml.Vector2f;
-import org.joml.Vector3f;
+import graphics.core.objects.Vao;
+import graphics.modelinfo.Model;
+import graphics.modelinfo.RenderInfo;
+import org.joml.*;
+
+import java.lang.Math;
 
 public class Island {
 
@@ -19,12 +18,11 @@ public class Island {
 
     private static final Vector3f terrainColorSrgb = new Vector3f(0.278f, 0.965f, 0.255f);
     private static final Vector3f terrainColor = gammaCorrect(terrainColorSrgb);
-
+    private final float size;
+    private final int vertexCount;
     public Model model;
     public Matrix4f transformation;
     public Vector3f position;
-    private final float size;
-    private final int vertexCount;
     private float[][] heights;
     private float[][] bottems;
 
@@ -51,6 +49,11 @@ public class Island {
 
     public float getSize() {
         return size;
+    }
+
+    public Vector3f placeVectorOnTerrain(Vector3f v) {
+        v.y = getBaryCentricAnswer(heights, -Float.MAX_VALUE, v.x, v.y, v.z);
+        return v;
     }
 
     public float getHeightOfTerrain(float worldX, float worldY, float worldZ) {
@@ -117,8 +120,8 @@ public class Island {
                 farPoint.z = Math.max(farPoint.z, Math.abs(modelZ));
 
                 verticies[pos + bottemOffset] = x * sizeMultiplier;
-                verticies[pos + 1 + bottemOffset] = bottems[x][z]= getIslandBottem(x * size / (float) vertexCount + position.x, z * size / (float) vertexCount + position.z, x, z);
-                verticies[pos + 2 + bottemOffset]  = z * sizeMultiplier;
+                verticies[pos + 1 + bottemOffset] = bottems[x][z] = getIslandBottem(x * size / (float) vertexCount + position.x, z * size / (float) vertexCount + position.z, x, z);
+                verticies[pos + 2 + bottemOffset] = z * sizeMultiplier;
                 verticies[pos + 3 + bottemOffset] = 0f;
                 modelX = verticies[pos + bottemOffset];
                 modelY = verticies[pos + 1] + bottemOffset;
@@ -248,4 +251,8 @@ public class Island {
         return terrainColor;
     }
 
+    public boolean isVisible(FrustumIntersection fi) {
+        float radius = (float) Math.sqrt(0.5f * size * size);
+        return Maths.isInsideFrustum(fi, position, model.relativeCenter, 1f, radius);
+    }
 }

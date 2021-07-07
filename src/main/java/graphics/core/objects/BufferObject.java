@@ -1,4 +1,4 @@
-package graphics.objects;
+package graphics.core.objects;
 
 import org.lwjgl.opengl.GL15;
 
@@ -12,9 +12,8 @@ import static org.lwjgl.opengl.GL45.*;
 public class BufferObject {
 
     private static final List<BufferObject> allBufferObjects = new ArrayList<>();
-
-    private int bufferID;
     private final int target;
+    private int bufferID;
 
     public BufferObject(int target) {
         this.target = target;
@@ -33,16 +32,15 @@ public class BufferObject {
         GL15.glBufferData(target, data, usage);
     }
 
+    public static void cleanUp() {
+        allBufferObjects.forEach(vbo -> GL15.glDeleteBuffers(vbo.bufferID));
+    }
 
     public ByteBuffer createPersistantVbo(int floatCount) {
         int flags = GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT;
-        long floatSizeInBytes = floatCount*4L;
+        long floatSizeInBytes = floatCount * 4L;
         glBufferStorage(target, floatSizeInBytes, flags);
         return glMapBufferRange(target, 0, floatSizeInBytes, flags);
-    }
-
-    public static void cleanUp() {
-        allBufferObjects.forEach(vbo -> GL15.glDeleteBuffers(vbo.bufferID));
     }
 
     public void bufferData(int[] data, int usage) {
@@ -70,7 +68,7 @@ public class BufferObject {
         return this;
     }
 
-    public int getBufferID(){
+    public int getBufferID() {
         return bufferID;
     }
 

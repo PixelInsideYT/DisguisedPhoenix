@@ -29,19 +29,19 @@ uniform vec3 dirToSun;
 
 vec2 raySphere(vec3 center, float radius, vec3 rayOrigin, vec3 rayDir){
     vec3 offset = rayOrigin - center;
-    float a = dot(rayDir,rayDir);
+    float a = dot(rayDir, rayDir);
     float b = 2 * dot(offset, rayDir);
-    float c = dot(offset,offset) - radius * radius;
+    float c = dot(offset, offset) - radius * radius;
     float discriminant = b*b-4*a*c;
-    if(discriminant>0){
+    if (discriminant>0){
         float s = sqrt(discriminant);
         float dstToSphereNear = max(0, (-b-s)/(2*a));
         float dstToSphereFar = (s-b)/(2*a);
-        if(dstToSphereFar>=0){
-            return vec2(dstToSphereNear,dstToSphereFar-dstToSphereNear);
+        if (dstToSphereFar>=0){
+            return vec2(dstToSphereNear, dstToSphereFar-dstToSphereNear);
         }
     }
-    return vec2(100000,0);
+    return vec2(100000, 0);
 }
 
 float densityAtPoint(vec3 densitySamplePoint){
@@ -65,15 +65,15 @@ float opticalDepth(vec3 rayOrigin, vec3 rayDir, float rayLength){
 
 float opticalDepth(vec3 rayOrigin, vec3 rayDir){
     float height01Orig = (length(rayOrigin)-planetRadius) /(atmosphereRadius-planetRadius);
-    float angle01 = (dot(normalize(rayOrigin),rayDir)*0.5+0.5);
-    return texture(lookUpTexture,vec2(angle01,height01Orig)).r;
+    float angle01 = (dot(normalize(rayOrigin), rayDir)*0.5+0.5);
+    return texture(lookUpTexture, vec2(angle01, height01Orig)).r;
 }
 
 float opticalDepth2(vec3 rayOrigin, vec3 rayDir, float rayLength){
     vec3 endPoint = rayOrigin + rayDir * rayLength;
     float d = dot(rayDir, normalize(rayOrigin));
     const float blendStrength = 1.5;
-    float w = clamp(d * blendStrength + .5,0,1);
+    float w = clamp(d * blendStrength + .5, 0, 1);
 
     float d1 = opticalDepth(rayOrigin, rayDir) - opticalDepth(endPoint, rayDir);
     float d2 = opticalDepth(endPoint, -rayDir) - opticalDepth(rayOrigin, -rayDir);
@@ -91,31 +91,31 @@ vec3 calculateLight(vec3 rayOrigin, vec3 rayDir, float rayLength, vec3 originalC
     vec3 inScatterPoint = rayOrigin;
     float stepSize = rayLength/(numInScatterPoints-1);
     vec3 inScatteredLight = vec3(0);
-    for(int i=0;i<numInScatterPoints;i++){
+    for (int i=0;i<numInScatterPoints;i++){
         //rayleigh
-        float sunRayLength = raySphere(vec3(0), atmosphereRadius, inScatterPoint,dirToSun).y;
+        float sunRayLength = raySphere(vec3(0), atmosphereRadius, inScatterPoint, dirToSun).y;
         float sunRayOpticalDepth = opticalDepth(inScatterPoint, dirToSun);
-        float viewRayOpticalDepth = opticalDepth2(inScatterPoint, -rayDir,stepSize*i);
+        float viewRayOpticalDepth = opticalDepth2(inScatterPoint, -rayDir, stepSize*i);
         vec3 transittance = exp(-(sunRayOpticalDepth+viewRayOpticalDepth)*scatterCoefficients);
         float localDensity = densityAtPoint(inScatterPoint);
         inScatteredLight += localDensity * transittance * stepSize*scatterCoefficients;
         inScatterPoint += rayDir * stepSize;
     }
-    vec3 origColorTransmittance = exp(-opticalDepth2(rayOrigin, rayDir,rayLength)*scatterCoefficients);
+    vec3 origColorTransmittance = exp(-opticalDepth2(rayOrigin, rayDir, rayLength)*scatterCoefficients);
     return origColorTransmittance*originalColor+inScatteredLight;
 }
 
 vec3 mieFog(vec3 rayOrigin, vec3 rayDir, vec3 originalColor, float maxTravel){
     int mieScatterPoints = 50;
-    float rayLength=min(maxTravel,10000);
+    float rayLength=min(maxTravel, 10000);
     vec3 accumFog = vec3(3);
     vec3 inScatterPoint = rayOrigin;
     float stepSize = rayLength/(mieScatterPoints-1);
-    for(int i=0;i<mieScatterPoints;i++){
+    for (int i=0;i<mieScatterPoints;i++){
         //mie
         int index=0;
-        for(int i=0;i<4;i++){
-            if(distance(inScatterPoint,camPos)<cascadeDepths[i]){
+        for (int i=0;i<4;i++){
+            if (distance(inScatterPoint, camPos)<cascadeDepths[i]){
                 index=i;
                 break;
             }
@@ -124,9 +124,9 @@ vec3 mieFog(vec3 rayOrigin, vec3 rayDir, vec3 originalColor, float maxTravel){
         shadowMapPos/=shadowMapPos.w;
         vec2 uvShadowMap = shadowMapPos.xy;
         float distanceFromLight = shadowMapPos.z;
-        float shadowMapValue = texture(shadowTexture, vec3(uvShadowMap,index)).r;
+        float shadowMapValue = texture(shadowTexture, vec3(uvShadowMap, index)).r;
         if (shadowMapValue>distanceFromLight){
-            accumFog += ComputeScattering(dot(rayDir,-dirToSun))*vec3(1.0);
+            accumFog += ComputeScattering(dot(rayDir, -dirToSun))*vec3(1.0);
         }
         inScatterPoint += rayDir * stepSize;
     }
@@ -140,22 +140,22 @@ float getSceneDistance(float depth){
 }
 
 void main() {
-    vec3 originalColor = texture(originalTexture,uv).rgb;
-    float sceneDepth = getSceneDistance(texture(depthTexture,uv).r);
-    vec3 noise = texture(noiseTexture,uv*50).rgb;
+    vec3 originalColor = texture(originalTexture, uv).rgb;
+    float sceneDepth = getSceneDistance(texture(depthTexture, uv).r);
+    vec3 noise = texture(noiseTexture, uv*50).rgb;
     vec3 rayOrigin = camPos;
     vec3 rayDir = normalize(viewDir);
 
-    vec2 hitInfo = raySphere(vec3(0),atmosphereRadius,rayOrigin,rayDir);
+    vec2 hitInfo = raySphere(vec3(0), atmosphereRadius, rayOrigin, rayDir);
     float dstToAtmosphere = hitInfo.x;
-    float dstThroughAtmosphere = min(hitInfo.y,sceneDepth-dstToAtmosphere);
-    if(dstThroughAtmosphere>0){
+    float dstThroughAtmosphere = min(hitInfo.y, sceneDepth-dstToAtmosphere);
+    if (dstThroughAtmosphere>0){
         const float epsilon = 0.00001;
         vec3 pointInAtmosphere = rayOrigin + rayDir * (dstToAtmosphere+epsilon);
-        vec3 light = calculateLight(pointInAtmosphere,rayDir,dstThroughAtmosphere-2*epsilon,originalColor)+mieFog(pointInAtmosphere,rayDir,originalColor,sceneDepth-dstToAtmosphere);
+        vec3 light = calculateLight(pointInAtmosphere, rayDir, dstThroughAtmosphere-2*epsilon, originalColor)+mieFog(pointInAtmosphere, rayDir, originalColor, sceneDepth-dstToAtmosphere);
         light.rgb += (noise.r *2.0-1.0)/255.0;
         color = vec4(light, 1.0);
-    }else{
+    } else {
         color = vec4(originalColor, 1.0);
     }
 }

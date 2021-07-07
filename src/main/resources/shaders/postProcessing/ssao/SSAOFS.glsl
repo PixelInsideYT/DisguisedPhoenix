@@ -54,7 +54,7 @@ float when_lt(float x, float y) {
     return max(sign(y - x), 0.0);
 }
 
-float calculateOcclusion(int i, vec3 pos, vec3 normal, ivec2 px, float hash, float diskRadius,int max_mip){
+float calculateOcclusion(int i, vec3 pos, vec3 normal, ivec2 px, float hash, float diskRadius, int max_mip){
     //calculate sample point distance
     float alpha = float(i + 0.5)*(1.0/samples);
     float distance = diskRadius*alpha;
@@ -81,13 +81,13 @@ void main(void){
     int max_mip = textureQueryLevels(camera_positions) - 1;
     float occlusion = 0;
     for (int i=0;i<samples;i++)
-    occlusion+=calculateOcclusion(i, pos, normal, px, hash, diskRadius,max_mip);
+    occlusion+=calculateOcclusion(i, pos, normal, px, hash, diskRadius, max_mip);
 
     occlusion = max(0, 1.0 - 2.0 * sigma/samples*occlusion);
     occlusion = pow(occlusion, kontrast);
     if (abs(dFdx(pos.z)) < 0.02)
     occlusion -= dFdx(occlusion) * ((px.x & 1) - 0.5);//* when_lt(abs(dFdx(pos.z)), 0.02);
-   if (abs(dFdy(pos.z)) < 0.02)
+    if (abs(dFdy(pos.z)) < 0.02)
     occlusion -= dFdy(occlusion) * ((px.y & 1) - 0.5);//*  when_lt(abs(dFdy(pos.z)), 0.02);
 
     ao_out = vec4(occlusion, packKey(pos.z), 1);

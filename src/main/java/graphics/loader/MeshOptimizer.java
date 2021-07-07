@@ -60,6 +60,10 @@ class Triangle {
         this.verticies = verticies;
     }
 
+    public static void clearNumTrisMap() {
+        Triangle.activeTris.clear();
+    }
+
     public float getScore(List<Vector3f> lruCache, List<Triangle> notRenderd) {
         float score = 0;
         for (Vector3f v : verticies)
@@ -115,9 +119,5 @@ class Triangle {
             if (v.equals(verticies[i])) return true;
         }
         return false;
-    }
-
-    public static void clearNumTrisMap() {
-        Triangle.activeTris.clear();
     }
 }

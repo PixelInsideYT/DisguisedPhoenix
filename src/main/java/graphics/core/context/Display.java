@@ -1,4 +1,4 @@
-package graphics.context;
+package graphics.core.context;
 
 
 import org.joml.Vector3f;
@@ -19,9 +19,9 @@ import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Display {
-    private long window;
     private final int[] size;
     private final Vector3f clearColor;
+    private long window;
     private ResizeListener resizeListener;
 
     public Display(String title, int width, int height) {

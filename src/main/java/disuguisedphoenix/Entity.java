@@ -3,7 +3,7 @@ package disuguisedphoenix;
 import engine.collision.Collider;
 import engine.collision.CollisionShape;
 import engine.collision.SAT;
-import graphics.world.Model;
+import graphics.modelinfo.Model;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -12,15 +12,15 @@ import java.util.List;
 
 public class Entity {
 
+    private final Model model;
     protected Vector3f position;
     protected Vector3f velocity;
     protected Vector3f acceleration;
+    protected Matrix4f modelMatrix;
     float rotX;
     float rotY;
     float rotZ;
     float scale;
-    protected Matrix4f modelMatrix;
-    private final Model model;
     boolean changedPosition = true;
     private Collider transformedCollider;
 
@@ -38,12 +38,12 @@ public class Entity {
     }
 
     public Matrix4f getTransformationMatrix() {
-        if(changedPosition){
-        modelMatrix.identity();
-        modelMatrix.translate(position);
-        modelMatrix.rotateXYZ(new Vector3f(rotX,rotY,rotZ));
-        modelMatrix.scale(scale);
-        changedPosition=false;
+        if (changedPosition) {
+            modelMatrix.identity();
+            modelMatrix.translate(position);
+            modelMatrix.rotateXYZ(new Vector3f(rotX, rotY, rotZ));
+            modelMatrix.scale(scale);
+            changedPosition = false;
         }
         return modelMatrix;
     }
@@ -64,12 +64,13 @@ public class Entity {
                     }
                 }
             }
-            for(CollisionShape cs:shapes){
-                for(CollisionShape ownShape : own.getAllTheShapes()){
-                 Vector3f mtv = SAT.getMTVNarrow(ownShape, velocity, cs, dt);
+            for (CollisionShape cs : shapes) {
+                for (CollisionShape ownShape : own.getAllTheShapes()) {
+                    Vector3f mtv = SAT.getMTVNarrow(ownShape, velocity, cs, dt);
                     if (mtv != null) {
                         position.add(mtv);
-                    }}
+                    }
+                }
             }
         }
         position.add(new Vector3f(velocity).mul(dt));

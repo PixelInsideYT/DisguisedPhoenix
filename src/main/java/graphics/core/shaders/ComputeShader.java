@@ -1,4 +1,4 @@
-package graphics.shaders;
+package graphics.core.shaders;
 
 import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
@@ -55,8 +55,8 @@ public class ComputeShader {
         GL20.glUseProgram(0);
     }
 
-    public void loadImage(int unit,int texture, int access,int format){
-        glBindImageTexture(unit,texture,0,false,0, access,format);
+    public void loadImage(int unit, int texture, int access, int format) {
+        glBindImageTexture(unit, texture, 0, false, 0, access, format);
     }
 
     public void connectSampler(String samplerName, int unit) {
@@ -66,11 +66,15 @@ public class ComputeShader {
     public void run(int x, int y, int z) {
         glDispatchCompute(x, y, z);
     }
-    public void setImageAccesBarrier(){
+
+    public void setImageAccesBarrier() {
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
-    public void setSSBOAccesBarrier(){
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);}
+
+    public void setSSBOAccesBarrier() {
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    }
+
     public boolean isFinished() {
         return true;
     }

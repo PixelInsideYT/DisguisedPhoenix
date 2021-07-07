@@ -1,6 +1,5 @@
 package graphics.particles;
 
-import disuguisedphoenix.terrain.Island;
 import disuguisedphoenix.terrain.World;
 import org.joml.SimplexNoise;
 import org.joml.Vector3f;
@@ -20,16 +19,14 @@ public class PointSeekingEmitter implements ParticleEmitter {
     private final float startSize;
     private final float variation = 0.2f;
     private final float ppSecond;
-    private float emitterTimeCount = 0;
     private final float distance;
-
     private final World heightLookup;
-    private float aliveTime;
     private final float terrainDistance = 50f;
-
+    float angleToDodge = 0f;
+    private float emitterTimeCount = 0;
+    private float aliveTime;
     private Vector3f islandDodgePos = null;
     private Vector3f islandDogeMovementDir = null;
-
 
     public PointSeekingEmitter(Vector3f startPos, Vector3f endPos, float startSize, float movementSpeed, float particlesPerSecond, World world) {
         currentPos = new Vector3f(startPos);
@@ -44,8 +41,6 @@ public class PointSeekingEmitter implements ParticleEmitter {
         aliveTime = 1.5f * distance / movementSpeed;
     }
 
-    float angleToDodge = 0f;
-
     @Override
     public List<Particle> getParticles(float dt) {
         aliveTime -= dt;
@@ -56,38 +51,8 @@ public class PointSeekingEmitter implements ParticleEmitter {
         float z = SimplexNoise.noise(currentPos.x / 500f, currentPos.y / 500f);
         Vector3f currentVel = new Vector3f(islandDogeMovementDir == null ? movingDir : islandDogeMovementDir).add(x, y, z).normalize();
         currentVel.lerp(wantedDir, 1f - blendFactor);
-        List<Island> possibleHeightCollisions = heightLookup.getPossibleTerrainCollisions(currentPos);
         currentPos.add(currentVel.mul(movementSpeed * dt));
-        for (Island land : possibleHeightCollisions) {
-            //TODO: point seeking emmiter avoids islands and doesnt get stuck
-            float terrainTop = land.getHeightOfTerrain(currentPos.x, currentPos.y, currentPos.z);
-            float terrainBot = land.getBottemOfTerrain(currentPos.x, currentPos.y, currentPos.z);
-            if(terrainTop!=- Float.MAX_VALUE||terrainBot!=Float.MAX_VALUE){
-            if (Math.abs(currentPos.y - terrainTop) < Math.abs(currentPos.y - terrainBot)) {
-                if (currentPos.y < terrainTop + terrainDistance) {
-                    currentPos.y = terrainTop + terrainDistance;
-                    if (islandDodgePos==null&&new Vector3f(0, -1, 0).dot(new Vector3f(currentVel).normalize()) > angleToDodge) {
-                        islandDodgePos = new Vector3f(land.position).sub(0, 2 * terrainDistance, 0);
-                        islandDogeMovementDir = new Vector3f(islandDodgePos).sub(currentPos).normalize();
-                        aliveTime += 2f * islandDodgePos.distance(currentPos) / movementSpeed;
-                    }
-                }
-            } else {
-                currentPos.y = Math.min(currentPos.y, terrainBot - terrainDistance);
-                if (currentPos.y > terrainBot - terrainDistance) {
-                    currentPos.y = terrainBot - terrainDistance;
-                    if (islandDodgePos==null&&new Vector3f(0, 1, 0).dot(new Vector3f(currentVel).normalize()) > angleToDodge) {
-                        islandDodgePos = new Vector3f(land.position).add(0, 2 * terrainDistance, 0);
-                        islandDogeMovementDir = new Vector3f(islandDodgePos).sub(currentPos).normalize();
-                        aliveTime += 2f * islandDodgePos.distance(currentPos) / movementSpeed;
-                    }
-                }}
-            }
-        }
-        if (islandDodgePos != null && currentPos.distance(islandDodgePos) < 2 * movementSpeed * dt) {
-            islandDodgePos = null;
-            islandDogeMovementDir = null;
-        }
+        //TODO: rework particle systems
         emitterTimeCount += dt;
         List<Particle> emittedParticles = new ArrayList<>();
         Random r = new Random();
@@ -103,7 +68,7 @@ public class PointSeekingEmitter implements ParticleEmitter {
 
     @Override
     public boolean toRemove() {
-        return new Vector3f(endPos).sub(currentPos).dot(movingDir) <= 0 || endPos.distance(currentPos) <= terrainDistance*1.5f || aliveTime < 0;
+        return new Vector3f(endPos).sub(currentPos).dot(movingDir) <= 0 || endPos.distance(currentPos) <= terrainDistance * 1.5f || aliveTime < 0;
     }
 
 }

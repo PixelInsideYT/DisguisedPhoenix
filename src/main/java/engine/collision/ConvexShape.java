@@ -1,13 +1,13 @@
 package engine.collision;
 
-import graphics.objects.Vao;
+import graphics.core.objects.Vao;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 public class ConvexShape extends CollisionShape {
 
-    private Vao model;
     private final Matrix4f transformation;
+    private Vao model;
 
     public ConvexShape(Vector3f[] cornerPoints, Vector3f[] axes) {
         super(cornerPoints, axes);
@@ -19,7 +19,8 @@ public class ConvexShape extends CollisionShape {
         this.model = model;
         transformation = new Matrix4f();
     }
-@Override
+
+    @Override
     public ConvexShape clone() {
         Vector3f[] clonedCornerPoints = new Vector3f[this.cornerPoints.length];
         Vector3f[] clonedAxes = new Vector3f[this.axes.length];

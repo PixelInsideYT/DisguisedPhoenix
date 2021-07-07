@@ -1,8 +1,8 @@
 package graphics.postprocessing;
 
 import graphics.camera.Camera;
-import graphics.context.Display;
-import graphics.objects.FrameBufferObject;
+import graphics.core.context.Display;
+import graphics.core.objects.FrameBufferObject;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -27,7 +27,7 @@ public class Pipeline {
         atm = new Atmosphere(quadRenderer);
     }
 
-    public void applyPostProcessing(Display display,  FrameBufferObject deferredResult, FrameBufferObject deferred,int shadowTexture, Vector3f lightPos, Camera ffc) {
+    public void applyPostProcessing(Display display, FrameBufferObject deferredResult){
         //bloom.render(deferredResult.getTextureID(1));
         //combine.render(deferredResult.getTextureID(0), bloom.getTexture());
         display.setViewport();

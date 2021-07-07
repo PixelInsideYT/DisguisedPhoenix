@@ -2,7 +2,7 @@ package engine.util;
 
 import java.util.Map;
 
-public class ModelConfig extends Object{
+public class ModelConfig extends Object {
 
     public String modelFilePath;
     public String relativePath;
@@ -18,9 +18,9 @@ public class ModelConfig extends Object{
         this.modelHeight = modelHeight;
     }
 
-    public boolean equals(Object other){
-        if(other instanceof ModelConfig)
-            return relativePath.equals(((ModelConfig)other).relativePath);
+    public boolean equals(Object other) {
+        if (other instanceof ModelConfig)
+            return relativePath.equals(((ModelConfig) other).relativePath);
         return false;
     }
 
