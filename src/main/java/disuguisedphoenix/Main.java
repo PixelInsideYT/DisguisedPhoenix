@@ -97,6 +97,8 @@ public class Main {
         });
         NuklearBinding nuklearBinding = new NuklearBinding(input, display);
         flightCamera.getPosition().set(player.position);
+        flightCamera2.getPosition().set((float)Math.random()*2f-1f,(float)Math.random()*2f-1f,(float)Math.random()*2f-1f);
+        flightCamera2.getPosition().set(Main.getPositionOnEarthFromDirection(flightCamera2.getPosition()));
         float summedMS = 0f;
         input.hideMouseCursor();
         float switchCameraTimer = 0f;

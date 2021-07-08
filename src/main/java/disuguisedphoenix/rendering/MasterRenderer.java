@@ -20,10 +20,13 @@ import static org.lwjgl.opengl.GL11.glClearColor;
 
 public class MasterRenderer {
 
-    public static final float FAR_PLANE = 500f;
+    public static final float FAR_PLANE = 250f;
     public static final float NEAR_PLANE = 0.05f;
     public static final float FOV = 70;
 
+    private int width;
+    private int height;
+    private float aspectRatio;
     TimerQuery vertexTimer = new TimerQuery("Geometry Pass");
 
     Matrix4f projMatrix = new Matrix4f();
@@ -50,6 +53,9 @@ public class MasterRenderer {
         occlusionRenderer = new OcclusionRenderer(quadRenderer,width,height,projMatrix);
         setupFBOs(width,height);
         setupPostProcessing(width,height,projMatrix);
+        this.width=width;
+        this.height=height;
+        this.aspectRatio=aspectRatio;
     }
 
 
@@ -85,6 +91,7 @@ public class MasterRenderer {
         renderer.render(model,new Matrix4f());
         gBuffer.unbind();
         vertexTimer.waitOnQuery();
+        occlusionRenderer.render(gBuffer,projMatrix,viewMatrix,NEAR_PLANE,FAR_PLANE,FOV,aspectRatio,time,lightPos,multiIndirectRenderer);
         OpenGLState.enableAlphaBlending();
         display.clear();
         hizGen.generateHiZMipMap(gBuffer);
@@ -102,6 +109,9 @@ public class MasterRenderer {
         occlusionRenderer.ssaoEffect.resize(width1, height1);
         postProcessPipeline.resize(width1, height1);
         projMatrix.identity().perspective((float) Math.toRadians(70), aspectRatio, NEAR_PLANE, FAR_PLANE);
+        this.width=width1;
+        this.height=height1;
+        this.aspectRatio=aspectRatio;
     }
 
 }
