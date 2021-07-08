@@ -38,15 +38,6 @@ public class Maths {
         return new Vector2f((float) Math.cos(angle), (float) Math.sin(angle));
     }
 
-    public static boolean isInsideFrustum(FrustumIntersection cullingHelper, Vector3f pos, Vector3f ralativeCenter, float scale, float radius) {
-        Vector3f p = new Vector3f(pos).add(scale * ralativeCenter.x, scale * ralativeCenter.y, scale * ralativeCenter.z);
-        return cullingHelper.testSphere(p, radius * scale);
-    }
-
-    public static boolean isInsideFrustum(FrustumIntersection cullingHelper, Entity e) {
-        return isInsideFrustum(cullingHelper, e.getPosition(), e.getModel().relativeCenter, e.getScale(), e.getModel().radius);
-    }
-
     public static Matrix4f lookAt(Vector3f target, Vector3f position) {
         Vector3f forward = new Vector3f(position).sub(target).normalize();
         Vector3f right = new Vector3f(position).normalize().cross(forward).normalize();

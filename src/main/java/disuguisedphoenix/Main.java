@@ -39,8 +39,7 @@ public class Main {
     public static int inViewObjects = 0;
     public static int drawCalls = 0;
     public static int facesDrawn = 0;
-    public static float scale = 600;
-    public static float radius = (float) Math.sqrt(Math.pow(scale / 2f, 2) * 3);
+    public static float radius = 500;
     private static Model model;
 
     //get models on itch and cgtrader

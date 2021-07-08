@@ -138,4 +138,14 @@ public class Entity {
         modelMatrix.setRow(1, new Vector4f(up, -position.dot(up)));
         modelMatrix.setRow(2, new Vector4f(forward, -position.dot(forward)));
     }
+
+    public Vector3f getCenter(){
+        getTransformationMatrix();
+        return modelMatrix.transformPosition(new Vector3f(model.relativeCenter));
+    }
+
+    public float getRadius(){
+        return scale* model.radius;
+    }
+
 }

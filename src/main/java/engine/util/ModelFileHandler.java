@@ -224,22 +224,32 @@ public class ModelFileHandler {
 
             float height = -Float.MAX_VALUE;
             float radiusXZ = -Float.MAX_VALUE;
-            Vector3f relativeCenter = new Vector3f();
+            Vector3f min = new Vector3f(Float.MAX_VALUE);
+            Vector3f max = new Vector3f(-Float.MAX_VALUE);
             Vector3f farPoint = new Vector3f();
             for (int i = 0; i < posAndWobble.length / 4; i++) {
                 float x = posAndWobble[i * 4];
                 float y = posAndWobble[i * 4 + 1];
                 float z = posAndWobble[i * 4 + 2];
-                relativeCenter.add(x, y, z);
+                Vector3f vec = new Vector3f(x,y,z);
+                min.min(vec);
+                max.max(vec);
                 height = Math.max(height, y);
                 radiusXZ = Math.max(radiusXZ, (float) Math.sqrt(x * x + z * z));
                 farPoint.x = Math.max(farPoint.x, Math.abs(x));
                 farPoint.y = Math.max(farPoint.y, Math.abs(y));
                 farPoint.z = Math.max(farPoint.z, Math.abs(z));
             }
-            relativeCenter.div(posAndWobble.length / 4f);
+            Vector3f relativeCenter = new Vector3f(min).add(max).mul(0.5f);
+            float radius =0;
+            for (int i = 0; i < posAndWobble.length / 4; i++) {
+                float x = posAndWobble[i * 4];
+                float y = posAndWobble[i * 4 + 1];
+                float z = posAndWobble[i * 4 + 2];
+                Vector3f vec = new Vector3f(x, y, z);
+                radius=Math.max(radius,vec.distance(relativeCenter));
+            }
             //TODO calculate radius better
-            float radius = farPoint.distance(relativeCenter);
             MeshInformation meshInformation = new MeshInformation(name, null, posAndWobble, colorAndShininess, indicies);
             meshInformation.height = height;
             meshInformation.radiusXZPlane = radiusXZ;

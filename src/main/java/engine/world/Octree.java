@@ -98,7 +98,7 @@ public class Octree {
                 for (Octree node : nodes) {
                     returnedStream = Stream.concat(returnedStream, node.getAllVisibleEntities(frustum, camPos).stream());
                 }
-                return returnedStream.filter(e -> Maths.isInsideFrustum(frustum, e) && couldBeVisible(e, camPos)).collect(Collectors.toList());
+                return returnedStream.filter(e -> frustum.testSphere(e.getCenter(),e.getRadius())&& couldBeVisible(e, camPos)).collect(Collectors.toList());
             } else {
                 return entities;
             }
@@ -108,10 +108,7 @@ public class Octree {
 
     protected boolean contains(Entity e) {
         float entityRadius = e.getModel().radius * e.getScale();
-        Vector3f relativeCenter = e.getModel().relativeCenter;
-        Vector3f entityCenter = tempVec.set(e.getPosition())
-                .add(relativeCenter.x * e.getScale(), relativeCenter.y * e.getScale(), relativeCenter.z * e.getScale());
-        return Intersectionf.testAabSphere(min, max, entityCenter, entityRadius);
+        return Intersectionf.testAabSphere(min, max, e.getCenter(), entityRadius);
     }
 
     private boolean hasMinSize() {

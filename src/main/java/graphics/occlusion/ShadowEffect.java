@@ -59,7 +59,7 @@ public class ShadowEffect {
                 cascades[i].update(viewMatrix, near, cascadeFar, fov, aspect, lightPos);
                 frustumIntersection.set(cascades[i].getViewProjMatrix(), true);
                 near = cascadeFar;
-                inCascade.add(renderer.currentEntities.stream().filter(e -> Maths.isInsideFrustum(frustumIntersection, e)).collect(Collectors.toList()));
+                inCascade.add(renderer.currentEntities.stream().filter(e -> frustumIntersection.testSphere(e.getCenter(),e.getRadius())).collect(Collectors.toList()));
             }
             shadowTimer.startQuery();
             shadowShader.bind();

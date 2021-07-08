@@ -34,7 +34,7 @@ public class EntityAdder {
     Random rnd;
     private int activated = 0;
     private List<GrowState> toAddEntities = new ArrayList<>();
-    private String[] exclude = new String[]{"birb", "lightPentagon", "cube"};
+    private String[] exclude = new String[]{"birb", "lightPentagon", "cube","sphere"};
 
     public EntityAdder(ParticleManager pm) {
         ShaderFactory creationFactory = new ShaderFactory("creationVS.glsl", "creationFS.glsl");
@@ -59,7 +59,7 @@ public class EntityAdder {
     }
 
     private static void addGrowStateToRenderMap(GrowState entity, Map<Model, List<GrowState>> modelMap, FrustumIntersection fi) {
-        if (entity.isReachedBySeeker() && Maths.isInsideFrustum(fi, entity.growingEntity)) {
+        if (entity.isReachedBySeeker() && fi.testSphere(entity.growingEntity.getCenter(),entity.growingEntity.getRadius())) {
             Model m = entity.growingEntity.getModel();
             modelMap.computeIfAbsent(m, k -> new ArrayList<>());
             modelMap.get(m).add(entity);
@@ -111,7 +111,7 @@ public class EntityAdder {
     private List<Entity> generateEntitiesFor(float xRange, float xOffset, float yRange, float yOffset, float zRange, float zOffset, float terrainAreaEstimate, UnaryOperator<Vector3f> placementFunction) {
         if (activated < modelNames.size()) {
             Model model = ModelFileHandler.getModel(modelNames.get(activated));
-            float modelAreaEstimate = (float) Math.PI * model.radiusXZ * model.radiusXZ;
+            float modelAreaEstimate = (float) Math.PI * model.radiusXZ * model.radiusXZ*2f;
             float count = terrainAreaEstimate / modelAreaEstimate / modelNames.size();
             if (count > 100000) count = 100000;
             return IntStream.range(0, (int) count).mapToObj(i -> generateEntity(xRange, xOffset, yRange, yOffset, zRange, zOffset, placementFunction, model, 6f, 1f)).collect(Collectors.toList());

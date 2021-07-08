@@ -253,6 +253,6 @@ public class Island {
 
     public boolean isVisible(FrustumIntersection fi) {
         float radius = (float) Math.sqrt(0.5f * size * size);
-        return Maths.isInsideFrustum(fi, position, model.relativeCenter, 1f, radius);
+        return fi.testSphere(new Vector3f(position).add(model.relativeCenter),radius);
     }
 }
