@@ -27,6 +27,7 @@ public class ComputeShader {
         shaderId = GL20.glCreateProgram();
         int computeShader = GL20.glCreateShader(GL_COMPUTE_SHADER);
         GL20.glShaderSource(computeShader, shaderCode);
+        GL20.glCompileShader(computeShader);
         GL20.glAttachShader(shaderId, computeShader);
         GL20.glLinkProgram(shaderId);
         if (GL20.glGetProgrami(shaderId, GL_LINK_STATUS) == GL_FALSE) {
