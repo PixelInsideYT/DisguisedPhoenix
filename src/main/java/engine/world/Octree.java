@@ -1,7 +1,6 @@
 package engine.world;
 
 import disuguisedphoenix.Entity;
-import engine.util.Maths;
 import org.joml.FrustumIntersection;
 import org.joml.Intersectionf;
 import org.joml.Matrix4f;
@@ -27,7 +26,6 @@ public class Octree {
     private Vector3f min, max;
 
     private List<Entity> entities = new ArrayList<>();
-    private Vector3f tempVec = new Vector3f();
 
     public Octree(Vector3f centerPosition, float width, float height, float depth) {
         this.centerPosition = centerPosition;
@@ -91,19 +89,38 @@ public class Octree {
         }
     }
 
-    public List<Entity> getAllVisibleEntities(FrustumIntersection frustum, Vector3f camPos) {
+    private Stream.Builder<Entity> addVisibleEntitiesToBuilder(Stream.Builder<Entity> builder, FrustumIntersection frustum, Vector3f camPos) {
         if (frustum.testAab(min, max)) {
+            entities.stream().filter(e->couldBeVisible(e,camPos)).forEach(builder::add);
             if (hasChildren) {
-                Stream<Entity> returnedStream = entities.stream();
                 for (Octree node : nodes) {
-                    returnedStream = Stream.concat(returnedStream, node.getAllVisibleEntities(frustum, camPos).stream());
+                    node.addVisibleEntitiesToBuilder(builder, frustum, camPos);
                 }
-                return returnedStream.filter(e -> frustum.testSphere(e.getCenter(),e.getRadius())&& couldBeVisible(e, camPos)).collect(Collectors.toList());
-            } else {
-                return entities;
             }
         }
-        return new ArrayList<>();
+        return builder;
+    }
+
+    private Stream.Builder<Octree> addVisibleNodesToBuilder(Stream.Builder<Octree> builder, FrustumIntersection frustum) {
+        if (frustum.testAab(min, max)) {
+            if(!entities.isEmpty()) {
+                builder.add(this);
+            }
+            if (hasChildren) {
+                for (Octree node : nodes) {
+                    node.addVisibleNodesToBuilder(builder, frustum);
+                }
+            }
+        }
+        return builder;
+    }
+
+    public List<Octree> getAllVisibleNodes(FrustumIntersection frustum){
+        return addVisibleNodesToBuilder(Stream.builder(),frustum).build().collect(Collectors.toList());
+    }
+
+    public List<Entity> getAllVisibleEntities(FrustumIntersection frustum, Vector3f camPos) {
+        return addVisibleEntitiesToBuilder(Stream.builder(),frustum, camPos).build().collect(Collectors.toList());
     }
 
     protected boolean contains(Entity e) {
@@ -118,19 +135,35 @@ public class Octree {
     public Matrix4f getTransformationMatrix() {
         Matrix4f modelMatrix = new Matrix4f();
         modelMatrix.translate(centerPosition);
-        modelMatrix.scale(halfWidth - 0.01f, halfHeight - 0.01f, halfDepth - 0.01f);
+        modelMatrix.scale(halfWidth, halfHeight, halfDepth);
         return modelMatrix;
     }
 
-    public List<Matrix4f> getAllTransformationMatricies(int depth) {
+    public List<Matrix4f> getAllTransformationMatrices(int depth) {
         List<Matrix4f> list = new ArrayList<>();
         list.add(getTransformationMatrix());
         if (hasChildren && depth > 0) {
             for (Octree node : nodes) {
-                list.addAll(node.getAllTransformationMatricies(depth - 1));
+                list.addAll(node.getAllTransformationMatrices(depth - 1));
             }
         }
         return list;
+    }
+
+    public Vector3f getMin(){
+        return min;
+    }
+
+    public Vector3f getMax(){
+        return max;
+    }
+
+    public Vector3f getCenter(){
+        return centerPosition;
+    }
+
+    public List<Entity> getEntities(){
+        return entities;
     }
 
 }

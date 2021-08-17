@@ -5,7 +5,6 @@ import graphics.core.objects.OpenGLState;
 import graphics.core.objects.TimerQuery;
 import graphics.core.shaders.Shader;
 import graphics.core.shaders.ShaderFactory;
-import graphics.occlusion.SSAOEffect;
 import graphics.occlusion.ShadowEffect;
 import graphics.postprocessing.QuadRenderer;
 import org.joml.Matrix4f;
@@ -34,19 +33,19 @@ public class LightingPassRenderer {
         deferredResult= new FrameBufferObject(width, height, 2).addTextureAttachment(0).addTextureAttachment(1).unbind();
     }
 
-    public void render(FrameBufferObject gBuffer, OcclusionRenderer occlusionRenderer, Matrix4f projMatrix, Matrix4f viewMatrix, Vector3f lightPos, Vector3f lightColor, float farPlane) {
+    public void render(FrameBufferObject gBuffer, ShadowRenderer shadowRenderer, Matrix4f projMatrix, Matrix4f viewMatrix, Vector3f lightPos, Vector3f lightColor, float farPlane) {
         lightTimer.startQuery();
         deferredResult.bind();
-        bindTextures(gBuffer, occlusionRenderer.ssaoEffect.getSSAOTexture(), occlusionRenderer.shadowEffect.getShadowTextureArray());
+        bindTextures(gBuffer, shadowRenderer.ssaoEffect.getSSAOTexture(), shadowRenderer.shadowEffect.getShadowTextureArray());
         shader.bind();
-        shader.loadInt("ssaoEnabled", occlusionRenderer.ssaoEffect.isEnabled() ? 1 : 0);
-        shader.loadInt("shadowsEnabled", occlusionRenderer.shadowEffect.isEnabled() ? 1 : 0);
+        shader.loadInt("ssaoEnabled", shadowRenderer.ssaoEffect.isEnabled() ? 1 : 0);
+        shader.loadInt("shadowsEnabled", shadowRenderer.shadowEffect.isEnabled() ? 1 : 0);
         shader.load3DVector("lightPos", viewMatrix.transformPosition(new Vector3f(lightPos)));
         shader.load3DVector("lightColor", lightColor);
         shader.loadFloat("zFar", farPlane);
         shader.loadMatrix("projMatrixInv", new Matrix4f(projMatrix).invert());
         shader.loadFloatArray("splitRange", ShadowEffect.CASCADE_DISTANCE);
-        Matrix4f[] shadowReprojected = occlusionRenderer.shadowEffect.getShadowProjViewMatrix();
+        Matrix4f[] shadowReprojected = shadowRenderer.shadowEffect.getShadowProjViewMatrix();
         Matrix4f[] shadowReprojectionMatrix = new Matrix4f[shadowReprojected.length];
         for (int i = 0; i < shadowReprojectionMatrix.length; i++) {
             shadowReprojectionMatrix[i] = new Matrix4f(shadowReprojected[i]).mul(new Matrix4f(viewMatrix).invert());

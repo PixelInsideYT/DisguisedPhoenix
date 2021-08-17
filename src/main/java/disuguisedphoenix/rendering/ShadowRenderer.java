@@ -9,21 +9,26 @@ import graphics.postprocessing.QuadRenderer;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-public class OcclusionRenderer {
+public class ShadowRenderer {
 
     protected ShadowEffect shadowEffect;
     protected SSAOEffect ssaoEffect;
 
-    public OcclusionRenderer(QuadRenderer quadRenderer, int width, int height, Matrix4f projMatrix) {
+    public ShadowRenderer(QuadRenderer quadRenderer, int width, int height, Matrix4f projMatrix) {
         ssaoEffect = new SSAOEffect(quadRenderer, width, height, projMatrix);
-      //  ssaoEffect.disable();
+        ssaoEffect.disable();
         shadowEffect = new ShadowEffect();
-      //  shadowEffect.disable();
+        shadowEffect.disable();
     }
 
     public void render(FrameBufferObject gBuffer,Matrix4f projMatrix,Matrix4f viewMatrix, float nearPlane, float farPlane, float fov, float aspectRatio, float time, Vector3f lightPos, MultiIndirectRenderer multiRenderer){
         shadowEffect.render(viewMatrix, nearPlane, farPlane, (float) Math.toRadians(fov), aspectRatio, time, lightPos, multiRenderer);
         ssaoEffect.renderEffect(gBuffer, projMatrix,farPlane);
+    }
+
+    public void print(){
+        shadowEffect.print();
+        ssaoEffect.print();
     }
 
 }

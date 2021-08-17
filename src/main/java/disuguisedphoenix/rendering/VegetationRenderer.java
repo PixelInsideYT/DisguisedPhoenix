@@ -19,7 +19,7 @@ public class VegetationRenderer {
 
     private MultiIndirectRenderer multiRenderer;
     protected Shader vegetationShader;
-    private int windTexture;
+    public int windTexture;
 
     public VegetationRenderer(MultiIndirectRenderer multiIndirectRenderer) {
         this.multiRenderer = multiIndirectRenderer;

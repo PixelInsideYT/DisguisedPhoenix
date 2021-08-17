@@ -16,7 +16,9 @@ import graphics.core.objects.FrameBufferObject;
 import graphics.core.objects.OpenGLState;
 import graphics.core.objects.Vao;
 import graphics.core.renderer.MultiIndirectRenderer;
+import graphics.core.shaders.ComputeShader;
 import graphics.core.shaders.Shader;
+import graphics.core.shaders.ShaderFactory;
 import graphics.gui.NuklearBinding;
 import graphics.loader.TextureLoader;
 import graphics.modelinfo.Model;
@@ -25,7 +27,9 @@ import graphics.particles.ParticleManager;
 import org.joml.Matrix4f;
 import org.joml.SimplexNoise;
 import org.joml.Vector3f;
+import org.lwjgl.opengl.GLUtil;
 
+import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -65,12 +69,10 @@ public class Main {
         int height = display.getHeight();
         float aspectRatio = width / (float) height;
         MasterRenderer masterRenderer = new MasterRenderer(width,height,aspectRatio);
-        ModelFileHandler.loadModelsForMultiDraw(masterRenderer.multiIndirectRenderer.persistantMatrixVbo, EntityAdder.getModelNameList().toArray(String[]::new));
+        ModelFileHandler.loadModelsForMultiDraw(masterRenderer.multiIndirectRenderer.persistantMatrixVbo, EntityAdder.getModelNameList().stream().toArray(String[]::new));
         World world = new World(pm, 4f * radius);
         EntityAdder ea = world.getEntityAdder();
         ea.getAllEntities(4f * 3.141592f * radius * radius, Main::getPositionOnEarthFromDirection).forEach(e -> world.placeUprightEntity(e, e.position));
-        List<String> modelNames = ea.modelNames;
-        modelNames.add("cube.modelFile");
         Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(0, radius, 0), mim);
         InputManager input = new InputManager(display.getWindowId());
         KeyboardInputMap kim = new KeyboardInputMap().addMapping("forward", GLFW_KEY_W).addMapping("backward", GLFW_KEY_S).addMapping("turnLeft", GLFW_KEY_A).addMapping("turnRight", GLFW_KEY_D).addMapping("accel", GLFW_KEY_SPACE);
@@ -91,17 +93,28 @@ public class Main {
         DecimalFormat df = new DecimalFormat("###,###,###");
         float avgFPS = 0;
         int frameCounter = 0;
-        display.setResizeListener((width1, height1, aspectRatio1) -> {
-            masterRenderer.resize(width1,height,aspectRatio);
-        });
+        display.setResizeListener(masterRenderer::resize);
         NuklearBinding nuklearBinding = new NuklearBinding(input, display);
         flightCamera.getPosition().set(player.position);
         flightCamera2.getPosition().set((float)Math.random()*2f-1f,(float)Math.random()*2f-1f,(float)Math.random()*2f-1f);
         flightCamera2.getPosition().set(Main.getPositionOnEarthFromDirection(flightCamera2.getPosition()));
         float summedMS = 0f;
-        input.hideMouseCursor();
+       // input.hideMouseCursor();
         float switchCameraTimer = 0f;
         float captureMouseTimer = 0f;
+/*
+        int tex_output = glGenTextures();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, tex_output);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 1920, 1080, 0, GL_RGBA, GL_FLOAT, (ByteBuffer) null);
+
+        ComputeShader computeShader = new ComputeShader(ShaderFactory.loadShaderCode("compute/hizTest.glsl"));
+        computeShader.loadUniform("hiZ");
+*/
         while (!display.shouldClose() && !input.isKeyDown(GLFW_KEY_ESCAPE)) {
             long startFrame = System.currentTimeMillis();
             float dt = zeitgeist.getDelta();
@@ -138,8 +151,9 @@ public class Main {
             Matrix4f viewMatrix = ffc.getViewMatrix();
             world.update(dt);
             input.updateInputMaps();
-            masterRenderer.render(display,viewMatrix,time,world,ffc.getPosition(),lightPos,lightColor,model);
-           avgFPS += zeitgeist.getFPS();
+            masterRenderer.render(display, viewMatrix,time,world,ffc.getPosition(),lightPos,lightColor,model);
+            display.clear();
+            avgFPS += zeitgeist.getFPS();
             display.setFrameTitle("Disguised Phoenix: " + " FPS: " + zeitgeist.getFPS() + ", In frustum objects: " + inViewObjects + ", drawcalls: " + drawCalls + " faces: " + df.format(facesDrawn));
             inViewObjects = 0;
             inViewVerticies = 0;
@@ -149,6 +163,7 @@ public class Main {
             frameCounter++;
             summedMS += (System.currentTimeMillis() - startFrame);
         }
+        masterRenderer.print();
         nuklearBinding.cleanUp();
         System.out.println("AVG FPS: " + (avgFPS / (float) frameCounter));
         System.out.println("AVG MS: " + (summedMS / (float) frameCounter));

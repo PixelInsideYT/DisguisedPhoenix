@@ -21,7 +21,7 @@ public class World {
     private Octree staticEntities;
     private List<Island> islands = new ArrayList<>();
     private Matrix4f cullingMatrix = new Matrix4f();
-
+public static int addedEntities=0;
     public World(ParticleManager pm, float worldSize) {
         adder = new EntityAdder(pm);
         staticEntities = new Octree(new Vector3f(0), worldSize, worldSize, worldSize);
@@ -40,7 +40,10 @@ public class World {
         cullingHelper.set(cullingMatrix.set(projMatrix).mul(viewMatrix));
         return staticEntities.getAllVisibleEntities(cullingHelper, camPos);
     }
-
+    public List<Octree> getVisibleNodes(Matrix4f projMatrix, Matrix4f viewMatrix) {
+        cullingHelper.set(cullingMatrix.set(projMatrix).mul(viewMatrix));
+        return staticEntities.getAllVisibleNodes(cullingHelper);
+    }
     public List<Island> getVisibleIslands() {
         return islands.stream().filter(i -> i.isVisible(cullingHelper)).collect(Collectors.toList());
     }
@@ -64,5 +67,6 @@ public class World {
 
     public void addEntity(Entity e) {
         staticEntities.insert(e);
+        addedEntities++;
     }
 }

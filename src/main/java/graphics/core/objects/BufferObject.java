@@ -1,12 +1,14 @@
 package graphics.core.objects;
 
 import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL43;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL45.*;
 
 public class BufferObject {
@@ -17,23 +19,23 @@ public class BufferObject {
 
     public BufferObject(int target) {
         this.target = target;
-        bufferID = GL15.glGenBuffers();
+        bufferID = glGenBuffers();
         bind();
         allBufferObjects.add(this);
     }
 
     public BufferObject(int dataCount, int target, int usage) {
         this(target);
-        GL15.glBufferData(target, dataCount * 4L, usage);
+        glBufferData(target, dataCount * 4L, usage);
     }
 
     public BufferObject(float[] data, int target, int usage) {
         this(target);
-        GL15.glBufferData(target, data, usage);
+        glBufferData(target, data, usage);
     }
 
     public static void cleanUp() {
-        allBufferObjects.forEach(vbo -> GL15.glDeleteBuffers(vbo.bufferID));
+        allBufferObjects.forEach(vbo -> glDeleteBuffers(vbo.bufferID));
     }
 
     public ByteBuffer createPersistantVbo(int floatCount) {
@@ -44,27 +46,33 @@ public class BufferObject {
     }
 
     public void bufferData(int[] data, int usage) {
-        GL15.glBufferData(target, data, usage);
+        glBufferData(target, data, usage);
     }
-
+    public void bufferData(float[] data, int usage) {
+        glBufferData(target, data, usage);
+    }
     public void updateVbo(FloatBuffer data) {
         bind();
-        GL15.glBufferSubData(target, 0, data);
+        glBufferSubData(target, 0, data);
         unbind();
     }
 
     public void updateVbo(int[] data) {
         bind();
-        GL15.glBufferSubData(target, 0, data);
+        glBufferSubData(target, 0, data);
         unbind();
     }
-
+    public void updateVbo(float[] data) {
+        bind();
+        glBufferSubData(target, 0, data);
+        unbind();
+    }
     public void bind() {
-        GL15.glBindBuffer(target, bufferID);
+        glBindBuffer(target, bufferID);
     }
 
     public BufferObject unbind() {
-        GL15.glBindBuffer(target, 0);
+        glBindBuffer(target, 0);
         return this;
     }
 
@@ -72,4 +80,19 @@ public class BufferObject {
         return bufferID;
     }
 
+    public int[] getBufferContentInt(int size){
+        bind();
+        int[] rt = new int[size];
+        glGetBufferSubData(target,0,rt);
+        return rt;
+    }
+    public float[] getBufferContentFloat(int size){
+        bind();
+        float[] rt = new float[size];
+        glGetBufferSubData(target,0,rt);
+        return rt;
+    }
+    public int getTarget() {
+        return target;
+    }
 }

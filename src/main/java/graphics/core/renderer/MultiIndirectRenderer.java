@@ -51,8 +51,7 @@ public class MultiIndirectRenderer {
     public void prepareRenderer(List<Entity> entities) {
         currentEntities.clear();
         currentEntities.addAll(entities);
-        //sort entities according to Vao and model (remeber one vao has multiple models)
-        renderCommands.clear();
+        //sort entities according to Vao and model (remember one vao has multiple models)
         Map<Vao, Map<RenderInfo, List<Matrix4f>>> vaoSortedEntries = new HashMap<>();
         for (Entity e : entities) {
             RenderInfo entityRenderInfo = e.getModel().renderInfo;
@@ -68,14 +67,19 @@ public class MultiIndirectRenderer {
     }
 
     public void prepareRenderer(Model model, List<Matrix4f> matrix4fList) {
-        Map<Vao, Map<RenderInfo, List<Matrix4f>>> vaoSortedEntries = new HashMap<>();
-        Map<RenderInfo, List<Matrix4f>> map = new HashMap<>();
-        map.put(model.renderInfo, matrix4fList);
-        vaoSortedEntries.put(model.renderInfo.actualVao, map);
-        prepareRender(vaoSortedEntries);
+        if(model.renderInfo.isMultiDrawCapabel) {
+            Map<Vao, Map<RenderInfo, List<Matrix4f>>> vaoSortedEntries = new HashMap<>();
+            Map<RenderInfo, List<Matrix4f>> map = new HashMap<>();
+            map.put(model.renderInfo, matrix4fList);
+            vaoSortedEntries.put(model.renderInfo.actualVao, map);
+            prepareRender(vaoSortedEntries);
+        }else{
+            System.err.println("Model not multidraw capable");
+        }
     }
 
     private void prepareRender(Map<Vao, Map<RenderInfo, List<Matrix4f>>> vaoSortedEntries) {
+        renderCommands.clear();
         //build command buffer per vao, fill matrix buffer and render
         for (Vao vao : vaoSortedEntries.keySet()) {
             Map<RenderInfo, List<Matrix4f>> modelMatrixMap = vaoSortedEntries.get(vao);

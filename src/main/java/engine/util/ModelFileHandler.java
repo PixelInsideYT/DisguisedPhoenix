@@ -58,11 +58,12 @@ public class ModelFileHandler {
             File selectedFile = jfc.getSelectedFile();
             if (selectedFile.getAbsolutePath().endsWith(".info")) {
                 try {
-                    String content = Files.readString(selectedFile.toPath());
+                    //String content = Files.readString(selectedFile.toPath());
+                    String content="";
                     ModelConfig[] modelConfigs = gson.fromJson(content, ModelConfig[].class);
                     for (ModelConfig mco : modelConfigs)
                         generateModelFile(mco.relativePath, mco.relativeColliderPath, mco.wobbleInfo, mco.modelHeight, false);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             } else {
@@ -89,17 +90,6 @@ public class ModelFileHandler {
             e.printStackTrace();
         }
 
-    }
-
-    public static void regenerateModels(String modelInfoFile) {
-        try {
-            String content = Files.readString(new File(modelInfoFile).toPath());
-            ModelConfig[] modelConfigs = gson.fromJson(content, ModelConfig[].class);
-            for (ModelConfig mco : modelConfigs)
-                generateModelFile(mco.relativePath, mco.relativeColliderPath, mco.wobbleInfo, mco.modelHeight, false);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public static Model getModel(String name) {

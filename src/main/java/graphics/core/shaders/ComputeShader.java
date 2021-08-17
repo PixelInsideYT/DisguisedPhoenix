@@ -1,8 +1,12 @@
 package graphics.core.shaders;
 
+import graphics.core.objects.BufferObject;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL43;
 
 import java.nio.FloatBuffer;
 import java.util.HashMap;
@@ -15,6 +19,8 @@ import static org.lwjgl.opengl.GL43.*;
 public class ComputeShader {
     private static final FloatBuffer matrixBuffer4f = BufferUtils.createFloatBuffer(16);
     private final Map<String, Integer> uniforms = new HashMap<>();
+    private final Map<String, Integer> buffers = new HashMap<>();
+
     private final int shaderId;
 
     public ComputeShader(String shaderCode) {
@@ -25,7 +31,7 @@ public class ComputeShader {
         GL20.glLinkProgram(shaderId);
         if (GL20.glGetProgrami(shaderId, GL_LINK_STATUS) == GL_FALSE) {
             System.out.println(GL20.glGetProgramInfoLog(shaderId, 500));
-            System.err.println("Could not links compute Shader.");
+            System.err.println("Could not link compute Shader.");
             System.exit(-1);
         }
         //shader is built and linked we can cleanup
@@ -63,22 +69,19 @@ public class ComputeShader {
         GL20.glUniform1i(uniforms.get(samplerName), unit);
     }
 
-    public void run(int x, int y, int z) {
+    public void dispatch(int x, int y, int z) {
+        if(x==0||y==0||z==0)
+            System.err.println("DON'T PUT 0 in Compute Shader dispatch");
         glDispatchCompute(x, y, z);
     }
 
-    public void setImageAccesBarrier() {
+    public void setImageAccessBarrier() {
         glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
     }
 
-    public void setSSBOAccesBarrier() {
+    public void setSSBOAccessBarrier() {
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
-
-    public boolean isFinished() {
-        return true;
-    }
-
 
     public void loadMatrix4f(String name, Matrix4f matrix) {
         matrixBuffer4f.clear();
@@ -88,6 +91,29 @@ public class ComputeShader {
 
     public void loadFloat(String name, float value) {
         GL20.glUniform1f(uniforms.get(name), value);
+    }
+
+    public void loadInt(String name, int value) {
+        GL20.glUniform1i(uniforms.get(name), value);
+    }
+
+
+    public void loadVec4(String name, Vector4f value) {
+        GL20.glUniform4f(uniforms.get(name), value.x,value.y,value.z,value.w);
+    }
+
+    public void loadBufferResource(String name, int bindingPoint){
+       int index =  GL43.glGetProgramResourceIndex(shaderId,GL_SHADER_STORAGE_BLOCK,name);
+       if(index==GL_INVALID_INDEX){
+           System.err.println("ERROR: Buffer Resource "+name +" not found");
+           System.exit(1);
+       }
+       GL43.glShaderStorageBlockBinding(shaderId,index,bindingPoint);
+       buffers.put(name,bindingPoint);
+    }
+
+    public void bindBuffer(String name, BufferObject buffer){
+        GL43.glBindBufferBase(buffer.getTarget(),buffers.get(name),buffer.getBufferID());
     }
 
 }

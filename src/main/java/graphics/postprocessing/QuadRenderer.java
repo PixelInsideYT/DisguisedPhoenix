@@ -15,7 +15,6 @@ import static org.lwjgl.opengl.GL30.GL_TEXTURE_2D_ARRAY;
 public class QuadRenderer {
 
     Vao quad;
-    Shader shader;
     Shader testShader;
 
     public QuadRenderer() {
@@ -35,7 +34,7 @@ public class QuadRenderer {
     public void renderTextureToScreen(int texture) {
         testShader.bind();
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
         renderOnlyQuad();
         testShader.unbind();
     }

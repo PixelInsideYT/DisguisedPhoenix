@@ -46,7 +46,7 @@ vec3 viewPosFromDepth(vec2 TexCoord, float depth) {
 const vec3[4] distanceColor=vec3[](vec3(1, 1, 0), vec3(1, 0, 0), vec3(0, 1, 0), vec3(0, 0, 1));
 
 float shadow(vec3 position, inout vec3 shadowColor){
-    float shadow =1;
+    float shadow =1.0;
     int index =0;
     float linearDepth = -position.z/zFar;
     for (int i=0;i<4;i++){
@@ -99,7 +99,7 @@ void main() {
     float attenuation = 1.0 / (dist * dist);
     // diffuse  *= attenuation;
     // specular *= attenuation;
-    float shadowMul = 1f;
+    float shadowMul = 1.0;
     vec3 shadowColor = vec3(0);
     if (shadowsEnabled==1){
         shadowMul=shadow(FragPos, shadowColor);

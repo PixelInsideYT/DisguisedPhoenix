@@ -1,7 +1,10 @@
 package disuguisedphoenix.rendering;
 
+import disuguisedphoenix.Entity;
 import disuguisedphoenix.terrain.Island;
 import disuguisedphoenix.terrain.World;
+import engine.util.ModelFileHandler;
+import engine.world.Octree;
 import graphics.core.context.Display;
 import graphics.core.objects.FrameBufferObject;
 import graphics.core.objects.OpenGLState;
@@ -16,11 +19,16 @@ import graphics.postprocessing.QuadRenderer;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-import static org.lwjgl.opengl.GL11.glClearColor;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
+import static org.lwjgl.opengl.GL13.glActiveTexture;
 
 public class MasterRenderer {
 
-    public static final float FAR_PLANE = 250f;
+    public static final float FAR_PLANE = 1000f;
     public static final float NEAR_PLANE = 0.05f;
     public static final float FOV = 70;
 
@@ -31,15 +39,15 @@ public class MasterRenderer {
 
     Matrix4f projMatrix = new Matrix4f();
 
-    private FrameBufferObject gBuffer;
+    public FrameBufferObject gBuffer;
 
-    VegetationRenderer vegetationRenderer;
+   public VegetationRenderer vegetationRenderer;
     LightingPassRenderer lightingPassRenderer;
-
+    private OcclusionCalculator occlusionCalculator;
     public MultiIndirectRenderer multiIndirectRenderer;
-    QuadRenderer quadRenderer = new QuadRenderer();
+    public QuadRenderer quadRenderer = new QuadRenderer();
     GaussianBlur blur = new GaussianBlur(quadRenderer);
-    OcclusionRenderer occlusionRenderer;
+    ShadowRenderer shadowRenderer;
     HIZGenerator hizGen = new HIZGenerator(quadRenderer);
     Pipeline postProcessPipeline;
     private TestRenderer renderer;
@@ -50,12 +58,13 @@ public class MasterRenderer {
         vegetationRenderer = new VegetationRenderer(multiIndirectRenderer);
         renderer = new TestRenderer(vegetationRenderer.vegetationShader);
         lightingPassRenderer = new LightingPassRenderer(quadRenderer,width,height);
-        occlusionRenderer = new OcclusionRenderer(quadRenderer,width,height,projMatrix);
+        shadowRenderer = new ShadowRenderer(quadRenderer,width,height,projMatrix);
         setupFBOs(width,height);
         setupPostProcessing(width,height,projMatrix);
         this.width=width;
         this.height=height;
         this.aspectRatio=aspectRatio;
+        occlusionCalculator = new OcclusionCalculator();
     }
 
 
@@ -71,6 +80,7 @@ public class MasterRenderer {
                 .addTextureAttachment(1)
                 //depth
                 .addDepthTextureAttachment(true);
+        gBuffer.unbind();
     }
 
 
@@ -82,22 +92,36 @@ public class MasterRenderer {
         gBuffer.bind();
         glClearColor(0.1f, 0.1f, 0.9f, 0.0f);
         gBuffer.clear();
-        vegetationRenderer.render(time, projMatrix, viewMatrix, world.getVisibleEntities(projMatrix, viewMatrix, camPos));
         renderer.begin(viewMatrix,projMatrix);
         for (Island island : world.getVisibleIslands()) {
             renderer.render(island.model, island.transformation);
         }
         //TODO: put earth management in World.java
         renderer.render(model,new Matrix4f());
-        gBuffer.unbind();
-        vertexTimer.waitOnQuery();
-        occlusionRenderer.render(gBuffer,projMatrix,viewMatrix,NEAR_PLANE,FAR_PLANE,FOV,aspectRatio,time,lightPos,multiIndirectRenderer);
-        OpenGLState.enableAlphaBlending();
-        display.clear();
         hizGen.generateHiZMipMap(gBuffer);
+        //
+        List<Octree> visibleNodes = world.getVisibleNodes(projMatrix,viewMatrix);
+        List<Entity> notOccluded = occlusionCalculator.getVisibleEntities(gBuffer.getDepthTexture(),visibleNodes,new Matrix4f(projMatrix).mul(viewMatrix),width,height);
+        //
+
+      //  System.out.println(notOccluded.size()/(float)World.addedEntities);
+        gBuffer.bind();
+        vegetationRenderer.vegetationShader.bind();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, vegetationRenderer.windTexture);
+        vegetationRenderer.vegetationShader.loadMatrix("projMatrix", projMatrix);
+        vegetationRenderer.vegetationShader.loadMatrix("viewMatrix", viewMatrix);
+        vegetationRenderer.vegetationShader.loadFloat("time", time);
+        vegetationRenderer.vegetationShader.loadInt("useInputTransformationMatrix", 1);
+        vegetationRenderer.render(time, projMatrix, viewMatrix, notOccluded);
+        vertexTimer.waitOnQuery();
+        hizGen.generateHiZMipMap(gBuffer);
+        shadowRenderer.render(gBuffer,projMatrix,viewMatrix,NEAR_PLANE,FAR_PLANE,FOV,aspectRatio,time,lightPos,multiIndirectRenderer);
+        OpenGLState.enableAlphaBlending();
         OpenGLState.disableDepthTest();
         gBuffer.blitDepth(lightingPassRenderer.deferredResult);
-        lightingPassRenderer.render(gBuffer, occlusionRenderer, projMatrix, viewMatrix, lightPos, lightColor, FAR_PLANE);
+        lightingPassRenderer.render(gBuffer, shadowRenderer, projMatrix, viewMatrix, lightPos, lightColor, FAR_PLANE);
+        display.clear();
         postProcessPipeline.applyPostProcessing(display, lightingPassRenderer.deferredResult);
         // nuklearBinding.renderGUI(display.getWidth(),display.getHeight());
         display.flipBuffers();
@@ -106,12 +130,18 @@ public class MasterRenderer {
     public void resize(int width1, int height1, float aspectRatio) {
         gBuffer.resize(width1, height1);
         lightingPassRenderer.deferredResult.resize(width1, height1);
-        occlusionRenderer.ssaoEffect.resize(width1, height1);
+        shadowRenderer.ssaoEffect.resize(width1, height1);
         postProcessPipeline.resize(width1, height1);
         projMatrix.identity().perspective((float) Math.toRadians(70), aspectRatio, NEAR_PLANE, FAR_PLANE);
         this.width=width1;
         this.height=height1;
         this.aspectRatio=aspectRatio;
+    }
+
+    public void print(){
+        vertexTimer.printResults();
+        lightingPassRenderer.lightTimer.printResults();
+        shadowRenderer.print();
     }
 
 }

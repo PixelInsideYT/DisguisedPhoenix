@@ -107,4 +107,11 @@ public class SSAOEffect {
         projScale *= Math.max(width, height);
         return projScale;
     }
+
+    public void print(){
+        if(isEnabled()){
+            ssaoTimer.printResults();
+        }
+    }
+
 }
