@@ -7,8 +7,9 @@ import engine.collision.CollisionShape;
 import engine.input.InputManager;
 import engine.input.KeyboardInputMap;
 import engine.input.MouseInputMap;
+import engine.time.TimerQuery;
 import engine.util.ModelFileHandler;
-import engine.util.Zeitgeist;
+import engine.time.Zeitgeist;
 import graphics.camera.Camera;
 import graphics.camera.FreeFlightCamera;
 import graphics.core.context.Display;
@@ -21,6 +22,7 @@ import graphics.loader.TextureLoader;
 import graphics.modelinfo.Model;
 import graphics.modelinfo.RenderInfo;
 import graphics.particles.ParticleManager;
+import lombok.extern.slf4j.Slf4j;
 import org.joml.Matrix4f;
 import org.joml.SimplexNoise;
 import org.joml.Vector3f;
@@ -32,6 +34,7 @@ import java.util.List;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46.GL_ONE_MINUS_SRC_ALPHA;
 
+@Slf4j
 public class Main {
 
     public static int inViewVerticies = 0;
@@ -158,10 +161,10 @@ public class Main {
             frameCounter++;
             summedMS += (System.currentTimeMillis() - startFrame);
         }
-        masterRenderer.print();
+        TimerQuery.printAllResults();
         nuklearBinding.cleanUp();
-        System.out.println("AVG FPS: " + (avgFPS / (float) frameCounter));
-        System.out.println("AVG MS: " + (summedMS / (float) frameCounter));
+        log.info("AVG FPS: {}",avgFPS /  frameCounter);
+        log.info("AVG MS: {}",summedMS /  frameCounter);
         TextureLoader.cleanUpAllTextures();
         FrameBufferObject.cleanUpAllFbos();
         Vao.cleanUpAllVaos();

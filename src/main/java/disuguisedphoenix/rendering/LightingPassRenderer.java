@@ -2,7 +2,7 @@ package disuguisedphoenix.rendering;
 
 import graphics.core.objects.FrameBufferObject;
 import graphics.core.objects.OpenGLState;
-import graphics.core.objects.TimerQuery;
+import graphics.core.objects.GPUTimerQuery;
 import graphics.core.shaders.Shader;
 import graphics.core.shaders.ShaderFactory;
 import graphics.occlusion.ShadowEffect;
@@ -17,7 +17,7 @@ import static org.lwjgl.opengl.GL30.GL_TEXTURE_2D_ARRAY;
 
 public class LightingPassRenderer {
 
-    TimerQuery lightTimer = new TimerQuery("Lighting Pass");
+    GPUTimerQuery lightTimer = new GPUTimerQuery("Lighting Pass");
     private final QuadRenderer quadRenderer;
     FrameBufferObject deferredResult;
     private final Shader shader;
@@ -59,7 +59,7 @@ public class LightingPassRenderer {
         OpenGLState.disableAlphaBlending();
         OpenGLState.disableDepthTest();
         deferredResult.unbind();
-        lightTimer.waitOnQuery();
+        lightTimer.stopQuery();
     }
 
 

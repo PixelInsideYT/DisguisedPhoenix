@@ -3,12 +3,13 @@ package disuguisedphoenix.rendering;
 import disuguisedphoenix.Entity;
 import disuguisedphoenix.terrain.Island;
 import disuguisedphoenix.terrain.World;
+import engine.time.CPUTimerQuery;
 import engine.world.Octree;
 import graphics.core.context.Display;
 import graphics.core.objects.BufferObject;
 import graphics.core.objects.FrameBufferObject;
 import graphics.core.objects.OpenGLState;
-import graphics.core.objects.TimerQuery;
+import graphics.core.objects.GPUTimerQuery;
 import graphics.core.renderer.MultiIndirectRenderer;
 import graphics.core.renderer.TestRenderer;
 import graphics.modelinfo.Model;
@@ -35,7 +36,8 @@ public class MasterRenderer {
     private int width;
     private int height;
     private float aspectRatio;
-    TimerQuery vertexTimer = new TimerQuery("Geometry Pass");
+    GPUTimerQuery vertexTimer = new GPUTimerQuery("Geometry Pass");
+    CPUTimerQuery entityCollectionTimer = new CPUTimerQuery("Entity Collection");
 
     Matrix4f projMatrix = new Matrix4f();
 
@@ -101,6 +103,7 @@ public class MasterRenderer {
         renderer.render(model,new Matrix4f());
         hizGen.generateHiZMipMap(gBuffer);
         //
+        entityCollectionTimer.startQuery();
         List<Octree> visibleNodes = world.getVisibleNodes(projMatrix,viewMatrix);
         List<Boolean> notOccluded = occlusionCalculator.getVisibleEntities(gBuffer.getDepthTexture(),visibleNodes,new Matrix4f(projMatrix).mul(viewMatrix),width,height);
         List<Entity> visibleEntities = new ArrayList<>();
@@ -109,6 +112,7 @@ public class MasterRenderer {
                 visibleEntities.addAll(visibleNodes.get(i).getAllVisibleEntities(camPos));
             }
         }
+        entityCollectionTimer.stopQuery();
         //
         gBuffer.bind();
         vegetationRenderer.vegetationShader.bind();
@@ -119,7 +123,7 @@ public class MasterRenderer {
         vegetationRenderer.vegetationShader.loadFloat("time", time);
         vegetationRenderer.vegetationShader.loadInt("useInputTransformationMatrix", 1);
         vegetationRenderer.render(time, projMatrix, viewMatrix, visibleEntities);
-        vertexTimer.waitOnQuery();
+        vertexTimer.stopQuery();
         hizGen.generateHiZMipMap(gBuffer);
         shadowRenderer.render(gBuffer,projMatrix,viewMatrix,NEAR_PLANE,FAR_PLANE,FOV,aspectRatio,time,lightPos,multiIndirectRenderer);
         OpenGLState.enableAlphaBlending();
@@ -142,12 +146,6 @@ public class MasterRenderer {
         this.width=width1;
         this.height=height1;
         this.aspectRatio=aspectRatio;
-    }
-
-    public void print(){
-        vertexTimer.printResults();
-        lightingPassRenderer.lightTimer.printResults();
-        shadowRenderer.print();
     }
 
     public BufferObject getMultiDrawVBO(){

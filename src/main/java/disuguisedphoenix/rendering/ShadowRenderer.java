@@ -25,9 +25,4 @@ public class ShadowRenderer {
         ssaoEffect.renderEffect(gBuffer, projMatrix,farPlane);
     }
 
-    public void print(){
-        shadowEffect.print();
-        ssaoEffect.print();
-    }
-
 }

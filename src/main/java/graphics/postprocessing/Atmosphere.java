@@ -5,7 +5,7 @@ import disuguisedphoenix.rendering.MasterRenderer;
 import engine.util.Maths;
 import graphics.camera.Camera;
 import graphics.core.objects.FrameBufferObject;
-import graphics.core.objects.TimerQuery;
+import graphics.core.objects.GPUTimerQuery;
 import graphics.core.shaders.Shader;
 import graphics.core.shaders.ShaderFactory;
 import graphics.gui.Gui;
@@ -47,7 +47,7 @@ public class Atmosphere implements Gui {
     private static final float PLANET_RADIUS = Main.radius;
     private static final int NUM_OPTICAL_DEPTH_POINTS = 10;
     private final int blueNoiseTexture;
-    private final TimerQuery timer;
+    private final GPUTimerQuery timer;
     private final FloatBuffer densityFallOffBuffer = BufferUtils.createFloatBuffer(1).put(0, densityFalloff);
     private final FloatBuffer scatterStrengthBuffer = BufferUtils.createFloatBuffer(1).put(0, scatteringStrength);
     private final FloatBuffer atmosphereRadiusBuffer = BufferUtils.createFloatBuffer(1).put(0, atmosphereRadius);
@@ -84,7 +84,7 @@ public class Atmosphere implements Gui {
         glBindTexture(GL_TEXTURE_2D, lookUpTable.getTextureID(0));
         glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, floatValues);
         blueNoiseTexture = TextureLoader.loadTexture("misc/blueNoise.png", GL_REPEAT, GL_NEAREST);
-        timer = new TimerQuery("Atmosphere");
+        timer = new GPUTimerQuery("Atmosphere");
     }
 
     public Vector3f calculateLightColor(Vector3f lightPos, Vector3f cameraPosition) {
@@ -149,7 +149,7 @@ public class Atmosphere implements Gui {
         atmosphereShader.load3DVector("frustumRays[3]", projViewMatrix.frustumRayDir(1, 1, new Vector3f()));
         renderer.renderOnlyQuad();
         atmosphereShader.unbind();
-        timer.waitOnQuery();
+        timer.stopQuery();
     }
 
     private void calculateScatterCoefficients() {
@@ -161,10 +161,6 @@ public class Atmosphere implements Gui {
 
     public int getLookUpTable() {
         return lookUpTable.getTextureID(0);
-    }
-
-    public void printTimer() {
-        timer.printResults();
     }
 
     public void show(NkContext ctx, float windowWidth, float windowHeight) {

@@ -2,7 +2,7 @@ package graphics.occlusion;
 
 import disuguisedphoenix.Entity;
 import graphics.core.objects.FrameBufferObject;
-import graphics.core.objects.TimerQuery;
+import graphics.core.objects.GPUTimerQuery;
 import graphics.core.renderer.MultiIndirectRenderer;
 import graphics.core.shaders.Shader;
 import graphics.core.shaders.ShaderFactory;
@@ -26,7 +26,7 @@ public class ShadowEffect {
     public static final float[] CASCADE_DISTANCE = {0.01f, 0.05f, 0.25f, 1f};
     private static final int SHADOW_RESOLUTION = 2048;
     private static final int SHADOWS_CASCADES = 4;
-    private TimerQuery shadowTimer;
+    private GPUTimerQuery shadowTimer;
     protected FrameBufferObject[] shadowMap = new FrameBufferObject[SHADOWS_CASCADES];
     int textureArray;
     private final ShadowCascade[] cascades = new ShadowCascade[SHADOWS_CASCADES];
@@ -37,7 +37,7 @@ public class ShadowEffect {
 
     public ShadowEffect() {
         generate2DTextureArray();
-        shadowTimer = new TimerQuery("Cascading Shadows");
+        shadowTimer = new GPUTimerQuery("Cascading Shadows");
         for (int i = 0; i < SHADOWS_CASCADES; i++) {
             cascades[i] = new ShadowCascade();
             shadowMap[i] = new FrameBufferObject(SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0).addLayeredDepthTextureAttachment(textureArray, i);
@@ -73,7 +73,7 @@ public class ShadowEffect {
             }
             shadowMap[0].unbind();
             shadowShader.unbind();
-            shadowTimer.waitOnQuery();
+            shadowTimer.stopQuery();
         }
     }
 

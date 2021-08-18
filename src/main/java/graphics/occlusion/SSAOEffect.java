@@ -1,7 +1,7 @@
 package graphics.occlusion;
 
 import graphics.core.objects.FrameBufferObject;
-import graphics.core.objects.TimerQuery;
+import graphics.core.objects.GPUTimerQuery;
 import graphics.core.shaders.Shader;
 import graphics.core.shaders.ShaderFactory;
 import graphics.postprocessing.QuadRenderer;
@@ -25,7 +25,7 @@ public class SSAOEffect {
     private final Shader ssaoShader;
     private final Shader blurShader;
     private final QuadRenderer renderer;
-    private TimerQuery ssaoTimer;
+    private GPUTimerQuery ssaoTimer;
     private boolean enabled = true;
 
     public SSAOEffect(QuadRenderer renderer, int width, int height) {
@@ -49,7 +49,7 @@ public class SSAOEffect {
         blurShader.loadInt("filter_scale", 1);
         blurShader.loadFloat("edge_sharpness", 10);
 
-        ssaoTimer = new TimerQuery("SSAO");
+        ssaoTimer = new GPUTimerQuery("SSAO");
     }
 
     public int getSSAOTexture() {
@@ -69,7 +69,7 @@ public class SSAOEffect {
             ssaoShader.loadFloat("projScale", calculateProjectionScale(projMatrix));
             renderer.renderOnlyQuad();
             blurSSAO();
-            ssaoTimer.waitOnQuery();
+            ssaoTimer.stopQuery();
         }
     }
 
@@ -107,12 +107,6 @@ public class SSAOEffect {
         projScale = projScale * 0.5f + 0.5f;
         projScale *= Math.max(width, height);
         return projScale;
-    }
-
-    public void print(){
-        if(isEnabled()){
-            ssaoTimer.printResults();
-        }
     }
 
 }
