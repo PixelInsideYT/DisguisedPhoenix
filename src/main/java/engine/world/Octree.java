@@ -68,8 +68,7 @@ public class Octree {
         hasChildren = true;
         nodes = new Octree[8];
         //cache all the entities to not end up in an endless loop
-        List<Entity> toReinsert = new ArrayList<>();
-        toReinsert.addAll(entities);
+        List<Entity> toReinsert = new ArrayList<>(entities);
         entities.clear();
         float quarterWidth = halfWidth / 2f;
         float quarterHeight = halfHeight / 2f;

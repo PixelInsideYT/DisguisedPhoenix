@@ -2,7 +2,6 @@ package graphics.core.shaders;
 
 import lombok.extern.slf4j.Slf4j;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL40;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

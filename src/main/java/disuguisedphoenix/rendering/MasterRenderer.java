@@ -8,8 +8,8 @@ import engine.world.Octree;
 import graphics.core.context.Display;
 import graphics.core.objects.BufferObject;
 import graphics.core.objects.FrameBufferObject;
-import graphics.core.objects.OpenGLState;
 import graphics.core.objects.GPUTimerQuery;
+import graphics.core.objects.OpenGLState;
 import graphics.core.renderer.MultiIndirectRenderer;
 import graphics.core.renderer.TestRenderer;
 import graphics.modelinfo.Model;
@@ -55,7 +55,10 @@ public class MasterRenderer {
     private final TestRenderer renderer;
 
     public MasterRenderer(int width, int height, float aspectRatio){
-        projMatrix.identity().perspective((float) Math.toRadians(FOV), aspectRatio, NEAR_PLANE, FAR_PLANE);
+        this.width=width;
+        this.height=height;
+        this.aspectRatio=aspectRatio;
+        setProjMatrix();
         multiIndirectRenderer = new MultiIndirectRenderer();
         vegetationRenderer = new VegetationRenderer(multiIndirectRenderer);
         renderer = new TestRenderer(vegetationRenderer.vegetationShader);
@@ -63,9 +66,6 @@ public class MasterRenderer {
         shadowRenderer = new ShadowRenderer(quadRenderer,width,height);
         setupFBOs(width,height);
         setupPostProcessing(width,height,projMatrix);
-        this.width=width;
-        this.height=height;
-        this.aspectRatio=aspectRatio;
         occlusionCalculator = new OcclusionCalculator();
     }
 
@@ -105,7 +105,7 @@ public class MasterRenderer {
         //
         entityCollectionTimer.startQuery();
         List<Octree> visibleNodes = world.getVisibleNodes(projMatrix,viewMatrix);
-        List<Boolean> notOccluded = occlusionCalculator.getVisibleEntities(gBuffer.getDepthTexture(),visibleNodes,new Matrix4f(projMatrix).mul(viewMatrix),width,height);
+        List<Boolean> notOccluded = occlusionCalculator.getVisibilityInformation(gBuffer.getDepthTexture(),visibleNodes,new Matrix4f(projMatrix).mul(viewMatrix),width,height);
         List<Entity> visibleEntities = new ArrayList<>();
         for(int i=0;i<visibleNodes.size();i++){
             if(notOccluded.get(i)){
@@ -138,18 +138,22 @@ public class MasterRenderer {
     //TODO: add GUI
 
     public void resize(int width1, int height1, float aspectRatio) {
+        this.width=width1;
+        this.height=height1;
+        this.aspectRatio=aspectRatio;
         gBuffer.resize(width1, height1);
         lightingPassRenderer.deferredResult.resize(width1, height1);
         shadowRenderer.ssaoEffect.resize(width1, height1);
         postProcessPipeline.resize(width1, height1);
-        projMatrix.identity().perspective((float) Math.toRadians(70), aspectRatio, NEAR_PLANE, FAR_PLANE);
-        this.width=width1;
-        this.height=height1;
-        this.aspectRatio=aspectRatio;
+        setProjMatrix();
     }
 
     public BufferObject getMultiDrawVBO(){
         return multiIndirectRenderer.getPersistentMatrixVbo();
+    }
+
+    private void setProjMatrix(){
+        projMatrix.setPerspective((float)Math.toRadians(FOV),aspectRatio,NEAR_PLANE,FAR_PLANE);
     }
 
 }

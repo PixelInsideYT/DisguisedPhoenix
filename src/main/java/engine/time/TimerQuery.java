@@ -10,7 +10,7 @@ public abstract class TimerQuery {
 
     private static List<TimerQuery> allTimers = new ArrayList<>();
 
-    protected static boolean timerEnabled = true;
+    protected static boolean timerEnabled = false;
     private int count = 0;
     private float min = Float.MAX_VALUE;
     private float max = -Float.MAX_VALUE;

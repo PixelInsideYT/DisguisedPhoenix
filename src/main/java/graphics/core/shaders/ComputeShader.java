@@ -3,6 +3,7 @@ package graphics.core.shaders;
 import graphics.core.objects.BufferObject;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL43;
@@ -117,4 +118,7 @@ public class ComputeShader {
         glBindBufferBase(buffer.getTarget(), buffers.get(name), buffer.getBufferID());
     }
 
+    public void loadVec3(String name, Vector3f vec) {
+        glUniform3f(uniforms.get(name),vec.x,vec.y,vec.z);
+    }
 }

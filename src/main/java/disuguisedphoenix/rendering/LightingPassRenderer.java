@@ -1,8 +1,8 @@
 package disuguisedphoenix.rendering;
 
 import graphics.core.objects.FrameBufferObject;
-import graphics.core.objects.OpenGLState;
 import graphics.core.objects.GPUTimerQuery;
+import graphics.core.objects.OpenGLState;
 import graphics.core.shaders.Shader;
 import graphics.core.shaders.ShaderFactory;
 import graphics.occlusion.ShadowEffect;
