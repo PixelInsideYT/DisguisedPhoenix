@@ -17,15 +17,16 @@ public class Octree {
     private static final float MIN_SIZE = 2f;
 
     private int splitSize = 20;
-    private Vector3f centerPosition;
-    private float halfWidth;
-    private float halfHeight;
-    private float halfDepth;
+    private final Vector3f centerPosition;
+    private final float halfWidth;
+    private final float halfHeight;
+    private final float halfDepth;
     private boolean hasChildren = false;
     private Octree[] nodes;
-    private Vector3f min, max;
+    private final Vector3f min;
+    private final Vector3f max;
 
-    private List<Entity> entities = new ArrayList<>();
+    private final List<Entity> entities = new ArrayList<>();
 
     public Octree(Vector3f centerPosition, float width, float height, float depth) {
         this.centerPosition = centerPosition;
@@ -37,7 +38,7 @@ public class Octree {
     }
 
     public static boolean couldBeVisible(Entity e, Vector3f cameraPos) {
-        float size = e.getScale() * e.getModel().radius;
+        float size = e.getRadius();
         float distance = e.getPosition().distance(cameraPos);
         return size > distance * NEEDED_SIZE_PER_LENGTH_UNIT;
     }
@@ -124,8 +125,7 @@ public class Octree {
     }
 
     protected boolean contains(Entity e) {
-        float entityRadius = e.getModel().radius * e.getScale();
-        return Intersectionf.testAabSphere(min, max, e.getCenter(), entityRadius);
+        return Intersectionf.testAabSphere(min, max, e.getCenter(), e.getRadius());
     }
 
     private boolean hasMinSize() {

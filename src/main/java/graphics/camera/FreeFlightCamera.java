@@ -13,7 +13,7 @@ public class FreeFlightCamera extends Camera {
     private static final float UP_SPEED = 0.1f / 5f;
     private final MouseInputMap movement;
     private final InputMap otherMovement;
-    private Vector3f lookDirection = new Vector3f(0, 0, 1);
+    private final Vector3f lookDirection = new Vector3f(0, 0, 1);
 
     public FreeFlightCamera(MouseInputMap mim, InputMap otherMovement) {
         this.movement = mim;

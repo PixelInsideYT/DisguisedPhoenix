@@ -1,7 +1,5 @@
 package graphics.occlusion;
 
-import disuguisedphoenix.Main;
-import disuguisedphoenix.rendering.MasterRenderer;
 import graphics.core.objects.FrameBufferObject;
 import graphics.core.objects.TimerQuery;
 import graphics.core.shaders.Shader;
@@ -16,6 +14,9 @@ import org.lwjgl.opengl.GL13;
 import static org.lwjgl.opengl.GL30.glActiveTexture;
 
 public class SSAOEffect {
+
+    private static final String BLUR_AXIS = "axis_f";
+
     private final int width;
     private final int height;
 
@@ -24,10 +25,10 @@ public class SSAOEffect {
     private final Shader ssaoShader;
     private final Shader blurShader;
     private final QuadRenderer renderer;
-    public TimerQuery ssaoTimer;
+    private TimerQuery ssaoTimer;
     private boolean enabled = true;
 
-    public SSAOEffect(QuadRenderer renderer, int width, int height, Matrix4f projMatrix) {
+    public SSAOEffect(QuadRenderer renderer, int width, int height) {
         this.renderer = renderer;
         this.width = width;
         this.height = height;
@@ -42,7 +43,7 @@ public class SSAOEffect {
         ssaoShader.loadFloat("radius", 0.05f);
         ssaoShader.unbind();
         ShaderFactory blurFactory = new ShaderFactory("postProcessing/quadVS.glsl", "postProcessing/ssao/SSAOBlur.glsl").withAttributes("pos");
-        blurFactory.withUniforms("ao_in", "axis_f", "filter_scale", "edge_sharpness").configureSampler("ao_in", 0);
+        blurFactory.withUniforms("ao_in", BLUR_AXIS, "filter_scale", "edge_sharpness").configureSampler("ao_in", 0);
         blurShader = blurFactory.built();
         blurShader.bind();
         blurShader.loadInt("filter_scale", 1);
@@ -77,11 +78,11 @@ public class SSAOEffect {
         blurShader.bind();
         glActiveTexture(GL13.GL_TEXTURE0);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, fbo.getTextureID(0));
-        blurShader.load2DVector("axis_f", new Vector2f(1, 0));
+        blurShader.load2DVector(BLUR_AXIS, new Vector2f(1, 0));
         renderer.renderOnlyQuad();
         fbo.bind();
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, helperFbo.getTextureID(0));
-        blurShader.load2DVector("axis_f", new Vector2f(0, 1));
+        blurShader.load2DVector(BLUR_AXIS, new Vector2f(0, 1));
         renderer.renderOnlyQuad();
         blurShader.unbind();
         fbo.unbind();

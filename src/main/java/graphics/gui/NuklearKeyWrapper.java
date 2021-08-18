@@ -7,7 +7,7 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.nuklear.Nuklear.*;
 
 public class NuklearKeyWrapper extends GLFWKeyCallback {
-    private NkContext ctx;
+    private final NkContext ctx;
 
     public NuklearKeyWrapper(NkContext ctx) {
         this.ctx = ctx;

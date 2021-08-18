@@ -2,24 +2,24 @@ package disuguisedphoenix.rendering;
 
 import disuguisedphoenix.Entity;
 import graphics.core.renderer.MultiIndirectRenderer;
-import graphics.core.renderer.TestRenderer;
 import graphics.core.shaders.Shader;
 import graphics.core.shaders.ShaderFactory;
 import graphics.loader.TextureLoader;
+import lombok.Getter;
 import org.joml.Matrix4f;
 
 import java.util.List;
 
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
 import static org.lwjgl.opengl.GL13.glActiveTexture;
 
 public class VegetationRenderer {
 
-    private MultiIndirectRenderer multiRenderer;
+    private final MultiIndirectRenderer multiRenderer;
     protected Shader vegetationShader;
-    public int windTexture;
+    @Getter
+    private int windTexture;
 
     public VegetationRenderer(MultiIndirectRenderer multiIndirectRenderer) {
         this.multiRenderer = multiIndirectRenderer;

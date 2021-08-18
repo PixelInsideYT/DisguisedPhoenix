@@ -1,10 +1,8 @@
 package graphics.postprocessing;
 
-import graphics.camera.Camera;
 import graphics.core.context.Display;
 import graphics.core.objects.FrameBufferObject;
 import org.joml.Matrix4f;
-import org.joml.Vector3f;
 
 public class Pipeline {
 
@@ -17,7 +15,7 @@ public class Pipeline {
     private final boolean fxaaEnabled = true;
     private final FXAARenderer fxaa;
 
-    private Atmosphere atm;
+    private final Atmosphere atm;
 
     public Pipeline(int width, int height, Matrix4f projMatrix, QuadRenderer quadRenderer, GaussianBlur blur) {
         this.projMatrix = projMatrix;

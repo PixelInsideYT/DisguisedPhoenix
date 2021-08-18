@@ -63,7 +63,7 @@ public class Vao {
 
     public void addInstancedAttribute(BufferObject vbo, int attributeNumber, int coordinateSize, int instancedDataLength, int offset) {
         vbo.bind();
-        glVertexAttribPointer(attributeNumber, coordinateSize, GL11.GL_FLOAT, false, instancedDataLength * 4, offset * 4);
+        glVertexAttribPointer(attributeNumber, coordinateSize, GL11.GL_FLOAT, false, instancedDataLength * 4, offset * 4L);
         glVertexAttribDivisor(attributeNumber, 1);
         glEnableVertexAttribArray(attributeNumber);
         vbo.unbind();

@@ -5,6 +5,7 @@ import disuguisedphoenix.Main;
 import graphics.core.objects.Vao;
 import graphics.core.shaders.Shader;
 import graphics.modelinfo.Model;
+import graphics.modelinfo.RenderInfo;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
@@ -30,31 +31,34 @@ public class TestRenderer {
     }
 
     public void render(Model model, Matrix4f... modelMatrixArray) {
-        model.renderInfo.actualVao.bind();
-        int indiciesLength = model.renderInfo.actualVao.getIndicesLength();
+        RenderInfo renderInfo = model.getRenderInfo();
+        Vao vao = model.getRenderInfo().getActualVao();
+        vao.bind();
+        int indicesLength = vao.getIndicesLength();
         for (Matrix4f modelMatrix : modelMatrixArray) {
             shader.loadMatrix("transformationMatrixUniform", modelMatrix);
-            glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, model.renderInfo.indexOffset * 4, model.renderInfo.vertexOffset);
+            glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indicesLength, GL11.GL_UNSIGNED_INT, renderInfo.getIndexOffset() * 4, renderInfo.getVertexOffset());
             Main.inViewObjects++;
-            Main.inViewVerticies += indiciesLength;
+            Main.inViewVerticies += indicesLength;
             Main.drawCalls++;
-            Main.facesDrawn += indiciesLength / 3;
+            Main.facesDrawn += indicesLength / 3;
         }
-        model.renderInfo.actualVao.unbind();
+       vao.unbind();
     }
 
     public void render(Map<Model, List<Entity>> toRender) {
         for (Model model : toRender.keySet()) {
-            Vao mesh = model.renderInfo.actualVao;
+            RenderInfo renderInfo = model.getRenderInfo();
+            Vao mesh = renderInfo.getActualVao();
             mesh.bind();
-            int indiciesLength = mesh.getIndicesLength();
+            int indicesLength = mesh.getIndicesLength();
             for (Entity e : toRender.get(model)) {
                 shader.loadMatrix("transformationMatrixUniform", e.getTransformationMatrix());
-                glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, model.renderInfo.indexOffset * 4, model.renderInfo.vertexOffset);
+                glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indicesLength, GL11.GL_UNSIGNED_INT, renderInfo.getIndexOffset() * 4, renderInfo.getVertexOffset());
                 Main.inViewObjects++;
-                Main.inViewVerticies += indiciesLength;
+                Main.inViewVerticies += indicesLength;
                 Main.drawCalls++;
-                Main.facesDrawn += indiciesLength / 3;
+                Main.facesDrawn += indicesLength / 3;
             }
             mesh.unbind();
         }

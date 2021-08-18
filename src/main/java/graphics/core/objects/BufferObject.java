@@ -1,8 +1,5 @@
 package graphics.core.objects;
 
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL43;
-
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
@@ -15,7 +12,7 @@ public class BufferObject {
 
     private static final List<BufferObject> allBufferObjects = new ArrayList<>();
     private final int target;
-    private int bufferID;
+    private final int bufferID;
 
     public BufferObject(int target) {
         this.target = target;

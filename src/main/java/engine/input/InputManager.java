@@ -1,5 +1,6 @@
 package engine.input;
 
+import lombok.extern.slf4j.Slf4j;
 import org.lwjgl.glfw.*;
 
 import java.nio.ByteBuffer;
@@ -8,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 public class InputManager {
 
     private static final int KEYBOARD_SIZE = 512;
@@ -24,8 +26,7 @@ public class InputManager {
 
         @Override
         public void invoke(int jid, int event) {
-            System.out.println(jid + "/" + GLFW.glfwGetJoystickName(jid) + " "
-                    + (event == GLFW.GLFW_CONNECTED ? "connected" : "disconnected"));
+            log.info("{} {} {}",jid,GLFW.glfwGetJoystickName(jid),(event == GLFW.GLFW_CONNECTED ? "connected" : "disconnected"));
         }
     };
     protected GLFWKeyCallback keyboard = new GLFWKeyCallback() {

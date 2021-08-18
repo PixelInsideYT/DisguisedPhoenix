@@ -216,8 +216,8 @@ public class AssimpWrapper {
                 } else {
                     if (useTextureToVertexColor) {
                         BufferedImage texture = material.diffuesTexture;
-                        int uvX = (int) ((textureCoords.get(index).x()) * (float) texture.getWidth());
-                        int uvY = (int) ((1f - textureCoords.get(index).y()) * (float) texture.getHeight());
+                        int uvX = (int) ((textureCoords.get(index).x()) *  texture.getWidth());
+                        int uvY = (int) ((1f - textureCoords.get(index).y()) *  texture.getHeight());
                         Color c = new Color(texture.getRGB(uvX, uvY));
                         vertexColors.put(pos, new Vector3f((float) Math.pow(c.getRed() / 255f, 2.2d), (float) Math.pow(c.getGreen() / 255f, 2.2d), (float) Math.pow(c.getBlue() / 255f, 2.2d)));
                     } else {

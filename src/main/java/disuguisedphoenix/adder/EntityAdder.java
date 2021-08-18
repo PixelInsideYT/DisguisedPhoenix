@@ -3,12 +3,13 @@ package disuguisedphoenix.adder;
 import com.google.gson.Gson;
 import disuguisedphoenix.Entity;
 import disuguisedphoenix.terrain.Island;
-import engine.util.Maths;
 import engine.util.ModelConfig;
 import engine.util.ModelFileHandler;
+import graphics.core.objects.Vao;
 import graphics.core.shaders.Shader;
 import graphics.core.shaders.ShaderFactory;
 import graphics.modelinfo.Model;
+import graphics.modelinfo.RenderInfo;
 import graphics.particles.ParticleManager;
 import org.joml.FrustumIntersection;
 import org.joml.Matrix4f;
@@ -26,6 +27,7 @@ import static org.lwjgl.opengl.GL40.glDrawElementsBaseVertex;
 
 public class EntityAdder {
 
+    //TODO: rework entity adding, support biomes, easier placement
     private static final float PARTICLES_PER_SECOND_PER_AREA_UNIT = 0.0005f;
     private static final float BUILT_SPEED = 0.1f;
     private final Shader creationShader;
@@ -33,8 +35,8 @@ public class EntityAdder {
     public List<String> modelNames = new ArrayList<>();
     Random rnd;
     private int activated = 0;
-    private List<GrowState> toAddEntities = new ArrayList<>();
-    private String[] exclude = new String[]{"birb", "lightPentagon", "cube","sphere"};
+    private final List<GrowState> toAddEntities = new ArrayList<>();
+    private final String[] exclude = new String[]{"birb", "lightPentagon", "cube","sphere"};
 
     public EntityAdder(ParticleManager pm) {
         ShaderFactory creationFactory = new ShaderFactory("creationVS.glsl", "creationFS.glsl");
@@ -93,25 +95,28 @@ public class EntityAdder {
     }
 
     private void render(Model model, List<GrowState> toRenderEntities) {
-        model.renderInfo.actualVao.bind();
-        int indiciesLength = model.renderInfo.indiciesCount;
-        creationShader.loadFloat("modelHeight", model.height);
+        RenderInfo renderInfo = model.getRenderInfo();
+        Vao actualVao = renderInfo.getActualVao();
+        actualVao.bind();
+        int indicesLength = model.getRenderInfo().getIndicesCount();
+        creationShader.loadFloat("modelHeight", model.getHeight());
         for (GrowState e : toRenderEntities) {
             creationShader.loadMatrix("transformationMatrix", e.growingEntity.getTransformationMatrix());
             creationShader.loadFloat("builtProgress", e.buildProgress);
-            glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indiciesLength, GL11.GL_UNSIGNED_INT, model.renderInfo.indexOffset * 4L, model.renderInfo.vertexOffset);
+            glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indicesLength, GL11.GL_UNSIGNED_INT,
+                    renderInfo.getIndexOffset() * 4L, renderInfo.getVertexOffset());
             inViewObjects++;
-            inViewVerticies += indiciesLength;
+            inViewVerticies += indicesLength;
             drawCalls++;
-            facesDrawn += indiciesLength / 3;
+            facesDrawn += indicesLength / 3;
         }
-        model.renderInfo.actualVao.unbind();
+        actualVao.unbind();
     }
 
     private List<Entity> generateEntitiesFor(float xRange, float xOffset, float yRange, float yOffset, float zRange, float zOffset, float terrainAreaEstimate, UnaryOperator<Vector3f> placementFunction) {
         if (activated < modelNames.size()) {
             Model model = ModelFileHandler.getModel(modelNames.get(activated));
-            float modelAreaEstimate = (float) Math.PI * model.radiusXZ * model.radiusXZ*2f;
+            float modelAreaEstimate = (float) Math.PI * model.getRadiusXZ() * model.getRadiusXZ()*2f;
             float count = terrainAreaEstimate / modelAreaEstimate / modelNames.size();
             if (count > 100000) count = 100000;
             return IntStream.range(0, (int) count).mapToObj(i -> generateEntity(xRange, xOffset, yRange, yOffset, zRange, zOffset, placementFunction, model, 6f, 1f)).collect(Collectors.toList());

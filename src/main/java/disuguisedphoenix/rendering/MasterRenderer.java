@@ -3,9 +3,9 @@ package disuguisedphoenix.rendering;
 import disuguisedphoenix.Entity;
 import disuguisedphoenix.terrain.Island;
 import disuguisedphoenix.terrain.World;
-import engine.util.ModelFileHandler;
 import engine.world.Octree;
 import graphics.core.context.Display;
+import graphics.core.objects.BufferObject;
 import graphics.core.objects.FrameBufferObject;
 import graphics.core.objects.OpenGLState;
 import graphics.core.objects.TimerQuery;
@@ -20,7 +20,6 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
@@ -39,18 +38,18 @@ public class MasterRenderer {
 
     Matrix4f projMatrix = new Matrix4f();
 
-    public FrameBufferObject gBuffer;
+    private FrameBufferObject gBuffer;
 
-   public VegetationRenderer vegetationRenderer;
+   private VegetationRenderer vegetationRenderer;
     LightingPassRenderer lightingPassRenderer;
-    private OcclusionCalculator occlusionCalculator;
-    public MultiIndirectRenderer multiIndirectRenderer;
-    public QuadRenderer quadRenderer = new QuadRenderer();
+    private final OcclusionCalculator occlusionCalculator;
+    private MultiIndirectRenderer multiIndirectRenderer;
+    private QuadRenderer quadRenderer = new QuadRenderer();
     GaussianBlur blur = new GaussianBlur(quadRenderer);
     ShadowRenderer shadowRenderer;
     HIZGenerator hizGen = new HIZGenerator(quadRenderer);
     Pipeline postProcessPipeline;
-    private TestRenderer renderer;
+    private final TestRenderer renderer;
 
     public MasterRenderer(int width, int height, float aspectRatio){
         projMatrix.identity().perspective((float) Math.toRadians(FOV), aspectRatio, NEAR_PLANE, FAR_PLANE);
@@ -58,7 +57,7 @@ public class MasterRenderer {
         vegetationRenderer = new VegetationRenderer(multiIndirectRenderer);
         renderer = new TestRenderer(vegetationRenderer.vegetationShader);
         lightingPassRenderer = new LightingPassRenderer(quadRenderer,width,height);
-        shadowRenderer = new ShadowRenderer(quadRenderer,width,height,projMatrix);
+        shadowRenderer = new ShadowRenderer(quadRenderer,width,height);
         setupFBOs(width,height);
         setupPostProcessing(width,height,projMatrix);
         this.width=width;
@@ -83,8 +82,9 @@ public class MasterRenderer {
         gBuffer.unbind();
     }
 
+    //TODO: deferred rendering with heck ton of lights
 
-    public void render(Display display,Matrix4f viewMatrix, float time, World world, Vector3f camPos, Vector3f lightPos, Vector3f lightColor, Model model) {
+    public void render(Display display,Matrix4f viewMatrix, float time, World world, Vector3f lightPos, Vector3f lightColor, Model model) {
         vertexTimer.startQuery();
         OpenGLState.enableBackFaceCulling();
         OpenGLState.enableDepthTest();
@@ -94,7 +94,7 @@ public class MasterRenderer {
         gBuffer.clear();
         renderer.begin(viewMatrix,projMatrix);
         for (Island island : world.getVisibleIslands()) {
-            renderer.render(island.model, island.transformation);
+            renderer.render(island.getModel(), island.getTransformation());
         }
         //TODO: put earth management in World.java
         renderer.render(model,new Matrix4f());
@@ -103,12 +103,10 @@ public class MasterRenderer {
         List<Octree> visibleNodes = world.getVisibleNodes(projMatrix,viewMatrix);
         List<Entity> notOccluded = occlusionCalculator.getVisibleEntities(gBuffer.getDepthTexture(),visibleNodes,new Matrix4f(projMatrix).mul(viewMatrix),width,height);
         //
-
-      //  System.out.println(notOccluded.size()/(float)World.addedEntities);
         gBuffer.bind();
         vegetationRenderer.vegetationShader.bind();
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, vegetationRenderer.windTexture);
+        glBindTexture(GL_TEXTURE_2D, vegetationRenderer.getWindTexture());
         vegetationRenderer.vegetationShader.loadMatrix("projMatrix", projMatrix);
         vegetationRenderer.vegetationShader.loadMatrix("viewMatrix", viewMatrix);
         vegetationRenderer.vegetationShader.loadFloat("time", time);
@@ -126,6 +124,7 @@ public class MasterRenderer {
         // nuklearBinding.renderGUI(display.getWidth(),display.getHeight());
         display.flipBuffers();
     }
+    //TODO: add GUI
 
     public void resize(int width1, int height1, float aspectRatio) {
         gBuffer.resize(width1, height1);
@@ -142,6 +141,10 @@ public class MasterRenderer {
         vertexTimer.printResults();
         lightingPassRenderer.lightTimer.printResults();
         shadowRenderer.print();
+    }
+
+    public BufferObject getMultiDrawVBO(){
+        return multiIndirectRenderer.getPersistentMatrixVbo();
     }
 
 }

@@ -27,7 +27,7 @@ public class Player extends Entity {
     public ThirdPersonCamera cam;
     Quaternionf rotation;
     Vector3f up = new Vector3f(), forward = new Vector3f(), right = new Vector3f();
-    private float currentFlySpeed = 300;
+    private final float currentFlySpeed = 300;
     private float accelerate = 0;
 
     public Player(Model model, Vector3f position, MouseInputMap mim) {

@@ -1,7 +1,11 @@
 package graphics.core.objects;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 import static org.lwjgl.opengl.GL11.*;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class OpenGLState {
 
     private static boolean alphaBlending = false;

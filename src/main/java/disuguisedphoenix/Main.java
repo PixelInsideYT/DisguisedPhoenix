@@ -15,10 +15,7 @@ import graphics.core.context.Display;
 import graphics.core.objects.FrameBufferObject;
 import graphics.core.objects.OpenGLState;
 import graphics.core.objects.Vao;
-import graphics.core.renderer.MultiIndirectRenderer;
-import graphics.core.shaders.ComputeShader;
 import graphics.core.shaders.Shader;
-import graphics.core.shaders.ShaderFactory;
 import graphics.gui.NuklearBinding;
 import graphics.loader.TextureLoader;
 import graphics.modelinfo.Model;
@@ -27,15 +24,13 @@ import graphics.particles.ParticleManager;
 import org.joml.Matrix4f;
 import org.joml.SimplexNoise;
 import org.joml.Vector3f;
-import org.lwjgl.opengl.GLUtil;
 
-import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.opengl.GL46.*;
+import static org.lwjgl.opengl.GL46.GL_ONE_MINUS_SRC_ALPHA;
 
 public class Main {
 
@@ -47,14 +42,14 @@ public class Main {
     private static Model model;
 
     //get models on itch and cgtrader
-    private static List<CollisionShape> worldTris = new ArrayList<>();
+    private static final List<CollisionShape> worldTris = new ArrayList<>();
 
     private static float lightAngle = 0;
-    private static float lightRadius = 2 * radius;
-    private static Vector3f lightPos = new Vector3f(0, 1, 0);
-    private static Vector3f lightColor = new Vector3f(1f);
-    private static float noiseScale = 0.01f;
-    private static float change = 0.1f;
+    private static final float lightRadius = 2 * radius;
+    private static final Vector3f lightPos = new Vector3f(0, 1, 0);
+    private static final Vector3f lightColor = new Vector3f(1f);
+    private static final float noiseScale = 0.01f;
+    private static final float change = 0.1f;
 
     public static void main(String[] args) {
         //TODO: refactor rendering into a modular pipeline
@@ -69,7 +64,7 @@ public class Main {
         int height = display.getHeight();
         float aspectRatio = width / (float) height;
         MasterRenderer masterRenderer = new MasterRenderer(width,height,aspectRatio);
-        ModelFileHandler.loadModelsForMultiDraw(masterRenderer.multiIndirectRenderer.persistantMatrixVbo, EntityAdder.getModelNameList().stream().toArray(String[]::new));
+        ModelFileHandler.loadModelsForMultiDraw(masterRenderer.getMultiDrawVBO(), EntityAdder.getModelNameList().stream().toArray(String[]::new));
         World world = new World(pm, 4f * radius);
         EntityAdder ea = world.getEntityAdder();
         ea.getAllEntities(4f * 3.141592f * radius * radius, Main::getPositionOnEarthFromDirection).forEach(e -> world.placeUprightEntity(e, e.position));
@@ -151,7 +146,7 @@ public class Main {
             Matrix4f viewMatrix = ffc.getViewMatrix();
             world.update(dt);
             input.updateInputMaps();
-            masterRenderer.render(display, viewMatrix,time,world,ffc.getPosition(),lightPos,lightColor,model);
+            masterRenderer.render(display, viewMatrix,time,world,lightPos,lightColor,model);
             display.clear();
             avgFPS += zeitgeist.getFPS();
             display.setFrameTitle("Disguised Phoenix: " + " FPS: " + zeitgeist.getFPS() + ", In frustum objects: " + inViewObjects + ", drawcalls: " + drawCalls + " faces: " + df.format(facesDrawn));

@@ -2,17 +2,19 @@ package graphics.modelinfo;
 
 import engine.collision.Collider;
 import graphics.loader.MeshInformation;
+import lombok.Getter;
 import org.joml.Vector3f;
 
+@Getter
 public class Model {
 
-    public RenderInfo renderInfo;
-    public Collider collider;
+    private RenderInfo renderInfo;
+    private Collider collider;
 
-    public Vector3f relativeCenter;
-    public float height;
-    public float radiusXZ;
-    public float radius;
+    private Vector3f relativeCenter;
+    private float height;
+    private float radiusXZ;
+    private float radius;
 
     public Model(RenderInfo info, Vector3f relativeCenter, float height, float radiusXZ, float radius) {
         this.renderInfo = info;

@@ -53,6 +53,7 @@ public class Entity {
         if (velocity.length() > 0) {
             changedPosition = true;
         }
+        //TODO: rework collision. Collide with any terrain and other entities
         Collider own = getCollider();
         if (own != null) {
             for (Entity e : possibleCollisions) {
@@ -121,9 +122,9 @@ public class Entity {
     }
 
     public Collider getCollider() {
-        if (model.collider != null) {
+        if (model.getCollider() != null) {
             if (transformedCollider == null || changedPosition) {
-                transformedCollider = model.collider.cloneAndTransform(getTransformationMatrix());
+                transformedCollider = model.getCollider().cloneAndTransform(getTransformationMatrix());
             }
             return transformedCollider;
         }
@@ -141,11 +142,17 @@ public class Entity {
 
     public Vector3f getCenter(){
         getTransformationMatrix();
-        return modelMatrix.transformPosition(new Vector3f(model.relativeCenter));
+        return modelMatrix.transformPosition(new Vector3f(model.getRelativeCenter()));
     }
 
     public float getRadius(){
-        return scale* model.radius;
+        return scale* model.getRadius();
     }
+
+    public float getHeight(){
+        return scale* model.getHeight();
+    }
+
+
 
 }

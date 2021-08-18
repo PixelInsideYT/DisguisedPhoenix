@@ -15,7 +15,7 @@ public class GrowState {
     UpwardsParticles growParticles;
     private boolean seekerReachedEntity = false;
     private boolean addedToIsland = false;
-    private World world;
+    private final World world;
 
     public GrowState(World world, int particlesCount, Vector3f playerPos, Entity toGrow, ParticleManager pm) {
         entitySeeker = new PointSeekingEmitter(playerPos, toGrow.getPosition(), 15, 700f, particlesCount, world);
@@ -30,12 +30,12 @@ public class GrowState {
             seekerReachedEntity = true;
             //init upward particle spawner
             float emitTime = 1f / builtSpeed;
-            float radius = growingEntity.getScale() * growingEntity.getModel().radiusXZ;
+            float radius = growingEntity.getScale() * growingEntity.getModel().getRadiusXZ();
             growParticles = new UpwardsParticles(new Vector3f(growingEntity.getPosition()), radius, 500, 3.14f * radius * radius * particlesPerSecondPerAreaUnit, emitTime);
             pm.addParticleEmitter(growParticles);
         }
         if (seekerReachedEntity) {
-            growParticles.center.y += dt * builtSpeed * growingEntity.getModel().height * growingEntity.getScale();
+            growParticles.center.y += dt * builtSpeed * growingEntity.getModel().getHeight() * growingEntity.getScale();
             buildProgress += dt * builtSpeed;
         }
     }

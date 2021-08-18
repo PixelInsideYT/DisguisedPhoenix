@@ -3,7 +3,7 @@ package engine.util;
 
 public class Zeitgeist {
 
-    public static float FPS_CAP = 900;
+    private static final float FPS_CAP = 900;
     long lastFrame = System.currentTimeMillis();
     float delta;
 
@@ -15,6 +15,7 @@ public class Zeitgeist {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             e.printStackTrace();
         }
     }

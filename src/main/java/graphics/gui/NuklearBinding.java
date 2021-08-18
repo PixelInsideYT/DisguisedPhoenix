@@ -65,10 +65,10 @@ public class NuklearBinding {
     private ByteBuffer ttf;
 
     private NkContext ctx = NkContext.create();
-    private NkUserFont default_font = NkUserFont.create();
+    private final NkUserFont default_font = NkUserFont.create();
 
-    private NkBuffer cmds = NkBuffer.create();
-    private NkDrawNullTexture null_texture = NkDrawNullTexture.create();
+    private final NkBuffer cmds = NkBuffer.create();
+    private final NkDrawNullTexture null_texture = NkDrawNullTexture.create();
 
     private int vbo, vao, ebo;
     private int prog;
@@ -77,7 +77,7 @@ public class NuklearBinding {
     private int uniform_tex;
     private int uniform_proj;
 
-    private List<Gui> guiList = new ArrayList<>();
+    private final List<Gui> guiList = new ArrayList<>();
 
     public NuklearBinding(InputManager inputManager, Display display) {
         this.display = display;

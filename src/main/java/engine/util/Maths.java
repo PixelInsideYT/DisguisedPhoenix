@@ -1,13 +1,14 @@
 package engine.util;
 
-import disuguisedphoenix.Entity;
-import org.joml.*;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import org.joml.Matrix4f;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 
-import java.lang.Math;
-
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Maths {
-
-    private static final Vector3f tempVec = new Vector3f();
 
     public static Vector2f raySphere(Vector3f center, float radius, Vector3f rayOrigin, Vector3f rayDir) {
         Vector3f offset = new Vector3f(rayOrigin).sub(center);
@@ -30,8 +31,8 @@ public class Maths {
         return Math.max(Math.min(currentTurnSpeed, max), min);
     }
 
-    public static float map(float x, float in_min, float in_max, float out_min, float out_max) {
-        return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+    public static float map(float x, float inMin, float inMax, float outMin, float outMax) {
+        return (x - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
     }
 
     public static Vector2f createUnitVecFromAngle(float angle) {

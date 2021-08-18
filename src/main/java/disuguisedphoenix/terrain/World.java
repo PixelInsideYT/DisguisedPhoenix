@@ -18,9 +18,9 @@ public class World {
 
     private final EntityAdder adder;
     private final FrustumIntersection cullingHelper = new FrustumIntersection();
-    private Octree staticEntities;
-    private List<Island> islands = new ArrayList<>();
-    private Matrix4f cullingMatrix = new Matrix4f();
+    private final Octree staticEntities;
+    private final List<Island> islands = new ArrayList<>();
+    private final Matrix4f cullingMatrix = new Matrix4f();
 public static int addedEntities=0;
     public World(ParticleManager pm, float worldSize) {
         adder = new EntityAdder(pm);

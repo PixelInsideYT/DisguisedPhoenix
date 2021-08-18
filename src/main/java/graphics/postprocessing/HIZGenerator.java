@@ -13,7 +13,7 @@ import static org.lwjgl.opengl.GL43.*;
 public class HIZGenerator {
 
     private final Shader hizShader;
-    private QuadRenderer renderer;
+    private final QuadRenderer renderer;
 
     public HIZGenerator(QuadRenderer renderer) {
         ShaderFactory hiZFactory = new ShaderFactory("postProcessing/quadVS.glsl", "postProcessing/hiZGen/HI-Z-generator.glsl").withAttributes("pos");

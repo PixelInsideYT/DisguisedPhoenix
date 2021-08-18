@@ -1,5 +1,6 @@
 package graphics.core.objects;
 
+import lombok.extern.slf4j.Slf4j;
 import org.lwjgl.opengl.GL15;
 
 import java.util.ArrayList;
@@ -7,15 +8,16 @@ import java.util.List;
 
 import static org.lwjgl.opengl.GL45.*;
 
+@Slf4j
 public class TimerQuery {
-    public static boolean timerEnabled = true;
-    public int count = 0;
-    public float min = Float.MAX_VALUE;
-    public float max = -Float.MAX_VALUE;
-    public float avg = 0;
-    String name;
-    int queryId;
-    private List<Float> gpuTimes = new ArrayList<>();
+    private static boolean timerEnabled = true;
+    private int count = 0;
+    private float min = Float.MAX_VALUE;
+    private float max = -Float.MAX_VALUE;
+    private float avg = 0;
+    private final String name;
+    private int queryId;
+    private final List<Float> gpuTimes = new ArrayList<>();
 
     public TimerQuery(String name) {
         this.name = name;
@@ -49,23 +51,25 @@ public class TimerQuery {
     public void printResults() {
         if (timerEnabled) {
             int decPlaces = 3;
-            System.out.println("Results for " + name);
-            System.out.println("Min: " + format(min, decPlaces) + "ms, Max: " + format(max, decPlaces) + "ms, AVG: " + format(avg / count, decPlaces) + "ms");
-            gpuTimes.sort((f1, f2) -> Float.compare(f1, f2));
+            log.info("Results for {}", name);
+            log.info("Min: {}ms, Max: {}ms, AVG: {}ms", format(min, decPlaces), format(max, decPlaces), format(avg / count, decPlaces));
+            gpuTimes.sort(Float::compare);
             int p50th = (int) (0.5f * gpuTimes.size());
             int p90th = (int) (0.9f * gpuTimes.size());
             int p95th = (int) (0.95f * gpuTimes.size());
             int p99th = (int) (0.99f * gpuTimes.size());
             int p995th = (int) (0.995f * gpuTimes.size());
-            if (gpuTimes.size() > 0)
-                System.out.println(" 50%: " + format(gpuTimes.get(p50th), decPlaces) + " 90%: " + format(gpuTimes.get(p90th), decPlaces) + " 95%: " + format(gpuTimes.get(p95th), decPlaces) + " 99%: " + format(gpuTimes.get(p99th), decPlaces) + " 99,5%: " + format(gpuTimes.get(p995th), decPlaces));
+            if (!gpuTimes.isEmpty())
+                log.info("50%: {}ms, 90%: {}ms, 95%: {}ms, 99%: {}ms, 99.5%: {}ms",
+                        format(gpuTimes.get(p50th), decPlaces), format(gpuTimes.get(p90th), decPlaces), format(gpuTimes.get(p95th),
+                                decPlaces), format(gpuTimes.get(p99th), decPlaces), format(gpuTimes.get(p995th), decPlaces));
         } else {
-            System.out.println("Timer not enabled");
+            log.info("Timer not enabled");
         }
     }
 
     private String format(float v, int decimalPlaces) {
-        return String.format("%." + decimalPlaces + "f", v);
+        return String.format("%."+decimalPlaces+"f", v);
     }
 
 }

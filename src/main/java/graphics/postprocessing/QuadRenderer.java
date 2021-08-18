@@ -4,13 +4,9 @@ import disuguisedphoenix.Main;
 import graphics.core.objects.Vao;
 import graphics.core.shaders.Shader;
 import graphics.core.shaders.ShaderFactory;
-import graphics.occlusion.ShadowEffect;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 
 import static org.lwjgl.opengl.GL13.*;
-import static org.lwjgl.opengl.GL30.GL_TEXTURE_2D_ARRAY;
 
 public class QuadRenderer {
 

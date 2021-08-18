@@ -1,7 +1,6 @@
 package graphics.occlusion;
 
 import disuguisedphoenix.Entity;
-import engine.util.Maths;
 import graphics.core.objects.FrameBufferObject;
 import graphics.core.objects.TimerQuery;
 import graphics.core.renderer.MultiIndirectRenderer;
@@ -27,14 +26,14 @@ public class ShadowEffect {
     public static final float[] CASCADE_DISTANCE = {0.01f, 0.05f, 0.25f, 1f};
     private static final int SHADOW_RESOLUTION = 2048;
     private static final int SHADOWS_CASCADES = 4;
-    public TimerQuery shadowTimer;
+    private TimerQuery shadowTimer;
     protected FrameBufferObject[] shadowMap = new FrameBufferObject[SHADOWS_CASCADES];
     int textureArray;
-    private ShadowCascade[] cascades = new ShadowCascade[SHADOWS_CASCADES];
-    private Shader shadowShader;
+    private final ShadowCascade[] cascades = new ShadowCascade[SHADOWS_CASCADES];
+    private final Shader shadowShader;
 
     private boolean enabled = true;
-    private FrustumIntersection frustumIntersection = new FrustumIntersection();
+    private final FrustumIntersection frustumIntersection = new FrustumIntersection();
 
     public ShadowEffect() {
         generate2DTextureArray();
@@ -43,13 +42,14 @@ public class ShadowEffect {
             cascades[i] = new ShadowCascade();
             shadowMap[i] = new FrameBufferObject(SHADOW_RESOLUTION, SHADOW_RESOLUTION, 0).addLayeredDepthTextureAttachment(textureArray, i);
         }
-        ShaderFactory shaderFactory = new ShaderFactory("shadows/shadowVSMultiDraw.glsl", "shadows/shadowFS.glsl");//.addShaderStage(ShaderFactory.GEOMETRY_SHADER,"shadows/shadowGS.glsl");
+        ShaderFactory shaderFactory = new ShaderFactory("shadows/shadowVSMultiDraw.glsl", "shadows/shadowFS.glsl");
         shaderFactory.withAttributes("posAndWobble", "colorAndShininess", "transformationMatrix");
         shaderFactory.withUniforms("noiseMap", "time", "viewProjMatrix");
         shaderFactory.configureSampler("noiseMap", 0);
         shadowShader = shaderFactory.built();
     }
 
+    //TODO: create a viewport info POJO
     public void render(Matrix4f viewMatrix, float nearPlane, float farPlane, float fov, float aspect, float time, Vector3f lightPos, MultiIndirectRenderer renderer) {
         if (isEnabled()) {
             List<List<Entity>> inCascade = new ArrayList<>();

@@ -1,10 +1,13 @@
 package graphics.core.objects;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.lwjgl.opengl.GL45.*;
 
+@Slf4j
 public class LockManger {
 
     private final List<LockObject> activeFences = new ArrayList<>();
@@ -14,7 +17,7 @@ public class LockManger {
         toRemove.clear();
         for (LockObject lock : activeFences) {
             if (lock.overlaps(beginIndex, endIndex)) {
-                System.out.println("waited: " + lock.waitUntilFree() + " ticks");
+                log.error("waited: {} ticks",lock.waitUntilFree());
             }
             if (lock.isDone()) toRemove.add(lock);
         }
@@ -32,9 +35,9 @@ public class LockManger {
 
 class LockObject {
     private boolean fenceReturned;
-    private long syncObj;
-    private int startIndex;
-    private int endIndex;
+    private final long syncObj;
+    private final int startIndex;
+    private final int endIndex;
 
     public LockObject(long syncObj, int startIndex, int endIndex) {
         this.syncObj = syncObj;

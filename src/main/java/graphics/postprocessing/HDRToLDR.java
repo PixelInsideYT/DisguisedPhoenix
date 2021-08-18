@@ -10,7 +10,7 @@ public class HDRToLDR {
 
     private final QuadRenderer renderer;
     private final Shader resolveShader;
-    private FrameBufferObject fbo;
+    private final FrameBufferObject fbo;
 
     public HDRToLDR(int width, int height, QuadRenderer renderer) {
         this.renderer = renderer;

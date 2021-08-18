@@ -5,7 +5,7 @@ import org.joml.Vector3f;
 import java.util.*;
 
 public class MeshOptimizer {
-
+    //TODO: rework mesh optimizer, huge runtimes
     public static final int MaxSizeVertexCache = 32;
 
     public static void optimize(List<Vector3f> modelVerticies, List<Integer> modelIndicies) {
@@ -52,7 +52,7 @@ class Triangle {
     private static final float FindVertexScore_LastTriScore = 0.75f;
     private static final float FindVertexScore_ValenceBoostScale = 2.0f;
     private static final float FindVertexScore_ValenceBoostPower = 0.5f;
-    private static Map<Vector3f, Integer> activeTris = new HashMap<>();
+    private static final Map<Vector3f, Integer> activeTris = new HashMap<>();
 
     Vector3f[] verticies;
 

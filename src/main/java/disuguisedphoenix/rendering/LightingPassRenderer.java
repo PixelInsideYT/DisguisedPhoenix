@@ -18,9 +18,9 @@ import static org.lwjgl.opengl.GL30.GL_TEXTURE_2D_ARRAY;
 public class LightingPassRenderer {
 
     TimerQuery lightTimer = new TimerQuery("Lighting Pass");
-    private QuadRenderer quadRenderer;
+    private final QuadRenderer quadRenderer;
     FrameBufferObject deferredResult;
-    private Shader shader;
+    private final Shader shader;
 
     public LightingPassRenderer(QuadRenderer quadRenderer, int width, int height) {
         this.quadRenderer = quadRenderer;

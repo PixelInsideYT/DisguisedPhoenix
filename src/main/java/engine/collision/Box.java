@@ -35,10 +35,14 @@ public class Box extends CollisionShape {
         for (int x = 0; x <= 1; x++) {
             for (int y = 0; y <= 1; y++) {
                 for (int z = 0; z <= 1; z++) {
-                    cornerPoints[count++] = new Vector3f(x == 0 ? min.x : max.x, y == 0 ? min.y : max.y, z == 0 ? min.z : max.z);
+                    cornerPoints[count++] = getBoxCorner(min,max, x,y,z);
                 }
             }
         }
         return cornerPoints;
+    }
+
+    private static Vector3f getBoxCorner(Vector3f min, Vector3f max, int x, int y, int z){
+        return new Vector3f(x == 0 ? min.x : max.x, y == 0 ? min.y : max.y, z == 0 ? min.z : max.z);
     }
 }

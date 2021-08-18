@@ -1,5 +1,6 @@
 package graphics.core.shaders;
 
+import lombok.extern.slf4j.Slf4j;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL40;
 
@@ -8,7 +9,9 @@ import java.io.InputStreamReader;
 import java.util.*;
 
 import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL40.*;
 
+@Slf4j
 public class ShaderFactory {
     public static final int VERTEX_SHADER = 0;
     public static final int GEOMETRY_SHADER = 1;
@@ -17,11 +20,11 @@ public class ShaderFactory {
     public static final int FRAGMENT_SHADER = 4;
     //TODO: bind textures to name not to int
     int shaderProgram;
-    private String[] shaderSources = new String[5];
-    private List<String> uniformNames = new ArrayList<>();
-    private Map<String, Integer> samplerTextureIdMap = new HashMap<>();
-    private Map<String, String> shaderConstants = new HashMap<>();
-    private Map<String, Integer> attributeLocationMap = new HashMap<>();
+    private final String[] shaderSources = new String[5];
+    private final List<String> uniformNames = new ArrayList<>();
+    private final Map<String, Integer> samplerTextureIdMap = new HashMap<>();
+    private final Map<String, String> shaderConstants = new HashMap<>();
+    private final Map<String, Integer> attributeLocationMap = new HashMap<>();
 
     //Shader Configuration
 
@@ -42,7 +45,7 @@ public class ShaderFactory {
             }
             reader.close();
         } catch (Exception e) {
-            System.err.println("Could not read file. " + name);
+            log.error("Could not read file: {}",name);
             e.printStackTrace();
             System.exit(-1);
         }
@@ -54,20 +57,21 @@ public class ShaderFactory {
             case 0:
                 return GL_VERTEX_SHADER;
             case 1:
-                return GL40.GL_GEOMETRY_SHADER;
+                return GL_GEOMETRY_SHADER;
             case 2:
-                return GL40.GL_TESS_CONTROL_SHADER;
+                return GL_TESS_CONTROL_SHADER;
             case 3:
-                return GL40.GL_TESS_EVALUATION_SHADER;
+                return GL_TESS_EVALUATION_SHADER;
             case 4:
                 return GL_FRAGMENT_SHADER;
+            default:
+                return -1;
         }
-        return -1;
     }
 
     public ShaderFactory addShaderStage(int shaderType, String shaderPath) {
         if (shaderSources[shaderType] != null) {
-            System.err.println("WARNING: You will overwrite:\n " + shaderSources[shaderType] + "\n by placing: " + shaderPath + " into that slot");
+            log.warn("You will overwrite {} by placing {} into that slot",shaderSources[shaderType],shaderPath);
         }
         shaderSources[shaderType] = loadShaderCode(shaderPath);
         return this;
@@ -76,7 +80,7 @@ public class ShaderFactory {
     public ShaderFactory withAttributes(String... attributes) {
         for (String variableName : attributes)
             if (!shaderSources[VERTEX_SHADER].contains(" " + variableName + ";")) {
-                System.err.println("Input: " + variableName + "; not found in Shader:\n" + shaderSources[VERTEX_SHADER]);
+                log.error("Input {} not found in Shader {}",variableName,shaderSources[VERTEX_SHADER]);
                 System.exit(1);
             }
         for (int i = 0; i < attributes.length; i++) {
@@ -87,7 +91,7 @@ public class ShaderFactory {
 
     public ShaderFactory setAttributeLocation(String name, int location) {
         if (!shaderSources[VERTEX_SHADER].contains(" " + name + ";")) {
-            System.err.println("Input: " + name + "; not found in Shader:\n" + shaderSources[VERTEX_SHADER]);
+            log.error("Input {} not found in Shader {}",name,shaderSources[VERTEX_SHADER]);
             System.exit(1);
         }
         attributeLocationMap.put(name, location);
@@ -135,13 +139,12 @@ public class ShaderFactory {
         List<Integer> compiledSources = compileAllShaders();
         compiledSources.forEach(i -> glAttachShader(shaderProgram, i));
         attributeLocationMap.keySet().forEach(name -> glBindAttribLocation(shaderProgram, attributeLocationMap.get(name), name));
-        if (attributeLocationMap.keySet().size() == 0) {
-            System.err.println("WARNING: Your shader has no input Variables!");
+        if (attributeLocationMap.isEmpty()) {
+            log.warn("Your shader has no input variables");
         }
         glLinkProgram(shaderProgram);
         if (glGetProgrami(shaderProgram, GL_LINK_STATUS) == GL_FALSE) {
-            System.out.println(glGetProgramInfoLog(shaderProgram, 500));
-            System.err.println("Could not link shaders.");
+            log.error("Could not link shaders: \n{}",glGetProgramInfoLog(shaderProgram, 500));
             System.exit(-1);
         }
         //load Uniforms
@@ -151,8 +154,8 @@ public class ShaderFactory {
         Shader shader = new Shader(shaderProgram, uniformLocationMap);
         shader.bind();
         //load texture locations
-        for (String name : samplerTextureIdMap.keySet()) {
-            glUniform1i(uniformLocationMap.get(name), samplerTextureIdMap.get(name));
+        for (Map.Entry<String,Integer> entry : samplerTextureIdMap.entrySet()) {
+            glUniform1i(uniformLocationMap.get(entry.getKey()), entry.getValue());
         }
         deleteUnusedSources(compiledSources);
         return shader;
@@ -161,7 +164,7 @@ public class ShaderFactory {
     private int loadUniform(String name) {
         int id = glGetUniformLocation(shaderProgram, name);
         if (id == -1) {
-            System.err.println("Uniform: " + name + " not found!");
+            log.error("Uniform {} not found",name);
         }
         return id;
     }
@@ -179,10 +182,11 @@ public class ShaderFactory {
 
     private String setShaderConstants(String sourceCode) {
         String withShaderConstants = sourceCode;
-        for (String name : shaderConstants.keySet()) {
+        for (Map.Entry<String,String> entry: shaderConstants.entrySet()) {
+            String name = entry.getKey();
             if (withShaderConstants.contains("#VAR " + name)) {
-                withShaderConstants = withShaderConstants.replaceAll("#VAR " + name, "#define " + name + shaderConstants.get(name));
-                System.out.println("Info: Shadervalue " + name + " is:" + shaderConstants.get(name));
+                withShaderConstants = withShaderConstants.replaceAll("#VAR " + name, "#define " + name + entry.getValue());
+                log.info("shader value {} is: {}",name,entry.getValue());
             }
         }
         return withShaderConstants;
@@ -193,9 +197,7 @@ public class ShaderFactory {
         glShaderSource(shader, code);
         glCompileShader(shader);
         if (glGetShaderi(shader, GL_COMPILE_STATUS) == GL11.GL_FALSE) {
-            System.out.println("Something went wrong for code: " + code + " \n");
-            System.out.println(glGetShaderInfoLog(shader, 500));
-            System.err.println("Could not compile shader.");
+            log.error("Something went wrong for code:\n {}\nCould not compile shader",glGetShaderInfoLog(shader, 500));
             System.exit(-1);
         }
         return shader;

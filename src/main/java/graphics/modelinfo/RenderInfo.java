@@ -1,27 +1,30 @@
 package graphics.modelinfo;
 
 import graphics.core.objects.Vao;
+import lombok.Getter;
 
+@Getter
 public class RenderInfo {
 
-    public Vao actualVao;
 
-    public boolean isMultiDrawCapabel;
-    public int indiciesCount;
-    public int indexOffset;
-    public int vertexOffset;
+    private final Vao actualVao;
 
-    public RenderInfo(Vao actualVao, int indiciesCount, int indexOffset, int vertexOffset) {
+    private final boolean isMultiDrawCapable;
+private final int indicesCount;
+    private int indexOffset;
+    private int vertexOffset;
+
+    public RenderInfo(Vao actualVao, int indicesCount, int indexOffset, int vertexOffset) {
         this.actualVao = actualVao;
-        this.indiciesCount = indiciesCount;
+        this.indicesCount = indicesCount;
         this.indexOffset = indexOffset;
         this.vertexOffset = vertexOffset;
-        isMultiDrawCapabel = true;
+        isMultiDrawCapable = true;
     }
 
     public RenderInfo(Vao actualVao) {
         this.actualVao = actualVao;
-        this.indiciesCount = actualVao.getIndicesLength();
-        isMultiDrawCapabel = false;
+        this.indicesCount = actualVao.getIndicesLength();
+        isMultiDrawCapable = false;
     }
 }

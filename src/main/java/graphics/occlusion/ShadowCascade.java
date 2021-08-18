@@ -6,11 +6,11 @@ import org.joml.Vector4f;
 
 public class ShadowCascade {
 
-    private Matrix4f lightProjMatrix;
-    private Matrix4f lightViewMatrix;
+    private final Matrix4f lightProjMatrix;
+    private final Matrix4f lightViewMatrix;
 
-    private Vector3f[] frustumCorners;
-    private Vector3f centroid;
+    private final Vector3f[] frustumCorners;
+    private final Vector3f centroid;
 
 
     public ShadowCascade() {

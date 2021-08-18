@@ -25,8 +25,8 @@ public class PointSeekingEmitter implements ParticleEmitter {
     float angleToDodge = 0f;
     private float emitterTimeCount = 0;
     private float aliveTime;
-    private Vector3f islandDodgePos = null;
-    private Vector3f islandDogeMovementDir = null;
+    private final Vector3f islandDodgePos = null;
+    private final Vector3f islandDogeMovementDir = null;
 
     public PointSeekingEmitter(Vector3f startPos, Vector3f endPos, float startSize, float movementSpeed, float particlesPerSecond, World world) {
         currentPos = new Vector3f(startPos);

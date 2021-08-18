@@ -4,12 +4,14 @@ import engine.util.Maths;
 import graphics.core.objects.Vao;
 import graphics.modelinfo.Model;
 import graphics.modelinfo.RenderInfo;
+import lombok.Getter;
 import org.joml.*;
 
 import java.lang.Math;
 
 public class Island {
 
+    //TODO: rework terrain and island generation
     public static final int OCTAVES = 5;
     public static final float FALL_OFF = 0.3f;
     public static final float NOISE_SCALE = 0.0001f;
@@ -20,9 +22,11 @@ public class Island {
     private static final Vector3f terrainColor = gammaCorrect(terrainColorSrgb);
     private final float size;
     private final int vertexCount;
-    public Model model;
-    public Matrix4f transformation;
-    public Vector3f position;
+    @Getter
+    private Model model;
+    @Getter
+    private Matrix4f transformation;
+    private Vector3f position;
     private float[][] heights;
     private float[][] bottems;
 
@@ -105,7 +109,7 @@ public class Island {
                 int pos = pointer * 4;
 
                 verticies[pos] = x * sizeMultiplier;
-                verticies[pos + 1] = heights[x][z] = getHeight(x * size / (float) vertexCount + position.x, z * size / (float) vertexCount + position.z, x, z);
+                verticies[pos + 1] = heights[x][z] = getHeight(x * size / vertexCount + position.x, z * size / vertexCount + position.z, x, z);
                 verticies[pos + 2] = z * sizeMultiplier;
                 verticies[pos + 3] = 0f;
 
@@ -120,7 +124,7 @@ public class Island {
                 farPoint.z = Math.max(farPoint.z, Math.abs(modelZ));
 
                 verticies[pos + bottemOffset] = x * sizeMultiplier;
-                verticies[pos + 1 + bottemOffset] = bottems[x][z] = getIslandBottem(x * size / (float) vertexCount + position.x, z * size / (float) vertexCount + position.z, x, z);
+                verticies[pos + 1 + bottemOffset] = bottems[x][z] = getIslandBottem(x * size / vertexCount + position.x, z * size / vertexCount + position.z, x, z);
                 verticies[pos + 2 + bottemOffset] = z * sizeMultiplier;
                 verticies[pos + 3 + bottemOffset] = 0f;
                 modelX = verticies[pos + bottemOffset];
@@ -226,10 +230,7 @@ public class Island {
             result -= (SimplexNoise.noise(x * NOISE_SCALE * octaveFactor, z * NOISE_SCALE * octaveFactor) + 1f) * TERRAIN_HEIGHT * heightFactor + 100;
         }
         float v2f = vertexCount / 2f;
-        float dx = v2f - gridX;
-        float dz = v2f - gridZ;
-        float distanceFromCenter = (float) Math.sqrt(dx * dx + dz * dz);
-        return heights[gridX][gridZ] - 100;
+        return result;
     }
 
     private float getHeight(float x, float z, int gridX, int gridZ) {
@@ -247,12 +248,8 @@ public class Island {
         return result * Maths.clamp(1f - distanceFromCenter / radius, 0, 1);
     }
 
-    private Vector3f getColor(int x, int z) {
-        return terrainColor;
-    }
-
     public boolean isVisible(FrustumIntersection fi) {
         float radius = (float) Math.sqrt(0.5f * size * size);
-        return fi.testSphere(new Vector3f(position).add(model.relativeCenter),radius);
+        return fi.testSphere(new Vector3f(position).add(model.getRelativeCenter()),radius);
     }
 }

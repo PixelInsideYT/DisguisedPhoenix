@@ -6,31 +6,29 @@ import graphics.core.objects.BufferObject;
 import graphics.core.shaders.ComputeShader;
 import graphics.core.shaders.ShaderFactory;
 import org.joml.Matrix4f;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
 import org.lwjgl.opengl.GL43;
 
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Stream;
 
 import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
 import static org.lwjgl.opengl.GL11.glBindTexture;
-import static org.lwjgl.opengl.GL13.*;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
+import static org.lwjgl.opengl.GL13.glActiveTexture;
 import static org.lwjgl.opengl.GL15.GL_DYNAMIC_DRAW;
 
 public class OcclusionCalculator {
 
-    private static int MAX_OCCLUSION_OBJECTS=1024;
-    private static int FLOATS_PER_INSTANCE=16;
+    private static final int MAX_OCCLUSION_OBJECTS=1024;
+    private static final int FLOATS_PER_INSTANCE=16;
 
-    private BufferObject matrixBuffer;
-    private ByteBuffer mappedMemory;
-    private BufferObject resultBuffer;
-    private ComputeShader computeShader;
+    private final BufferObject matrixBuffer;
+    private final ByteBuffer mappedMemory;
+    private final BufferObject resultBuffer;
+    private final ComputeShader computeShader;
+
+    //TODO: exclude small objects
 
     public OcclusionCalculator() {
         computeShader = new ComputeShader(ShaderFactory.loadShaderCode("compute/hizTest.glsl"));
@@ -54,7 +52,6 @@ public class OcclusionCalculator {
         computeShader.loadMatrix4f("projViewMatrix",projViewMatrix);
         computeShader.loadFloat("viewPortWidth",width);
         computeShader.loadFloat("viewPortHeight",height);
-
 
         int dispatchCount=(int)Math.ceil(inFrustumOctrees.size()/(float)MAX_OCCLUSION_OBJECTS);
         for(int d=0;d<dispatchCount;d++) {

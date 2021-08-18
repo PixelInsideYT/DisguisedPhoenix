@@ -1,6 +1,5 @@
 package disuguisedphoenix.rendering;
 
-import disuguisedphoenix.terrain.World;
 import graphics.core.objects.FrameBufferObject;
 import graphics.core.renderer.MultiIndirectRenderer;
 import graphics.occlusion.SSAOEffect;
@@ -14,8 +13,8 @@ public class ShadowRenderer {
     protected ShadowEffect shadowEffect;
     protected SSAOEffect ssaoEffect;
 
-    public ShadowRenderer(QuadRenderer quadRenderer, int width, int height, Matrix4f projMatrix) {
-        ssaoEffect = new SSAOEffect(quadRenderer, width, height, projMatrix);
+    public ShadowRenderer(QuadRenderer quadRenderer, int width, int height) {
+        ssaoEffect = new SSAOEffect(quadRenderer, width, height);
         ssaoEffect.disable();
         shadowEffect = new ShadowEffect();
         shadowEffect.disable();

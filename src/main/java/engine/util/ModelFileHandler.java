@@ -18,7 +18,6 @@ import javax.swing.*;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -47,8 +46,8 @@ public class ModelFileHandler {
     // possible collision path
     // name wobbletype map
 
-    private static List<ModelConfig> modelConfigs = new ArrayList<>();
-    private static Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    private static final List<ModelConfig> modelConfigs = new ArrayList<>();
+    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     public static void main(String[] args) {
         workingDir = System.getProperty("user.dir");

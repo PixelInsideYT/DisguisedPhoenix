@@ -16,7 +16,6 @@ import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.nuklear.NkContext;
 import org.lwjgl.nuklear.NkRect;
-import org.lwjgl.opengl.GL46;
 import org.lwjgl.system.MemoryStack;
 
 import java.nio.FloatBuffer;
@@ -24,38 +23,39 @@ import java.nio.FloatBuffer;
 import static org.lwjgl.nuklear.Nuklear.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.*;
+import static org.lwjgl.opengl.GL46.GL_TEXTURE_2D_ARRAY;
 import static org.lwjgl.system.MemoryStack.stackPush;
 
 public class Atmosphere implements Gui {
 
     private static final String ATMOSPHERE_RADIUS = "atmosphereRadius";
-    private static final String PLANET_RADIUS = "planetRadius";
+    private static final String PLANET_RADIUS_UNIFORM_NAME = "planetRadius";
     private static final String DENSITY_FALLOFF = "densityFalloff";
 
     private static final float[] depthCascades = new float[]{0.02f * MasterRenderer.FAR_PLANE, 0.05f * MasterRenderer.FAR_PLANE, 0.5f * MasterRenderer.FAR_PLANE, MasterRenderer.FAR_PLANE};
 
-    private Shader atmosphereShader;
-    private Shader lookupGenerator;
-    private int lookupTableSize = 512;
-    private FrameBufferObject lookUpTable;
-    private QuadRenderer renderer;
-    private Vector3f wavelengths = new Vector3f(700, 530, 440);
-    private Vector3f scatterCoeffiecients = new Vector3f();
+    private final Shader atmosphereShader;
+    private final Shader lookupGenerator;
+    private static final int LOOKUP_TABLE_SIZE = 512;
+    private final FrameBufferObject lookUpTable;
+    private final QuadRenderer renderer;
+    private final Vector3f wavelengths = new Vector3f(700, 530, 440);
+    private final Vector3f scatterCoeffiecients = new Vector3f();
     private float densityFalloff = 1f;
     private float scatteringStrength = 1f;
     private float atmosphereRadius = Main.radius + 12000;
-    private float planetRadius = Main.radius;
-    private int numOpticalDepthPoints = 10;
-    private int blueNoiseTexture;
-    private TimerQuery timer;
-    private FloatBuffer densityFallOffBuffer = BufferUtils.createFloatBuffer(1).put(0, densityFalloff);
-    private FloatBuffer scatterStrengthBuffer = BufferUtils.createFloatBuffer(1).put(0, scatteringStrength);
-    private FloatBuffer atmosphereRadiusBuffer = BufferUtils.createFloatBuffer(1).put(0, atmosphereRadius);
+    private static final float PLANET_RADIUS = Main.radius;
+    private static final int NUM_OPTICAL_DEPTH_POINTS = 10;
+    private final int blueNoiseTexture;
+    private final TimerQuery timer;
+    private final FloatBuffer densityFallOffBuffer = BufferUtils.createFloatBuffer(1).put(0, densityFalloff);
+    private final FloatBuffer scatterStrengthBuffer = BufferUtils.createFloatBuffer(1).put(0, scatteringStrength);
+    private final FloatBuffer atmosphereRadiusBuffer = BufferUtils.createFloatBuffer(1).put(0, atmosphereRadius);
 
     public Atmosphere(QuadRenderer renderer) {
         this.renderer = renderer;
         ShaderFactory atmosphereFactory = new ShaderFactory("postProcessing/atmosphere/atmosphereVS.glsl", "postProcessing/atmosphere/atmosphereFS.glsl").withAttributes("pos");
-        atmosphereFactory.withUniforms("originalTexture", "depthTexture", "noiseTexture", "lookUpTexture", "shadowTexture", "cascadeDepths", "camPos", ATMOSPHERE_RADIUS, "dirToSun", PLANET_RADIUS, DENSITY_FALLOFF, "scatterCoefficients", "invProjMatrix", "zNear", "zFar");
+        atmosphereFactory.withUniforms("originalTexture", "depthTexture", "noiseTexture", "lookUpTexture", "shadowTexture", "cascadeDepths", "camPos", ATMOSPHERE_RADIUS, "dirToSun", PLANET_RADIUS_UNIFORM_NAME, DENSITY_FALLOFF, "scatterCoefficients", "invProjMatrix", "zNear", "zFar");
         atmosphereFactory.withUniformArray("toShadowMapCoords", 4);
         atmosphereFactory.configureSampler("originalTexture", 0);
         atmosphereFactory.configureSampler("depthTexture", 1);
@@ -64,23 +64,23 @@ public class Atmosphere implements Gui {
         atmosphereFactory.configureSampler("shadowTexture", 4);
 
         atmosphereFactory.configureShaderConstant("numInScatterPoints", 10);
-        atmosphereFactory.configureShaderConstant("numOpticalDepthPoints", numOpticalDepthPoints);
+        atmosphereFactory.configureShaderConstant("numOpticalDepthPoints", NUM_OPTICAL_DEPTH_POINTS);
         atmosphereFactory.withUniformArray("frustumRays", 4);
         atmosphereShader = atmosphereFactory.built();
         ShaderFactory atmLookupFactory = new ShaderFactory("postProcessing/quadVS.glsl", "postProcessing/atmosphere/opticalDepthPreCompute.glsl").withAttributes("pos");
         atmLookupFactory.configureShaderConstant("numOpticalDepthPoints", 200);
-        lookupGenerator = atmLookupFactory.withUniforms(PLANET_RADIUS, DENSITY_FALLOFF, ATMOSPHERE_RADIUS).built();
-        lookUpTable = new FrameBufferObject(lookupTableSize, lookupTableSize, 1).addUnclampedTexture(0);
+        lookupGenerator = atmLookupFactory.withUniforms(PLANET_RADIUS_UNIFORM_NAME, DENSITY_FALLOFF, ATMOSPHERE_RADIUS).built();
+        lookUpTable = new FrameBufferObject(LOOKUP_TABLE_SIZE, LOOKUP_TABLE_SIZE, 1).addUnclampedTexture(0);
         lookUpTable.bind();
         lookupGenerator.bind();
         lookupGenerator.loadFloat(ATMOSPHERE_RADIUS, atmosphereRadius);
-        lookupGenerator.loadFloat(PLANET_RADIUS, planetRadius);
+        lookupGenerator.loadFloat(PLANET_RADIUS_UNIFORM_NAME, PLANET_RADIUS);
         lookupGenerator.loadFloat(DENSITY_FALLOFF, densityFalloff);
         renderer.renderOnlyQuad();
         lookupGenerator.unbind();
         lookUpTable.unbind();
         //get texture values
-        float[] floatValues = new float[lookupTableSize * lookupTableSize];
+        float[] floatValues = new float[LOOKUP_TABLE_SIZE * LOOKUP_TABLE_SIZE];
         glBindTexture(GL_TEXTURE_2D, lookUpTable.getTextureID(0));
         glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, floatValues);
         blueNoiseTexture = TextureLoader.loadTexture("misc/blueNoise.png", GL_REPEAT, GL_NEAREST);
@@ -100,12 +100,12 @@ public class Atmosphere implements Gui {
 
     private float calculateOpticalDepth(Vector3f rayOrigin, Vector3f rayDir, float rayLength) {
         Vector3f densitySamplePoint = new Vector3f(rayOrigin);
-        float stepSize = rayLength / (numOpticalDepthPoints - 1);
+        float stepSize = rayLength / (NUM_OPTICAL_DEPTH_POINTS - 1);
         float opticalDepth = 0;
         Vector3f scaledRayDir = new Vector3f(rayDir).mul(rayDir);
-        for (int i = 0; i < numOpticalDepthPoints; i++) {
-            float heightAboveSurface = densitySamplePoint.length() - planetRadius;
-            float height01 = Math.max(heightAboveSurface / (atmosphereRadius - planetRadius), 0f);
+        for (int i = 0; i < NUM_OPTICAL_DEPTH_POINTS; i++) {
+            float heightAboveSurface = densitySamplePoint.length() - PLANET_RADIUS;
+            float height01 = Math.max(heightAboveSurface / (atmosphereRadius - PLANET_RADIUS), 0f);
             float localDensity = (float) Math.exp(-height01 * densityFalloff) * (1f - height01);
             opticalDepth += localDensity * stepSize;
             densitySamplePoint.add(scaledRayDir);
@@ -125,7 +125,7 @@ public class Atmosphere implements Gui {
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, lookUpTable.getTextureID(0));
         glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL46.GL_TEXTURE_2D_ARRAY, shadowMap);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, shadowMap);
         atmosphereShader.load3DVector("dirToSun", new Vector3f(lightPos).normalize());
         atmosphereShader.loadFloat("zNear", MasterRenderer.NEAR_PLANE);
         atmosphereShader.loadFloat("zFar", MasterRenderer.FAR_PLANE);
@@ -137,7 +137,7 @@ public class Atmosphere implements Gui {
         atmosphereShader.loadFloatArray("cascadeDepths", depthCascades);
         atmosphereShader.load3DVector("scatterCoefficients", scatterCoeffiecients);
         atmosphereShader.loadFloat(ATMOSPHERE_RADIUS, atmosphereRadius);
-        atmosphereShader.loadFloat(PLANET_RADIUS, planetRadius);
+        atmosphereShader.loadFloat(PLANET_RADIUS_UNIFORM_NAME, PLANET_RADIUS);
         atmosphereShader.loadFloat(DENSITY_FALLOFF, densityFalloff);
         atmosphereShader.load3DVector("camPos", camera.getPosition());
         Matrix4f projViewMatrix = new Matrix4f(projMatrix).mul(camera.getViewMatrix());

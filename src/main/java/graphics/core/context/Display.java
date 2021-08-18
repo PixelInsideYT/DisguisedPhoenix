@@ -1,6 +1,6 @@
 package graphics.core.context;
 
-
+import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -10,7 +10,9 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.Platform;
 
+import java.io.PrintStream;
 import java.nio.IntBuffer;
+import java.util.logging.Logger;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
@@ -18,6 +20,7 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
+@Slf4j
 public class Display {
     private final int[] size;
     private final Vector3f clearColor;
@@ -55,8 +58,10 @@ public class Display {
         glfwWindowHint(GLFW_SAMPLES, 0);
         // Create the window
         window = glfwCreateWindow(width, height, title, NULL, NULL);
-        if (window == NULL)
-            throw new RuntimeException("Failed to create the GLFW window");
+        if (window == NULL) {
+            log.error("Failed to create the GLFW window");
+            System.exit(1);
+        }
 
         // Get the thread stack and push a new frame
         try (MemoryStack stack = stackPush()) {
@@ -88,12 +93,11 @@ public class Display {
                     if (resizeListener != null)
                         resizeListener.resized(w, h, w / (float) h);
                 }
-                System.out.println("Window is resized, aspect ratio: " + w + " " + h + " " + (w / (float) h));
+                log.info("Window is resized, aspect ratio: {},{},{}", w , h , (w / (float) h));
             }
         });
         glfwShowWindow(window);
         pollEvents();
-        //GLUtil.setupDebugMessageCallback();
     }
 
     public int getWidth() {

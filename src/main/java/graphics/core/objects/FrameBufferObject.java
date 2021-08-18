@@ -1,5 +1,6 @@
 package graphics.core.objects;
 
+import lombok.extern.slf4j.Slf4j;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 
@@ -11,6 +12,7 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.opengl.GL32.glFramebufferTexture;
 
+@Slf4j
 public class FrameBufferObject {
 
     private static final List<FrameBufferObject> allFbos = new ArrayList<>();
@@ -96,7 +98,7 @@ public class FrameBufferObject {
         if (hasDepthAttachment && hasDepthTexture) {
             return depthPointer;
         } else {
-            System.err.println("YOU DONT HAVE A DEPTH TEXTURE OR DEPTH BUFFER ATTACHMENT TO THAT FBO");
+            log.error("No depth buffer or texture is attached");
             return 0;
         }
     }
@@ -223,7 +225,8 @@ public class FrameBufferObject {
             }
         }
         if (hasDepthAttachment && !hasDepthTexture) {
-            System.err.println("renderbuffer resizing not supported");
+            //TODO: resize renderbuffer
+            log.error("Renderbuffer resizing not supported");
         }
     }
 }
