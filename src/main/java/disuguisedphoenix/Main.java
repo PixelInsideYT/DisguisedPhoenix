@@ -146,7 +146,7 @@ public class Main {
             Matrix4f viewMatrix = ffc.getViewMatrix();
             world.update(dt);
             input.updateInputMaps();
-            masterRenderer.render(display, viewMatrix,time,world,lightPos,lightColor,model);
+            masterRenderer.render(display, viewMatrix,ffc.getPosition(),time,world,lightPos,lightColor,model);
             display.clear();
             avgFPS += zeitgeist.getFPS();
             display.setFrameTitle("Disguised Phoenix: " + " FPS: " + zeitgeist.getFPS() + ", In frustum objects: " + inViewObjects + ", drawcalls: " + drawCalls + " faces: " + df.format(facesDrawn));

@@ -28,8 +28,6 @@ public class OcclusionCalculator {
     private final BufferObject resultBuffer;
     private final ComputeShader computeShader;
 
-    //TODO: exclude small objects
-
     public OcclusionCalculator() {
         computeShader = new ComputeShader(ShaderFactory.loadShaderCode("compute/hizTest.glsl"));
         computeShader.loadUniforms("hiZ","projViewMatrix","viewPortWidth","viewPortHeight","maxSize");
@@ -42,8 +40,8 @@ public class OcclusionCalculator {
 
     }
 
-    public List<Entity> getVisibleEntities(int hiZTexture, List<Octree> inFrustumOctrees, Matrix4f projViewMatrix, int width, int height) {
-        List<Entity> rt = new ArrayList<>();
+    public List<Boolean> getVisibleEntities(int hiZTexture, List<Octree> inFrustumOctrees, Matrix4f projViewMatrix, int width, int height) {
+        List<Boolean> rt = new ArrayList<>();
         computeShader.bind();
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, hiZTexture);
@@ -64,9 +62,7 @@ public class OcclusionCalculator {
             int[] result = resultBuffer.getBufferContentInt(invocations);
 
             for (int i = 0; i < invocations; i++) {
-                if (result[i] == 1) {
-                    rt.addAll(inFrustumOctrees.get(i+offset).getEntities());
-                }
+                rt.add(result[i] == 1);
             }
         }
 

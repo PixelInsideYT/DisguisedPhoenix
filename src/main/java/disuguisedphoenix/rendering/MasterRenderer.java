@@ -19,6 +19,7 @@ import graphics.postprocessing.QuadRenderer;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.lwjgl.opengl.GL11.*;
@@ -84,7 +85,7 @@ public class MasterRenderer {
 
     //TODO: deferred rendering with heck ton of lights
 
-    public void render(Display display,Matrix4f viewMatrix, float time, World world, Vector3f lightPos, Vector3f lightColor, Model model) {
+    public void render(Display display,Matrix4f viewMatrix,Vector3f camPos, float time, World world, Vector3f lightPos, Vector3f lightColor, Model model) {
         vertexTimer.startQuery();
         OpenGLState.enableBackFaceCulling();
         OpenGLState.enableDepthTest();
@@ -101,7 +102,13 @@ public class MasterRenderer {
         hizGen.generateHiZMipMap(gBuffer);
         //
         List<Octree> visibleNodes = world.getVisibleNodes(projMatrix,viewMatrix);
-        List<Entity> notOccluded = occlusionCalculator.getVisibleEntities(gBuffer.getDepthTexture(),visibleNodes,new Matrix4f(projMatrix).mul(viewMatrix),width,height);
+        List<Boolean> notOccluded = occlusionCalculator.getVisibleEntities(gBuffer.getDepthTexture(),visibleNodes,new Matrix4f(projMatrix).mul(viewMatrix),width,height);
+        List<Entity> visibleEntities = new ArrayList<>();
+        for(int i=0;i<visibleNodes.size();i++){
+            if(notOccluded.get(i)){
+                visibleEntities.addAll(visibleNodes.get(i).getAllVisibleEntities(camPos));
+            }
+        }
         //
         gBuffer.bind();
         vegetationRenderer.vegetationShader.bind();
@@ -111,7 +118,7 @@ public class MasterRenderer {
         vegetationRenderer.vegetationShader.loadMatrix("viewMatrix", viewMatrix);
         vegetationRenderer.vegetationShader.loadFloat("time", time);
         vegetationRenderer.vegetationShader.loadInt("useInputTransformationMatrix", 1);
-        vegetationRenderer.render(time, projMatrix, viewMatrix, notOccluded);
+        vegetationRenderer.render(time, projMatrix, viewMatrix, visibleEntities);
         vertexTimer.waitOnQuery();
         hizGen.generateHiZMipMap(gBuffer);
         shadowRenderer.render(gBuffer,projMatrix,viewMatrix,NEAR_PLANE,FAR_PLANE,FOV,aspectRatio,time,lightPos,multiIndirectRenderer);

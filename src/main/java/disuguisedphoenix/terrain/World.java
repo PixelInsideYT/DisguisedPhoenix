@@ -36,10 +36,12 @@ public static int addedEntities=0;
         return null;
     }
 
+    /*
     public List<Entity> getVisibleEntities(Matrix4f projMatrix, Matrix4f viewMatrix, Vector3f camPos) {
         cullingHelper.set(cullingMatrix.set(projMatrix).mul(viewMatrix));
         return staticEntities.getAllVisibleEntities(cullingHelper, camPos);
     }
+    */
     public List<Octree> getVisibleNodes(Matrix4f projMatrix, Matrix4f viewMatrix) {
         cullingHelper.set(cullingMatrix.set(projMatrix).mul(viewMatrix));
         return staticEntities.getAllVisibleNodes(cullingHelper);

@@ -119,9 +119,13 @@ public class Octree {
     public List<Octree> getAllVisibleNodes(FrustumIntersection frustum){
         return addVisibleNodesToBuilder(Stream.builder(),frustum).build().collect(Collectors.toList());
     }
-
+/*
     public List<Entity> getAllVisibleEntities(FrustumIntersection frustum, Vector3f camPos) {
         return addVisibleEntitiesToBuilder(Stream.builder(),frustum, camPos).build().collect(Collectors.toList());
+    }*/
+
+    public List<Entity> getAllVisibleEntities(Vector3f camPos){
+        return             entities.stream().filter(e->couldBeVisible(e,camPos)).collect(Collectors.toList());
     }
 
     protected boolean contains(Entity e) {
