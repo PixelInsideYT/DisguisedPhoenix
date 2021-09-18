@@ -58,7 +58,7 @@ public static int addedEntities=0;
         e.setPosition(position);
         Vector3f eulerAngles = new Vector3f();
         Quaternionf qf = new Quaternionf();
-        qf.rotateTo(new Vector3f(0, 1, 0), new Vector3f(e.getPosition()).normalize());
+        qf.rotateTo(new Vector3f(0, 1, 0), new Vector3f(position).normalize());
         qf.mul(new Quaternionf().rotateLocalY(new Random().nextFloat() * 7f), qf);
         qf.getEulerAnglesXYZ(eulerAngles);
         e.setRotX(eulerAngles.x);

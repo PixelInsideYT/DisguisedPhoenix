@@ -20,7 +20,7 @@ import static org.lwjgl.opengl.GL15.GL_DYNAMIC_DRAW;
 
 public class OcclusionCalculator {
 
-    private static final int MAX_OCCLUSION_OBJECTS=1024;
+    private static final int MAX_OCCLUSION_OBJECTS=4096;
     private static final int FLOATS_PER_INSTANCE=8;
 
     private final BufferObject matrixBuffer;

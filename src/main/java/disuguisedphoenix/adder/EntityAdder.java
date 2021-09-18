@@ -18,6 +18,7 @@ import org.lwjgl.opengl.GL11;
 
 import java.io.InputStreamReader;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -113,39 +114,28 @@ public class EntityAdder {
         actualVao.unbind();
     }
 
-    private List<Entity> generateEntitiesFor(float xRange, float xOffset, float yRange, float yOffset, float zRange, float zOffset, float terrainAreaEstimate, UnaryOperator<Vector3f> placementFunction) {
+    private List<Entity> generateEntitiesFor(float terrainAreaEstimate, UnaryOperator<Vector3f> placementFunction) {
         if (activated < modelNames.size()) {
             Model model = ModelFileHandler.getModel(modelNames.get(activated));
             float modelAreaEstimate = (float) Math.PI * model.getRadiusXZ() * model.getRadiusXZ()*2f;
             float count = terrainAreaEstimate / modelAreaEstimate / modelNames.size();
-            if (count > 100000) count = 100000;
-            return IntStream.range(0, (int) count).mapToObj(i -> generateEntity(xRange, xOffset, yRange, yOffset, zRange, zOffset, placementFunction, model, 6f, 1f)).collect(Collectors.toList());
+            return IntStream.range(0, (int) count).mapToObj(i -> generateEntity( placementFunction, model)).collect(Collectors.toList());
         }
         return new ArrayList<>();
     }
 
-    private Entity generateEntity(float xRange, float xOffset, float yRange, float yOffset, float zRange, float zOffset, UnaryOperator<Vector3f> placementFunction, Model modelFile, float rotRandomZ, float scale) {
-        Vector3f position = new Vector3f(rnd.nextFloat() * xRange + xOffset, rnd.nextFloat() * yRange + yOffset, rnd.nextFloat() * zRange + zOffset);
+    private Entity generateEntity(UnaryOperator<Vector3f> placementFunction, Model modelFile) {
+        Vector3f position = new Vector3f(rnd.nextFloat() * 2f-1f, rnd.nextFloat() * 2f-1f, rnd.nextFloat() * 2f-1f);
         float scaleDifference = (rnd.nextFloat() * 2f - 1) * 0.5f + 1.0f;
-        return new Entity(modelFile, placementFunction.apply(position), 0, 0, rnd.nextFloat() * rotRandomZ, scale * scaleDifference);
+        return new Entity(modelFile, placementFunction.apply(position), 0, 0, rnd.nextFloat() * 7f, scaleDifference);
     }
 
-    public List<Entity> getAllEntities(Island island) {
-        List<Entity> rt = new ArrayList<>();
-        activated = 0;
-        float areaEstimate = island.getSize() * island.getSize();
-        for (int i = 0; i < modelNames.size(); i++) {
-            rt.addAll(generateEntitiesFor(island.getSize(), 0, 0, 0, island.getSize(), 0, areaEstimate, island::placeVectorOnTerrain));
-            activated++;
-        }
-        return rt;
-    }
 
     public List<Entity> getAllEntities(float areaEstimate, UnaryOperator<Vector3f> placementFunction) {
         List<Entity> rt = new ArrayList<>();
         activated = 0;
         for (int i = 0; i < modelNames.size(); i++) {
-            rt.addAll(generateEntitiesFor(2f, -1, 2f, -1f, 2f, -1f, areaEstimate, placementFunction));
+            rt.addAll(generateEntitiesFor(areaEstimate, placementFunction));
             activated++;
         }
         return rt;
