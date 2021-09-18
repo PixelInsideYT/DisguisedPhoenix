@@ -113,7 +113,7 @@ public class MasterRenderer {
             }
         }
         entityCollectionTimer.stopQuery();
-        //
+        //TODO: more performant occlusion culling
         gBuffer.bind();
         vegetationRenderer.vegetationShader.bind();
         glActiveTexture(GL_TEXTURE0);

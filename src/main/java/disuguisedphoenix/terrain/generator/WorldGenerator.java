@@ -12,6 +12,8 @@ import org.spongepowered.noise.module.source.Simplex;
 public class WorldGenerator {
     RidgedMultiSimplex ridgedMultiSimplex = new RidgedMultiSimplex();
     Simplex simplex = new Simplex();
+//TODO: BiomeConfig benutzen für noise funktion
+    //TODO: biomeconfig für entity placement benutzen
 
     private static final float BIOME_SELECTION_NOISE_SCALE = 0.5f;
     private static final float RIDGE_NOISE_SCALE = 1f;

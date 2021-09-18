@@ -48,7 +48,7 @@ public class ShadowEffect {
         shaderFactory.configureSampler("noiseMap", 0);
         shadowShader = shaderFactory.built();
     }
-
+    //TODO: improve shadow quality by PCF or reprojection
     //TODO: create a viewport info POJO
     public void render(Matrix4f viewMatrix, float nearPlane, float farPlane, float fov, float aspect, float time, Vector3f lightPos, MultiIndirectRenderer renderer) {
         if (isEnabled()) {
