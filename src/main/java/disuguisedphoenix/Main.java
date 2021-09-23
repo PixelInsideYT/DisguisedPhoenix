@@ -42,8 +42,7 @@ public class Main {
     public static int inViewObjects = 0;
     public static int drawCalls = 0;
     public static int facesDrawn = 0;
-    public static float radius = 500;
-    private static Model model;
+    public static float radius = 1000;
 
     //get models on itch and cgtrader
 
@@ -73,7 +72,6 @@ public class Main {
         //GLUtil.setupDebugMessageCallback();
         ParticleManager pm = new ParticleManager();
         WorldGenerator worldGenerator = new WorldGenerator(radius);
-        model = worldGenerator.generateSphereSurface();
         World world = worldGenerator.generateWorld(pm);
         FreeFlightCamera flightCamera = new FreeFlightCamera(mim, freeFlightCam);
         FreeFlightCamera flightCamera2 = new FreeFlightCamera(mim, freeFlightCam);
@@ -129,10 +127,11 @@ public class Main {
                 ffc = flightCamera;
             }
             ffc.update(dt);
+            world.updatePlayerPos(ffc.getPosition(),worldGenerator);
             Matrix4f viewMatrix = ffc.getViewMatrix();
             world.update(dt);
             input.updateInputMaps();
-            masterRenderer.render(display, viewMatrix, ffc.getPosition(), time, world, lightPos, lightColor, model);
+            masterRenderer.render(display, viewMatrix, ffc.getPosition(), time, world, lightPos, lightColor);
             display.clear();
             avgFPS += zeitgeist.getFPS();
             display.setFrameTitle("Disguised Phoenix: " + " FPS: " + zeitgeist.getFPS() + ", In frustum objects: " + inViewObjects + ", drawcalls: " + drawCalls + " faces: " + df.format(facesDrawn));
@@ -153,6 +152,7 @@ public class Main {
         Vao.cleanUpAllVaos();
         Shader.cleanUpAllShaders();
         display.destroy();
+        world.shutdown();
     }
 
 }

@@ -3,6 +3,7 @@ package disuguisedphoenix.adder;
 import com.google.gson.Gson;
 import disuguisedphoenix.Entity;
 import disuguisedphoenix.terrain.Island;
+import disuguisedphoenix.terrain.PositionProvider;
 import engine.util.ModelConfig;
 import engine.util.ModelFileHandler;
 import graphics.core.objects.Vao;
@@ -114,28 +115,28 @@ public class EntityAdder {
         actualVao.unbind();
     }
 
-    private List<Entity> generateEntitiesFor(float terrainAreaEstimate, UnaryOperator<Vector3f> placementFunction) {
+    private List<Entity> generateEntitiesFor(float terrainAreaEstimate,PositionProvider positionProvider, UnaryOperator<Vector3f> placementFunction) {
         if (activated < modelNames.size()) {
             Model model = ModelFileHandler.getModel(modelNames.get(activated));
             float modelAreaEstimate = (float) Math.PI * model.getRadiusXZ() * model.getRadiusXZ()*2f;
             float count = terrainAreaEstimate / modelAreaEstimate / modelNames.size();
-            return IntStream.range(0, (int) count).mapToObj(i -> generateEntity( placementFunction, model)).collect(Collectors.toList());
+            return IntStream.range(0, (int) count).mapToObj(i -> generateEntity( placementFunction,positionProvider, model)).collect(Collectors.toList());
         }
         return new ArrayList<>();
     }
 
-    private Entity generateEntity(UnaryOperator<Vector3f> placementFunction, Model modelFile) {
-        Vector3f position = new Vector3f(rnd.nextFloat() * 2f-1f, rnd.nextFloat() * 2f-1f, rnd.nextFloat() * 2f-1f);
+    private Entity generateEntity(UnaryOperator<Vector3f> placementFunction, PositionProvider positionProvider, Model modelFile) {
+        Vector3f position = positionProvider.getRandomPosition();
         float scaleDifference = (rnd.nextFloat() * 2f - 1) * 0.5f + 1.0f;
         return new Entity(modelFile, placementFunction.apply(position), 0, 0, rnd.nextFloat() * 7f, scaleDifference);
     }
 
 
-    public List<Entity> getAllEntities(float areaEstimate, UnaryOperator<Vector3f> placementFunction) {
+    public List<Entity> getAllEntities(float areaEstimate,PositionProvider positionProvider, UnaryOperator<Vector3f> placementFunction) {
         List<Entity> rt = new ArrayList<>();
         activated = 0;
         for (int i = 0; i < modelNames.size(); i++) {
-            rt.addAll(generateEntitiesFor(areaEstimate, placementFunction));
+            rt.addAll(generateEntitiesFor(areaEstimate,positionProvider, placementFunction));
             activated++;
         }
         return rt;

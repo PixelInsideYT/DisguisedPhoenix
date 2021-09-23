@@ -87,7 +87,7 @@ public class MasterRenderer {
 
     //TODO: deferred rendering with heck ton of lights
 
-    public void render(Display display,Matrix4f viewMatrix,Vector3f camPos, float time, World world, Vector3f lightPos, Vector3f lightColor, Model model) {
+    public void render(Display display,Matrix4f viewMatrix,Vector3f camPos, float time, World world, Vector3f lightPos, Vector3f lightColor) {
         vertexTimer.startQuery();
         OpenGLState.enableBackFaceCulling();
         OpenGLState.enableDepthTest();
@@ -100,7 +100,10 @@ public class MasterRenderer {
             renderer.render(island.getModel(), island.getTransformation());
         }
         //TODO: put earth management in World.java
-        renderer.render(model,new Matrix4f());
+        Matrix4f unitMatrix = new Matrix4f();
+        for(Model model:world.getTerrain()) {
+            renderer.render(model, unitMatrix);
+        }
         hizGen.generateHiZMipMap(gBuffer);
         //
         entityCollectionTimer.startQuery();

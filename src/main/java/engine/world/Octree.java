@@ -91,7 +91,7 @@ public class Octree {
 
     private Stream.Builder<Entity> addVisibleEntitiesToBuilder(Stream.Builder<Entity> builder, FrustumIntersection frustum, Vector3f camPos) {
         if (frustum.testAab(min, max)) {
-            entities.stream().filter(e->couldBeVisible(e,camPos)).forEach(builder::add);
+            entities.stream().filter(e -> couldBeVisible(e, camPos)).forEach(builder::add);
             if (hasChildren) {
                 for (Octree node : nodes) {
                     node.addVisibleEntitiesToBuilder(builder, frustum, camPos);
@@ -103,7 +103,7 @@ public class Octree {
 
     private Stream.Builder<Octree> addVisibleNodesToBuilder(Stream.Builder<Octree> builder, FrustumIntersection frustum) {
         if (frustum.testAab(min, max)) {
-            if(!entities.isEmpty()) {
+            if (!entities.isEmpty()) {
                 builder.add(this);
             }
             if (hasChildren) {
@@ -115,16 +115,16 @@ public class Octree {
         return builder;
     }
 
-    public List<Octree> getAllVisibleNodes(FrustumIntersection frustum){
-        return addVisibleNodesToBuilder(Stream.builder(),frustum).build().collect(Collectors.toList());
+    public List<Octree> getAllVisibleNodes(FrustumIntersection frustum) {
+        return addVisibleNodesToBuilder(Stream.builder(), frustum).build().collect(Collectors.toList());
     }
 /*
     public List<Entity> getAllVisibleEntities(FrustumIntersection frustum, Vector3f camPos) {
         return addVisibleEntitiesToBuilder(Stream.builder(),frustum, camPos).build().collect(Collectors.toList());
     }*/
 
-    public List<Entity> getAllVisibleEntities(Vector3f camPos){
-        return             entities.stream().filter(e->couldBeVisible(e,camPos)).collect(Collectors.toList());
+    public List<Entity> getAllVisibleEntities(Vector3f camPos) {
+        return new ArrayList<>(entities).stream().filter(e -> couldBeVisible(e, camPos)).collect(Collectors.toList());
     }
 
     protected boolean contains(Entity e) {
@@ -153,19 +153,19 @@ public class Octree {
         return list;
     }
 
-    public Vector3f getMin(){
+    public Vector3f getMin() {
         return min;
     }
 
-    public Vector3f getMax(){
+    public Vector3f getMax() {
         return max;
     }
 
-    public Vector3f getCenter(){
+    public Vector3f getCenter() {
         return centerPosition;
     }
 
-    public List<Entity> getEntities(){
+    public List<Entity> getEntities() {
         return entities;
     }
 
