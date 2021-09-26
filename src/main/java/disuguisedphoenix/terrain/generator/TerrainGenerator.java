@@ -17,9 +17,9 @@ import java.util.stream.Collectors;
 
 public class TerrainGenerator {
 
-    public MeshInformation buildTerrain(int subdivision, Vector3f vector3f, UnaryOperator<Vector3f> heightMapper, BinaryOperator<Vector3f> colorMapper) {
+    public MeshInformation buildTerrain(int subdivision, int index, UnaryOperator<Vector3f> heightMapper, BinaryOperator<Vector3f> colorMapper) {
         List<TerrainTriangle> sphereTriangles = new ArrayList<>();
-        sphereTriangles.add(TerrainTriangle.getTriangle(TerrainTriangle.getIndexForVector(vector3f)));
+        sphereTriangles.add(TerrainTriangle.getTriangle(index));
         for (int i = 0; i < subdivision; i++) {
             sphereTriangles = sphereTriangles.parallelStream().flatMap(TerrainTriangle::subdivide).collect(Collectors.toList());
         }

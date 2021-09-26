@@ -31,10 +31,9 @@ public class WorldGenerator {
         terrainGenerator = new TerrainGenerator();
     }
 
-    public MeshInformation createTerrainFor(Vector3f vector3f) {
-        return terrainGenerator.buildTerrain(6, vector3f, this::getNoiseFunction, this::getColor);
+    public MeshInformation createTerrainFor(int index) {
+        return terrainGenerator.buildTerrain(6, index, this::getNoiseFunction, this::getColor);
     }
-
 
     public World generateWorld(ParticleManager pm) {
         World world = new World(pm, 4f * radius);

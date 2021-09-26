@@ -50,15 +50,27 @@ public class World {
     List<Future<MeshInformation>> terrainFutures = new ArrayList<>();
 
 
-    private ExecutorService executor = Executors.newFixedThreadPool(2);
+    private ExecutorService executor = Executors.newWorkStealingPool();
 
     public void updatePlayerPos(Vector3f vector3f, WorldGenerator generator) {
-        int terrainIndex = TerrainTriangle.getIndexForVector(vector3f);
-        if (!addedTerrains.contains(terrainIndex)) {
-            addedTerrains.add(terrainIndex);
-            terrainFutures.add(executor.submit(() -> generator.createTerrainFor(vector3f)));
-            PositionProvider positionProvider = new PositionProvider(TerrainTriangle.getTriangle(terrainIndex), generator::getNoiseFunction);
-           executor.submit(()-> adder.getAllEntities(positionProvider.getArea(), positionProvider, generator::getNoiseFunction).forEach(this::placeUprightEntity));
+        Vector3f normalized = new Vector3f(vector3f).normalize();
+        List<Integer> choosenTriangle = new ArrayList<>();
+        ListIterator<TerrainTriangle> triangleIteratoritr = TerrainTriangle.getTriangleIterator();
+        while (triangleIteratoritr.hasNext()){
+            int index = triangleIteratoritr.nextIndex();
+            TerrainTriangle triangle = triangleIteratoritr.next();
+            float dot = triangle.getDirection().normalize().dot(normalized);
+            if(dot>0.9){
+                choosenTriangle.add(index);
+            }
+        }
+        for(int terrainIndex:choosenTriangle) {
+            if (!addedTerrains.contains(terrainIndex)) {
+                addedTerrains.add(terrainIndex);
+                terrainFutures.add(executor.submit(() -> generator.createTerrainFor(terrainIndex)));
+                PositionProvider positionProvider = new PositionProvider(TerrainTriangle.getTriangle(terrainIndex), generator::getNoiseFunction);
+                executor.submit(() -> adder.getAllEntities(positionProvider.getArea(), positionProvider, generator::getNoiseFunction).forEach(this::placeUprightEntity));
+            }
         }
         Iterator<Future<MeshInformation>> itr = terrainFutures.iterator();
         while (itr.hasNext()) {

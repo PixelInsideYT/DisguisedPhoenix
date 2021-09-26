@@ -3,9 +3,7 @@ package disuguisedphoenix.terrain.generator;
 import org.joml.Intersectionf;
 import org.joml.Vector3f;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,6 +29,10 @@ public class TerrainTriangle {
         }
     }
 
+    public static ListIterator<TerrainTriangle> getTriangleIterator(){
+        return terrainTriangles.listIterator();
+    }
+
     private static TerrainTriangle getTriangle(int[] indices) {
         return new TerrainTriangle(new Vector3f(VERTS[indices[0]]),
                 new Vector3f(VERTS[indices[1]]),
@@ -50,6 +52,17 @@ public class TerrainTriangle {
                 new TerrainTriangle(vecs[0], a, c),
                 new TerrainTriangle(vecs[1], b, a),
                 new TerrainTriangle(vecs[2], c, b));
+    }
+
+    public Vector3f getNormal(){
+        Vector3f ab = new Vector3f(vecs[0]).sub(vecs[1]);
+        Vector3f ac = new Vector3f(vecs[0]).sub(vecs[2]);
+        return ab.cross(ac);
+    }
+
+    public Vector3f getDirection(){
+       return new Vector3f(vecs[0])
+                .add(vecs[1]).add(vecs[2]).mul(1f/3f);
     }
 
     private static Vector3f getMiddlePoint(Vector3f v1, Vector3f v2) {
