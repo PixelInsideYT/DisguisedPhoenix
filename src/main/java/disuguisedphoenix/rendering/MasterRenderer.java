@@ -1,6 +1,7 @@
 package disuguisedphoenix.rendering;
 
 import disuguisedphoenix.Entity;
+import disuguisedphoenix.Player;
 import disuguisedphoenix.terrain.Island;
 import disuguisedphoenix.terrain.World;
 import engine.time.CPUTimerQuery;
@@ -87,7 +88,7 @@ public class MasterRenderer {
 
     //TODO: deferred rendering with heck ton of lights
 
-    public void render(Display display,Matrix4f viewMatrix,Vector3f camPos, float time, World world, Vector3f lightPos, Vector3f lightColor) {
+    public void render(Player player, Display display, Matrix4f viewMatrix, Vector3f camPos, float time, World world, Vector3f lightPos, Vector3f lightColor) {
         vertexTimer.startQuery();
         OpenGLState.enableBackFaceCulling();
         OpenGLState.enableDepthTest();
@@ -104,6 +105,7 @@ public class MasterRenderer {
         for(Model model:world.getTerrain()) {
             renderer.render(model, unitMatrix);
         }
+        renderer.render(player.getModel(),player.getTransformationMatrix());
         hizGen.generateHiZMipMap(gBuffer);
         //
         entityCollectionTimer.startQuery();

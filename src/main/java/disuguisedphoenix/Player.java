@@ -15,20 +15,16 @@ import java.util.List;
 
 public class Player extends Entity {
     private static final float MAX_FLYSPEED = 1;
-    private static final float TURN_SPEED_ACCEL = 7f;
-    private static final float TILT_SPEED_ACCEL = 4f;
-
-    private static final float MAX_TURN_SPEED = 50f;
-    private static final float GRAVITY = 10;
+    private static final float MAX_TURN_SPEED = 5f;
+    private static final float GRAVITY = 1;
     private final Vector3f currentTurnSpeed;
     private final Vector3i currentTurnDirection;
     private final Vector3f lookAtPosition = new Vector3f();
     public InputMap movement;
     public ThirdPersonCamera cam;
     Quaternionf rotation;
+    float accelerate = 0;
     Vector3f up = new Vector3f(), forward = new Vector3f(), right = new Vector3f();
-    private final float currentFlySpeed = 300;
-    private float accelerate = 0;
 
     public Player(Model model, Vector3f position, MouseInputMap mim) {
         super(model, position, 0, 0, 0, 1f);
@@ -56,7 +52,7 @@ public class Player extends Entity {
         velocity.add(right.mul(currentTurnDirection.y * MAX_TURN_SPEED));
         velocity.add(up.mul(currentTurnDirection.x * MAX_TURN_SPEED));
         this.update(dt, possibleCollisions, shapes);
-        cam.getPosition().set(new Vector3f(position).sub(new Vector3f(velocity).normalize(500)));
+        cam.getPosition().set(new Vector3f(position).sub(new Vector3f(velocity).normalize(10)));
         lookAtPosition.set(position);
     }
 

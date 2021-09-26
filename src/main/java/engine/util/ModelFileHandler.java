@@ -18,6 +18,7 @@ import javax.swing.*;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -57,8 +58,7 @@ public class ModelFileHandler {
             File selectedFile = jfc.getSelectedFile();
             if (selectedFile.getAbsolutePath().endsWith(".info")) {
                 try {
-                    //String content = Files.readString(selectedFile.toPath());
-                    String content="";
+                    String content = Files.readString(selectedFile.toPath());
                     ModelConfig[] modelConfigs = gson.fromJson(content, ModelConfig[].class);
                     for (ModelConfig mco : modelConfigs)
                         generateModelFile(mco.relativePath, mco.relativeColliderPath, mco.wobbleInfo, mco.modelHeight, false);

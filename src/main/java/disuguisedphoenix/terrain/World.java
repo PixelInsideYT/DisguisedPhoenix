@@ -43,15 +43,8 @@ public class World {
 
     public List<Entity> getPossibleCollisions(Entity e) {
         //TODO: implement oct tree for collision
-        return null;
+        return new ArrayList<>();
     }
-
-    /*
-    public List<Entity> getVisibleEntities(Matrix4f projMatrix, Matrix4f viewMatrix, Vector3f camPos) {
-        cullingHelper.set(cullingMatrix.set(projMatrix).mul(viewMatrix));
-        return staticEntities.getAllVisibleEntities(cullingHelper, camPos);
-    }
-    */
     Set<Integer> addedTerrains = new HashSet<>();
 
     List<Future<MeshInformation>> terrainFutures = new ArrayList<>();

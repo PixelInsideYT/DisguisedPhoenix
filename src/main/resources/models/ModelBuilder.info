@@ -205,5 +205,23 @@
       "Icosphere": "0:0"
     },
     "modelHeight": 1.0
+  },
+  {
+    "modelFilePath": "misc/birb.modelFile",
+    "relativePath": "misc/birb.fbx",
+    "relativeColliderPath": "misc/birbCollider.fbx",
+    "wobbleInfo": {
+      "Plane": "0:0"
+    },
+    "modelHeight": 0.1
+  },
+  {
+    "modelFilePath": "misc/birb.modelFile",
+    "relativePath": "misc/birb.fbx",
+    "relativeColliderPath": "misc/birbCollider.fbx",
+    "wobbleInfo": {
+      "Plane": "0:0"
+    },
+    "modelHeight": 0.05
   }
 ]

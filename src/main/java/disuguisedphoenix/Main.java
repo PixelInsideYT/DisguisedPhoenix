@@ -4,7 +4,6 @@ import disuguisedphoenix.adder.EntityAdder;
 import disuguisedphoenix.rendering.MasterRenderer;
 import disuguisedphoenix.terrain.World;
 import disuguisedphoenix.terrain.generator.WorldGenerator;
-import engine.collision.CollisionShape;
 import engine.input.InputManager;
 import engine.input.KeyboardInputMap;
 import engine.input.MouseInputMap;
@@ -20,17 +19,13 @@ import graphics.core.objects.Vao;
 import graphics.core.shaders.Shader;
 import graphics.gui.NuklearBinding;
 import graphics.loader.TextureLoader;
-import graphics.modelinfo.Model;
-import graphics.modelinfo.RenderInfo;
 import graphics.particles.ParticleManager;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Matrix4f;
-import org.joml.SimplexNoise;
 import org.joml.Vector3f;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.List;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46.GL_ONE_MINUS_SRC_ALPHA;
@@ -80,7 +75,6 @@ public class Main {
         OpenGLState.setAlphaBlending(GL_ONE_MINUS_SRC_ALPHA);
         System.err.println("STARTUP TIME: " + (System.currentTimeMillis() - startUpTime) / 1000f);
         Zeitgeist zeitgeist = new Zeitgeist();
-        boolean wireframe = false;
         boolean freeFlightCamActivated = false;
         float time = 1f;
         DecimalFormat df = new DecimalFormat("###,###,###");
@@ -94,54 +88,55 @@ public class Main {
         // input.hideMouseCursor();
         float switchCameraTimer = 0f;
         float captureMouseTimer = 0f;
-        while (!display.shouldClose() && !input.isKeyDown(GLFW_KEY_ESCAPE)) {
-            long startFrame = System.currentTimeMillis();
-            float dt = zeitgeist.getDelta();
-            // lightAngle += lightSpeed * dt;
-            lightAngle = 1f;
-            lightPos.z = (float) Math.cos(lightAngle) * lightRadius;
-            lightPos.y = (float) Math.sin(lightAngle) * lightRadius;
-            time += dt;
-            display.pollEvents();
-            // nuklearBinding.pollInputs();
-            if (input.isKeyDown(GLFW_KEY_P) && captureMouseTimer < 0) {
-                input.toggleCursor();
-                captureMouseTimer = 0.25f;
+        try {
+            while (!display.shouldClose() && !input.isKeyDown(GLFW_KEY_ESCAPE)) {
+                long startFrame = System.currentTimeMillis();
+                float dt = zeitgeist.getDelta();
+                // lightAngle += lightSpeed * dt;
+                lightAngle = 1f;
+                lightPos.z = (float) Math.cos(lightAngle) * lightRadius;
+                lightPos.y = (float) Math.sin(lightAngle) * lightRadius;
+                time += dt;
+                display.pollEvents();
+                // nuklearBinding.pollInputs();
+                if (input.isKeyDown(GLFW_KEY_P) && captureMouseTimer < 0) {
+                    input.toggleCursor();
+                    captureMouseTimer = 0.25f;
+                }
+                if (input.isKeyDown(GLFW_KEY_C) && switchCameraTimer < 0) {
+                    freeFlightCamActivated = !freeFlightCamActivated;
+                    switchCameraTimer = 0.25f;
+                }
+                switchCameraTimer -= dt;
+                captureMouseTimer -= dt;
+                pm.update(dt);
+                Camera ffc=player.cam;
+                if (!freeFlightCamActivated) {
+                    player.move(null,dt,world.getPossibleCollisions(player),new ArrayList<>());
+                    flightCamera.setPosition(new Vector3f(player.cam.getPosition()));
+                } else {
+                    ffc = flightCamera;
+                }
+                ffc.update(dt);
+                world.updatePlayerPos(ffc.getPosition(), worldGenerator);
+                Matrix4f viewMatrix = ffc.getViewMatrix();
+                world.update(dt);
+                input.updateInputMaps();
+                masterRenderer.render(player, display, viewMatrix, ffc.getPosition(), time, world, lightPos, lightColor);
+                display.clear();
+                avgFPS += zeitgeist.getFPS();
+                display.setFrameTitle("Disguised Phoenix: " + " FPS: " + zeitgeist.getFPS() + ", In frustum objects: " + inViewObjects + ", drawcalls: " + drawCalls + " faces: " + df.format(facesDrawn));
+                inViewObjects = 0;
+                inViewVerticies = 0;
+                facesDrawn = 0;
+                drawCalls = 0;
+                zeitgeist.sleep();
+                frameCounter++;
+                summedMS += (System.currentTimeMillis() - startFrame);
             }
-            if (input.isKeyDown(GLFW_KEY_C) && switchCameraTimer < 0) {
-                freeFlightCamActivated = !freeFlightCamActivated;
-                switchCameraTimer = 0.25f;
-            }
-            switchCameraTimer -= dt;
-            captureMouseTimer -= dt;
-            if (wireframe) {
-                OpenGLState.enableWireframe();
-            } else {
-                OpenGLState.disableWireframe();
-            }
-            pm.update(dt);
-            Camera ffc;
-            if (!freeFlightCamActivated) {
-                ffc = flightCamera2;
-            } else {
-                ffc = flightCamera;
-            }
-            ffc.update(dt);
-            world.updatePlayerPos(ffc.getPosition(),worldGenerator);
-            Matrix4f viewMatrix = ffc.getViewMatrix();
-            world.update(dt);
-            input.updateInputMaps();
-            masterRenderer.render(display, viewMatrix, ffc.getPosition(), time, world, lightPos, lightColor);
-            display.clear();
-            avgFPS += zeitgeist.getFPS();
-            display.setFrameTitle("Disguised Phoenix: " + " FPS: " + zeitgeist.getFPS() + ", In frustum objects: " + inViewObjects + ", drawcalls: " + drawCalls + " faces: " + df.format(facesDrawn));
-            inViewObjects = 0;
-            inViewVerticies = 0;
-            facesDrawn = 0;
-            drawCalls = 0;
-            zeitgeist.sleep();
-            frameCounter++;
-            summedMS += (System.currentTimeMillis() - startFrame);
+        } catch (Exception x) {
+            x.printStackTrace();
+            System.exit(-1);
         }
         TimerQuery.printAllResults();
         nuklearBinding.cleanUp();
