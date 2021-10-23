@@ -3,7 +3,7 @@
     "modelFilePath": "bush/mountain_ash_1.modelFile",
     "relativePath": "bush/mountain_ash_1.fbx",
     "wobbleInfo": {
-      "Icosphere": "0:0"
+      "Icosphere": "2:0.5"
     },
     "modelHeight": 1.5
   },
@@ -11,7 +11,7 @@
     "modelFilePath": "bush/mountain_ash_2.modelFile",
     "relativePath": "bush/mountain_ash_2.fbx",
     "wobbleInfo": {
-      "Icosphere.011": "0:0"
+      "Icosphere.011": "2:0.5"
     },
     "modelHeight": 2.0
   },
@@ -19,7 +19,7 @@
     "modelFilePath": "bush/mountain_ash_3.modelFile",
     "relativePath": "bush/mountain_ash_3.fbx",
     "wobbleInfo": {
-      "Icosphere.016": "0:0"
+      "Icosphere.016": "2:0.5"
     },
     "modelHeight": 2.0
   },
@@ -27,7 +27,7 @@
     "modelFilePath": "bush/mountain_ash_with_berries_1.modelFile",
     "relativePath": "bush/mountain_ash_with_berries_1.fbx",
     "wobbleInfo": {
-      "Icosphere.001": "0:0"
+      "Icosphere.001": "2:0.5"
     },
     "modelHeight": 2.0
   },
@@ -35,7 +35,7 @@
     "modelFilePath": "bush/mountain_ash_with_berries_2.modelFile",
     "relativePath": "bush/mountain_ash_with_berries_2.fbx",
     "wobbleInfo": {
-      "Icosphere.002": "0:0"
+      "Icosphere.002": "2:0.5"
     },
     "modelHeight": 2.0
   },
@@ -43,7 +43,7 @@
     "modelFilePath": "bush/mountain_ash_with_berries_3.modelFile",
     "relativePath": "bush/mountain_ash_with_berries_3.fbx",
     "wobbleInfo": {
-      "Icosphere.003": "0:0"
+      "Icosphere.003": "2:0.5"
     },
     "modelHeight": 2.0
   },
@@ -69,7 +69,7 @@
     "relativeColliderPath": "lowPolyTree/ballTreeCollider.fbx",
     "wobbleInfo": {
       "Plane.001": "0:0",
-      "Plane.003": "0:0"
+      "Plane.003": "0:1"
     },
     "modelHeight": 15.0
   },
@@ -79,7 +79,7 @@
     "relativeColliderPath": "lowPolyTree/bendyTreeCollider.fbx",
     "wobbleInfo": {
       "Plane_Plane.001": "0:0",
-      "Plane_Plane.004": "0:0"
+      "Plane_Plane.004": "0:1"
     },
     "modelHeight": 5.0
   },
@@ -97,7 +97,7 @@
     "relativeColliderPath": "lowPolyTree/tree2Collider.fbx",
     "wobbleInfo": {
       "Icosphere.001": "0:0",
-      "Icosphere.002": "0:0"
+      "Icosphere.002": "0:1"
     },
     "modelHeight": 15.0
   },
@@ -106,19 +106,10 @@
     "relativePath": "lowPolyTree/vc.fbx",
     "relativeColliderPath": "lowPolyTree/vc.fbx",
     "wobbleInfo": {
-      "Icosphere.003": "0:0",
+      "Icosphere.003": "0:1",
       "Circle_Circle.001": "0:0"
     },
     "modelHeight": 20.0
-  },
-  {
-    "modelFilePath": "misc/birb.modelFile",
-    "relativePath": "misc/birb.fbx",
-    "relativeColliderPath": "misc/birb.fbx",
-    "wobbleInfo": {
-      "Plane": "0:0"
-    },
-    "modelHeight": 0.05
   },
   {
     "modelFilePath": "misc/fox.modelFile",
@@ -166,10 +157,10 @@
     "modelFilePath": "plants/glockenblume.modelFile",
     "relativePath": "plants/glockenblume.fbx",
     "wobbleInfo": {
-      "Cone": "0:0",
-      "Plane.002": "0:0",
-      "Plane.004": "0:0",
-      "Circle.002": "0:0"
+      "Cone": "2:0.5",
+      "Plane.002": "2:0.5",
+      "Plane.004": "2:0.5",
+      "Circle.002": "2:0.5"
     },
     "modelHeight": 0.5
   },
@@ -205,23 +196,5 @@
       "Icosphere": "0:0"
     },
     "modelHeight": 1.0
-  },
-  {
-    "modelFilePath": "misc/birb.modelFile",
-    "relativePath": "misc/birb.fbx",
-    "relativeColliderPath": "misc/birbCollider.fbx",
-    "wobbleInfo": {
-      "Plane": "0:0"
-    },
-    "modelHeight": 0.1
-  },
-  {
-    "modelFilePath": "misc/birb.modelFile",
-    "relativePath": "misc/birb.fbx",
-    "relativeColliderPath": "misc/birbCollider.fbx",
-    "wobbleInfo": {
-      "Plane": "0:0"
-    },
-    "modelHeight": 0.05
   }
 ]

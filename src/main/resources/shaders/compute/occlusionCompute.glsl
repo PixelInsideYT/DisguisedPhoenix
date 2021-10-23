@@ -2,18 +2,16 @@
 layout(local_size_x = 32, local_size_y = 1) in;
 layout(binding = 0) uniform sampler2D hiZ;
 
-struct BoundingBox{
-    vec4 min;
-    vec4 dimension;
-};
-
 layout(std430, binding = 0) writeonly buffer resultBuffer{
     int results[];
 };
 
 layout(std430, binding = 1) readonly buffer matrixBuffer{
-    BoundingBox dimensions[];
+    mat4 transformations[];
 };
+
+uniform vec3 minAABB;
+uniform vec3 dimension;
 
 uniform mat4 projViewMatrix;
 uniform float viewPortWidth;
@@ -23,13 +21,13 @@ uniform int maxSize;
 void main() {
     uint invocation = gl_GlobalInvocationID.x;
     if (invocation>=maxSize)return;
-    BoundingBox worldBoundingBox=dimensions[invocation];
+    mat4 transformationMatrix=transformations[invocation];
     vec3 minNDC = vec3(1000);
     vec3 maxNDC = vec3(0);
     for (int x=0;x<=1;x++){
         for (int y=0;y<=1;y++){
             for (int z=0;z<=1;z++){
-                vec4 vertexPos = vec4(worldBoundingBox.min.xyz+worldBoundingBox.dimension.xyz*vec3(x, y, z), 1);
+                vec4 vertexPos = transformationMatrix * vec4(minAABB+dimension*vec3(x, y, z), 1);
                 vec4 clipPos = projViewMatrix * vertexPos;
                 clipPos.z = max(0,clipPos.z);
                 vec3 ndcPos = clipPos.xyz/clipPos.w;
