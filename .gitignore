@@ -1,5 +1,8 @@
 /target/
 /.idea/
 /out/
-/src/main/resources/META-INF/
 /gradle/
+/build/
+/.gradle/
+/gradlew
+/gradlew.bat
