@@ -1,5 +1,6 @@
 package de.thriemer.engine.util;
 
+import de.thriemer.disguisedphoenix.Entity;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.joml.Matrix4f;
@@ -59,4 +60,24 @@ public class Maths {
         return unsignedDistance + distanceInsideBox;
     }
 
+    private static final float NEEDED_SIZE_PER_LENGTH_UNIT = 0.005f;
+
+    public static boolean couldBeVisible(Entity e, Vector3f cameraPos) {
+        float size = e.getRadius();
+        float distance = e.getPosition().distance(cameraPos);
+        return size > distance * NEEDED_SIZE_PER_LENGTH_UNIT;
+    }
+
+
+    public static boolean aabbFullyContainsSphere(Vector3f min, Vector3f max, Vector3f center, float radius) {
+        return min.x < center.x - radius && center.x + radius < max.x &&
+                min.y < center.y - radius && center.y + radius < max.y &&
+                min.z < center.z - radius && center.z + radius < max.z;
+    }
+
+    public static boolean pointInAabb(Vector3f min, Vector3f max, Vector3f center) {
+        return min.x < center.x && center.x < max.x &&
+                min.y < center.y && center.y < max.y &&
+                min.z < center.z && center.z < max.z;
+    }
 }

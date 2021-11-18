@@ -10,6 +10,7 @@ import de.thriemer.graphics.loader.MeshInformation;
 import de.thriemer.graphics.modelinfo.Model;
 import de.thriemer.graphics.modelinfo.RenderInfo;
 import de.thriemer.graphics.particles.ParticleManager;
+import lombok.Getter;
 import org.joml.FrustumIntersection;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -20,6 +21,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class World {
@@ -45,6 +47,7 @@ public class World {
         //TODO: implement oct tree for collision
         return new ArrayList<>();
     }
+
     Set<Integer> addedTerrains = new HashSet<>();
 
     List<Future<MeshInformation>> terrainFutures = new ArrayList<>();
@@ -52,19 +55,20 @@ public class World {
 
     private ExecutorService executor = Executors.newWorkStealingPool();
 
+
     public void updatePlayerPos(Vector3f vector3f, WorldGenerator generator) {
         Vector3f normalized = new Vector3f(vector3f).normalize();
         List<Integer> choosenTriangle = new ArrayList<>();
         ListIterator<TerrainTriangle> triangleIteratoritr = TerrainTriangle.getTriangleIterator();
-        while (triangleIteratoritr.hasNext()){
+        while (triangleIteratoritr.hasNext()) {
             int index = triangleIteratoritr.nextIndex();
             TerrainTriangle triangle = triangleIteratoritr.next();
             float dot = triangle.getDirection().normalize().dot(normalized);
-            if(dot>0.9){
+            if (dot > 0.9) {
                 choosenTriangle.add(index);
             }
         }
-        for(int terrainIndex:choosenTriangle) {
+        for (int terrainIndex : choosenTriangle) {
             if (!addedTerrains.contains(terrainIndex)) {
                 addedTerrains.add(terrainIndex);
                 terrainFutures.add(executor.submit(() -> generator.createTerrainFor(terrainIndex)));
@@ -75,14 +79,14 @@ public class World {
         Iterator<Future<MeshInformation>> itr = terrainFutures.iterator();
         while (itr.hasNext()) {
             Future<MeshInformation> singleMesh = itr.next();
-            if (singleMesh != null && singleMesh.isDone()) {
+            if (singleMesh.isDone()) {
                 try {
                     MeshInformation terrainMesh = singleMesh.get();
                     Vao vao = new Vao();
                     vao.addDataAttributes(0, 4, terrainMesh.vertexPositions);
                     vao.addDataAttributes(1, 4, terrainMesh.colors);
                     vao.addIndicies(terrainMesh.indicies);
-                    terrains.add(new Terrain(new Model(new RenderInfo(vao), null, 0, 0, new Vector3f(),new Vector3f(), null)));
+                    terrains.add(new Terrain(new Model(new RenderInfo(vao), null, 0, 0, new Vector3f(), new Vector3f(), null)));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
@@ -93,10 +97,9 @@ public class World {
         }
     }
 
-
-    public List<Octree> getVisibleNodes(Matrix4f projMatrix, Matrix4f viewMatrix) {
+    public List<Entity> getVisibleEntities(Matrix4f projMatrix, Matrix4f viewMatrix, Function<Entity, Boolean> visibilityFunction) {
         cullingHelper.set(cullingMatrix.set(projMatrix).mul(viewMatrix));
-        return staticEntities.getAllVisibleNodes(cullingHelper);
+        return staticEntities.getAllVisibleEntities(cullingHelper, visibilityFunction, new ArrayList<>());
     }
 
     public List<Island> getVisibleIslands() {
@@ -121,6 +124,7 @@ public class World {
 
     public void addEntity(Entity e) {
         staticEntities.insert(e);
+        //  staticEntities.add(e);
         addedEntities++;
     }
 

@@ -25,6 +25,8 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import java.text.DecimalFormat;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46.GL_ONE_MINUS_SRC_ALPHA;
@@ -67,6 +69,7 @@ public class Main {
         ParticleManager pm = new ParticleManager();
         WorldGenerator worldGenerator = new WorldGenerator(radius);
         World world = worldGenerator.generateWorld(pm);
+        //world.loadEntireWorld(worldGenerator);
         FreeFlightCamera flightCamera = new FreeFlightCamera(mim, freeFlightCam);
         FreeFlightCamera flightCamera2 = new FreeFlightCamera(mim, freeFlightCam);
         player.movement = kim;

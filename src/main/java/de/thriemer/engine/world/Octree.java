@@ -1,6 +1,7 @@
 package de.thriemer.engine.world;
 
 import de.thriemer.disguisedphoenix.Entity;
+import de.thriemer.engine.util.Maths;
 import org.joml.FrustumIntersection;
 import org.joml.Intersectionf;
 import org.joml.Matrix4f;
@@ -8,15 +9,14 @@ import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Map;
+import java.util.function.Function;
 
 public class Octree {
-    private static final float NEEDED_SIZE_PER_LENGTH_UNIT = 0.005f;
 
-    private static final float MIN_SIZE = 2f;
-
-    private int splitSize = 20;
+    private static final float MIN_SIZE = 5f;
+    private static final float LOOSENESS = 1.5f;
+    private int splitSize = 40;
     private final Vector3f centerPosition;
     private final float halfWidth;
     private final float halfHeight;
@@ -25,7 +25,8 @@ public class Octree {
     private Octree[] nodes;
     private final Vector3f min;
     private final Vector3f max;
-
+    private final Vector3f looseMin;
+    private final Vector3f looseMax;
     private final List<Entity> entities = new ArrayList<>();
 
     public Octree(Vector3f centerPosition, float width, float height, float depth) {
@@ -35,37 +36,37 @@ public class Octree {
         this.halfDepth = depth / 2f;
         min = new Vector3f(centerPosition).sub(halfWidth, halfHeight, halfDepth);
         max = new Vector3f(centerPosition).add(halfWidth, halfHeight, halfDepth);
-    }
+        looseMin = new Vector3f(centerPosition).sub(LOOSENESS * halfWidth, LOOSENESS * halfHeight, LOOSENESS * halfDepth);
+        looseMax = new Vector3f(centerPosition).add(LOOSENESS * halfWidth, LOOSENESS * halfHeight, LOOSENESS * halfDepth);
 
-    public static boolean couldBeVisible(Entity e, Vector3f cameraPos) {
-        float size = e.getRadius();
-        float distance = e.getPosition().distance(cameraPos);
-        return size > distance * NEEDED_SIZE_PER_LENGTH_UNIT;
     }
 
     public void insert(Entity e) {
-        int i = 0;
-        int fittingCounter = 0;
-        Octree fitting = null;
-        while (hasChildren && i < nodes.length) {
-            if (nodes[i].contains(e)) {
-                fitting = nodes[i];
-                fittingCounter++;
+        if (hasChildren) {
+            boolean stillFree = true;
+            for (Octree node : nodes) {
+                if (node.containsLoosely(e) && node.contains(e.getCenter())) {
+                    node.insert(e);
+                    stillFree = false;
+                    break;
+                }
             }
-            i++;
-        }
-        if (!hasChildren || fittingCounter != 1) {
-            entities.add(e);
+            if (stillFree) {
+                entities.add(e);
+            }
         } else {
-            fitting.insert(e);
+            entities.add(e);
         }
         if (entities.size() > splitSize && !hasChildren && !hasMinSize()) {
             splitTree();
         }
     }
 
+    private boolean contains(Vector3f center) {
+        return Maths.pointInAabb(min, max, center);
+    }
+
     private void splitTree() {
-        hasChildren = true;
         nodes = new Octree[8];
         //cache all the entities to not end up in an endless loop
         List<Entity> toReinsert = new ArrayList<>(entities);
@@ -84,52 +85,49 @@ public class Octree {
             }
         }
         //reinsert it in the this node and therefore leaves
+        hasChildren = true;
         for (Entity e : toReinsert) {
             this.insert(e);
         }
     }
 
-    private Stream.Builder<Entity> addVisibleEntitiesToBuilder(Stream.Builder<Entity> builder, FrustumIntersection frustum, Vector3f camPos) {
-        if (frustum.testAab(min, max)) {
-            entities.stream().filter(e -> couldBeVisible(e, camPos)).forEach(builder::add);
+    public List<Entity> getAllVisibleEntities(FrustumIntersection frustum, Function<Entity, Boolean> visibilityFunction, List<Entity> result) {
+        if (frustum.testAab(looseMin, looseMax)) {
+            List<Entity> shallowCopy = new ArrayList<>(entities);
+            if (!shallowCopy.isEmpty()) {
+                for (Entity e : shallowCopy) {
+                    if (visibilityFunction.apply(e) && frustum.testSphere(e.getCenter(), e.getRadius()))
+                        result.add(e);
+                }
+            }
             if (hasChildren) {
                 for (Octree node : nodes) {
-                    node.addVisibleEntitiesToBuilder(builder, frustum, camPos);
+                    if (node != null)
+                        node.getAllVisibleEntities(frustum, visibilityFunction, result);
                 }
             }
         }
-        return builder;
+        return result;
     }
 
-    private Stream.Builder<Octree> addVisibleNodesToBuilder(Stream.Builder<Octree> builder, FrustumIntersection frustum) {
-        if (frustum.testAab(min, max)) {
-            if (!entities.isEmpty()) {
-                builder.add(this);
-            }
-            if (hasChildren&&nodes!=null) {
-                for (Octree node : nodes) {
-                    if(node!=null)
-                    node.addVisibleNodesToBuilder(builder, frustum);
-                }
-            }
+    public void collectStats(int level, Map<Integer, Integer> levelInfo) {
+        int size = entities.size();
+        if (levelInfo.containsKey(level)) {
+            int current = levelInfo.get(level);
+            current += size;
+            levelInfo.put(level, current);
+        } else {
+            levelInfo.put(level, size);
         }
-        return builder;
+        if (hasChildren)
+            for (Octree o : nodes)
+                o.collectStats(level + 1, levelInfo);
     }
-
-    public List<Octree> getAllVisibleNodes(FrustumIntersection frustum) {
-        return addVisibleNodesToBuilder(Stream.builder(), frustum).build().collect(Collectors.toList());
-    }
-/*
-    public List<Entity> getAllVisibleEntities(FrustumIntersection frustum, Vector3f camPos) {
-        return addVisibleEntitiesToBuilder(Stream.builder(),frustum, camPos).build().collect(Collectors.toList());
-    }*/
-
-    public List<Entity> getAllVisibleEntities(Vector3f camPos) {
-        return new ArrayList<>(entities).stream().filter(e -> couldBeVisible(e, camPos)).collect(Collectors.toList());
-    }
-
     protected boolean contains(Entity e) {
         return Intersectionf.testAabSphere(min, max, e.getCenter(), e.getRadius());
+    }
+    protected boolean containsLoosely(Entity e) {
+        return Maths.aabbFullyContainsSphere(looseMin, looseMax, e.getCenter(), e.getRadius());
     }
 
     private boolean hasMinSize() {
@@ -152,14 +150,6 @@ public class Octree {
             }
         }
         return list;
-    }
-
-    public Vector3f getMin() {
-        return min;
-    }
-
-    public Vector3f getMax() {
-        return max;
     }
 
     public Vector3f getCenter() {

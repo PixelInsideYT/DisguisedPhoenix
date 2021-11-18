@@ -15,9 +15,9 @@ public class ShadowRenderer {
 
     public ShadowRenderer(QuadRenderer quadRenderer, int width, int height) {
         ssaoEffect = new SSAOEffect(quadRenderer, width, height);
-     //   ssaoEffect.disable();
+        ssaoEffect.disable();
         shadowEffect = new ShadowEffect();
-      //  shadowEffect.disable();
+        shadowEffect.disable();
     }
 
     public void render(FrameBufferObject gBuffer,Matrix4f projMatrix,Matrix4f viewMatrix, float nearPlane, float farPlane, float fov, float aspectRatio, float time, Vector3f lightPos, MultiIndirectRenderer multiRenderer){

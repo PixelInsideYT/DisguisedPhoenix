@@ -5,6 +5,7 @@ import de.thriemer.disguisedphoenix.Player;
 import de.thriemer.disguisedphoenix.terrain.Island;
 import de.thriemer.disguisedphoenix.terrain.World;
 import de.thriemer.engine.time.CPUTimerQuery;
+import de.thriemer.engine.util.Maths;
 import de.thriemer.graphics.core.context.Display;
 import de.thriemer.graphics.core.objects.BufferObject;
 import de.thriemer.graphics.core.objects.FrameBufferObject;
@@ -108,9 +109,7 @@ public class MasterRenderer {
         hizGen.generateHiZMipMap(gBuffer);
         //
         entityCollectionTimer.startQuery();
-        List<Entity> visibleEntities = world.getVisibleNodes(projMatrix,viewMatrix).stream()
-                .flatMap(node->node.getAllVisibleEntities(camPos).stream())
-                .collect(Collectors.toList());
+        List<Entity> visibleEntities = world.getVisibleEntities(projMatrix,viewMatrix,e->Maths.couldBeVisible(e,camPos));
         entityCollectionTimer.stopQuery();
         //TODO: more performant occlusion culling
         vegetationRenderer.prepareRender( visibleEntities);
