@@ -33,22 +33,23 @@ public class LightingPassRenderer {
         deferredResult= new FrameBufferObject(width, height, 2).addTextureAttachment(0).addTextureAttachment(1).unbind();
     }
 
-    public void render(FrameBufferObject gBuffer, ShadowRenderer shadowRenderer, CameraInformation cameraInformation, Matrix4f viewMatrix, Vector3f lightPos, Vector3f lightColor) {
+    public void render(FrameBufferObject gBuffer, ShadowRenderer shadowRenderer, CameraInformation cameraInformation, Vector3f lightPos, Vector3f lightColor) {
         lightTimer.startQuery();
         deferredResult.bind();
         bindTextures(gBuffer, shadowRenderer.ssaoEffect.getSSAOTexture(), shadowRenderer.shadowEffect.getShadowTextureArray());
         shader.bind();
         shader.loadInt("ssaoEnabled", shadowRenderer.ssaoEffect.isEnabled() ? 1 : 0);
         shader.loadInt("shadowsEnabled", shadowRenderer.shadowEffect.isEnabled() ? 1 : 0);
-        shader.load3DVector("lightPos", viewMatrix.transformPosition(new Vector3f(lightPos)));
+        shader.load3DVector("lightPos", cameraInformation.getViewMatrix().transformPosition(new Vector3f(lightPos)));
         shader.load3DVector("lightColor", lightColor);
         shader.loadFloat("zFar", cameraInformation.getFarPlane());
         shader.loadMatrix("projMatrixInv", cameraInformation.getInvertedProjectionMatrix());
         shader.loadFloatArray("splitRange", ShadowEffect.CASCADE_DISTANCE);
         Matrix4f[] shadowReprojected = shadowRenderer.shadowEffect.getShadowProjViewMatrix();
         Matrix4f[] shadowReprojectionMatrix = new Matrix4f[shadowReprojected.length];
+        Matrix4f invertedCameraMatrix = new Matrix4f(cameraInformation.getViewMatrix()).invert();
         for (int i = 0; i < shadowReprojectionMatrix.length; i++) {
-            shadowReprojectionMatrix[i] = new Matrix4f(shadowReprojected[i]).mul(new Matrix4f(viewMatrix).invert());
+            shadowReprojectionMatrix[i] = new Matrix4f(shadowReprojected[i]).mul(invertedCameraMatrix);
         }
         shader.loadMatrix4fArray("shadowReprojectionMatrix", shadowReprojectionMatrix);
         quadRenderer.renderOnlyQuad();

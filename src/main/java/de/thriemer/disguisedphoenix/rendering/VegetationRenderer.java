@@ -36,12 +36,12 @@ public class VegetationRenderer {
         multiRenderer.prepareRenderer(vaoSortedEntries);
     }
 
-    public void render(float time, Matrix4f projMatrix, Matrix4f viewMatrix){
+    public void render(float time, CameraInformation cameraInformation){
         vegetationShader.bind();
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, windTexture);
-        vegetationShader.loadMatrix("projMatrix", projMatrix);
-        vegetationShader.loadMatrix("viewMatrix", viewMatrix);
+        vegetationShader.loadMatrix("projMatrix", cameraInformation.getProjectionMatrix());
+        vegetationShader.loadMatrix("viewMatrix", cameraInformation.getViewMatrix());
         vegetationShader.loadFloat("time", time);
         vegetationShader.loadInt("useInputTransformationMatrix", 1);
         multiRenderer.render();

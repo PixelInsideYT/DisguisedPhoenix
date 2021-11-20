@@ -2,6 +2,7 @@ package de.thriemer.graphics.core.renderer;
 
 import de.thriemer.disguisedphoenix.Entity;
 import de.thriemer.disguisedphoenix.Main;
+import de.thriemer.disguisedphoenix.rendering.CameraInformation;
 import de.thriemer.graphics.core.objects.Vao;
 import de.thriemer.graphics.core.shaders.Shader;
 import de.thriemer.graphics.modelinfo.Model;
@@ -23,10 +24,10 @@ public class TestRenderer {
         this.shader = shader;
     }
 
-    public void begin(Matrix4f camMatrix, Matrix4f projMatrix) {
+    public void begin(CameraInformation cameraInformation) {
         shader.bind();
-        shader.loadMatrix("projMatrix", projMatrix);
-        shader.loadMatrix("viewMatrix", camMatrix);
+        shader.loadMatrix("projMatrix", cameraInformation.getProjectionMatrix());
+        shader.loadMatrix("viewMatrix", cameraInformation.getViewMatrix());
         shader.loadInt("useInputTransformationMatrix",0);
     }
 

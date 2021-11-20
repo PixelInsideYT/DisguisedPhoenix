@@ -2,6 +2,7 @@ package de.thriemer.disguisedphoenix.terrain;
 
 import de.thriemer.disguisedphoenix.Entity;
 import de.thriemer.disguisedphoenix.adder.EntityAdder;
+import de.thriemer.disguisedphoenix.rendering.CameraInformation;
 import de.thriemer.disguisedphoenix.terrain.generator.TerrainTriangle;
 import de.thriemer.disguisedphoenix.terrain.generator.WorldGenerator;
 import de.thriemer.engine.world.Octree;
@@ -99,13 +100,13 @@ public class World {
         }
     }
 
-    public List<Entity> getVisibleEntities(Matrix4f projMatrix, Matrix4f viewMatrix, Function<Entity, Boolean> visibilityFunction) {
+    public List<Entity> getVisibleEntities(Matrix4f projViewMatrix, Function<Entity, Boolean> visibilityFunction) {
         List<Entity> returnList = new LinkedList<>();
-        consumeVisibleEntities(projMatrix,viewMatrix,visibilityFunction,returnList::add);
+        consumeVisibleEntities(projViewMatrix,visibilityFunction,returnList::add);
         return returnList;
     }
-    public void consumeVisibleEntities(Matrix4f projMatrix, Matrix4f viewMatrix, Function<Entity, Boolean> visibilityFunction, Consumer<Entity> entityConsumer) {
-        cullingHelper.set(cullingMatrix.set(projMatrix).mul(viewMatrix));
+    public void consumeVisibleEntities(Matrix4f projViewMatrix, Function<Entity, Boolean> visibilityFunction, Consumer<Entity> entityConsumer) {
+        cullingHelper.set(projViewMatrix);
         staticEntities.getAllVisibleEntities(cullingHelper, visibilityFunction, entityConsumer);
     }
     public List<Island> getVisibleIslands() {

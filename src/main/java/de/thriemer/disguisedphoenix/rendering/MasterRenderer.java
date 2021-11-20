@@ -56,9 +56,9 @@ public class MasterRenderer {
     private final TestRenderer renderer;
 
     public MasterRenderer(ContextInformation contextInformation) {
-       int width=contextInformation.getWidth();
-       int height=contextInformation.getHeight();
-        cameraInformation = new CameraInformation(NEAR_PLANE,FAR_PLANE,FOV,contextInformation.getAspectRatio());
+        int width = contextInformation.getWidth();
+        int height = contextInformation.getHeight();
+        cameraInformation = new CameraInformation(NEAR_PLANE, FAR_PLANE, FOV, contextInformation.getAspectRatio());
         multiIndirectRenderer = new MultiIndirectRenderer();
         vegetationRenderer = new VegetationRenderer(multiIndirectRenderer);
         renderer = new TestRenderer(vegetationRenderer.vegetationShader);
@@ -88,9 +88,10 @@ public class MasterRenderer {
     //TODO: deferred rendering with heck ton of lights
 
     public void render(Player player, Camera camera, Display display, Matrix4f viewMatrix, Vector3f camPos, float time, World world, Vector3f lightPos, Vector3f lightColor) {
+        cameraInformation.updateCameraMatrix(viewMatrix);
         entityCollectionTimer.startQuery();
-        Map<Vao, Map<RenderInfo, List<Matrix4f>>> vaoSortedEntries=new HashMap<>();
-       world.consumeVisibleEntities(cameraInformation.getProjectionMatrix(), viewMatrix, e -> Maths.couldBeVisible(e, camPos), e->consumeRenderEntity(e,vaoSortedEntries));
+        Map<Vao, Map<RenderInfo, List<Matrix4f>>> vaoSortedEntries = new HashMap<>();
+        world.consumeVisibleEntities(cameraInformation.getProjViewMatrix(), e -> Maths.couldBeVisible(e, camPos), e -> consumeRenderEntity(e, vaoSortedEntries));
         entityCollectionTimer.stopQuery();
         vertexTimer.startQuery();
         OpenGLState.enableBackFaceCulling();
@@ -99,7 +100,7 @@ public class MasterRenderer {
         gBuffer.bind();
         glClearColor(0.1f, 0.1f, 0.9f, 0.0f);
         gBuffer.clear();
-        renderer.begin(viewMatrix, cameraInformation.getProjectionMatrix());
+        renderer.begin(cameraInformation);
         for (Island island : world.getVisibleIslands()) {
             renderer.render(island.getModel(), island.getTransformation());
         }
@@ -118,19 +119,19 @@ public class MasterRenderer {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, vegetationRenderer.getWindTexture());
         vegetationRenderer.vegetationShader.loadMatrix("projMatrix", cameraInformation.getProjectionMatrix());
-        vegetationRenderer.vegetationShader.loadMatrix("viewMatrix", viewMatrix);
+        vegetationRenderer.vegetationShader.loadMatrix("viewMatrix", cameraInformation.getViewMatrix());
         vegetationRenderer.vegetationShader.loadFloat("time", time);
         vegetationRenderer.vegetationShader.loadInt("useInputTransformationMatrix", 1);
-        vegetationRenderer.render(time, cameraInformation.getProjectionMatrix(), viewMatrix);
+        vegetationRenderer.render(time, cameraInformation);
         hizGen.generateHiZMipMap(gBuffer);
         vertexTimer.stopQuery();
-        shadowRenderer.render(gBuffer, cameraInformation, viewMatrix, time, lightPos,world, multiIndirectRenderer);
+        shadowRenderer.render(gBuffer, cameraInformation, time, lightPos, world, multiIndirectRenderer);
         OpenGLState.enableAlphaBlending();
         OpenGLState.disableDepthTest();
         gBuffer.blitDepth(lightingPassRenderer.deferredResult);
-        lightingPassRenderer.render(gBuffer, shadowRenderer, cameraInformation, viewMatrix, lightPos, lightColor);
+        lightingPassRenderer.render(gBuffer, shadowRenderer, cameraInformation, lightPos, lightColor);
         display.clear();
-        postProcessPipeline.applyPostProcessing(display, lightingPassRenderer.deferredResult,gBuffer.getDepthTexture(),camera,shadowRenderer.shadowEffect.getShadowProjViewMatrix(), shadowRenderer.shadowEffect.getShadowTextureArray(),lightPos);
+        postProcessPipeline.applyPostProcessing(display, lightingPassRenderer.deferredResult, gBuffer.getDepthTexture(), camera, shadowRenderer.shadowEffect.getShadowProjViewMatrix(), shadowRenderer.shadowEffect.getShadowTextureArray(), lightPos);
         // nuklearBinding.renderGUI(display.getWidth(),display.getHeight());
         display.flipBuffers();
     }
@@ -150,13 +151,13 @@ public class MasterRenderer {
     }
 
     public void resize(ContextInformation contextInformation) {
-        int width=contextInformation.getWidth();
-        int height=contextInformation.getHeight();
+        int width = contextInformation.getWidth();
+        int height = contextInformation.getHeight();
         gBuffer.resize(width, height);
         lightingPassRenderer.deferredResult.resize(width, height);
         shadowRenderer.ssaoEffect.resize(width, height);
         postProcessPipeline.resize(width, height);
-        cameraInformation.update(NEAR_PLANE,FAR_PLANE, FOV,contextInformation.getAspectRatio());
+        cameraInformation.update(NEAR_PLANE, FAR_PLANE, FOV, contextInformation.getAspectRatio());
     }
 
     public BufferObject getMultiDrawVBO() {

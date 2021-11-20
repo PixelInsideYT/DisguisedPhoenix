@@ -22,8 +22,8 @@ public class ShadowRenderer {
         shadowEffect.disable();
     }
 
-    public void render(FrameBufferObject gBuffer, CameraInformation cameraInformation, Matrix4f viewMatrix, float time, Vector3f lightPos, World world, MultiIndirectRenderer multiRenderer) {
-        shadowEffect.render(viewMatrix, cameraInformation, time, lightPos, world, multiRenderer);
+    public void render(FrameBufferObject gBuffer, CameraInformation cameraInformation, float time, Vector3f lightPos, World world, MultiIndirectRenderer multiRenderer) {
+        shadowEffect.render(cameraInformation, time, lightPos, world, multiRenderer);
         ssaoEffect.renderEffect(gBuffer, cameraInformation);
     }
 

@@ -85,7 +85,7 @@ public class ShadowCascade {
         return offset.mul(lightProjMatrix).mul(lightViewMatrix);
     }
 
-    public Matrix4f getViewProjMatrix() {
+    public Matrix4f getProjViewMatrix() {
         return new Matrix4f(lightProjMatrix).mul(lightViewMatrix);
     }
 

@@ -52,17 +52,17 @@ public class ShadowEffect {
     }
     //TODO: improve shadow quality by PCF or reprojection
     //TODO: create a viewport info POJO
-    public void render(Matrix4f viewMatrix, CameraInformation cameraInformation, float time, Vector3f lightPos, World world, MultiIndirectRenderer renderer) {
+    public void render(CameraInformation cameraInformation, float time, Vector3f lightPos, World world, MultiIndirectRenderer renderer) {
         if (isEnabled()) {
 
             List<List<Entity>> inCascade = new ArrayList<>();
             float near = cameraInformation.getNearPlane();
             for (int i = 0; i < SHADOWS_CASCADES; i++) {
                 float cascadeFar = CASCADE_DISTANCE[i] * cameraInformation.getFarPlane();
-                cascades[i].update(viewMatrix, near, cascadeFar, cameraInformation.getFov(), contextInformation.getAspectRatio(), lightPos);
+                cascades[i].update(cameraInformation.getViewMatrix(), near, cascadeFar, cameraInformation.getFov(), contextInformation.getAspectRatio(), lightPos);
                 near = cascadeFar;
                 Vector3f camPos = cascades[i].getLightPosition();
-                inCascade.add(world.getVisibleEntities(cascades[i].getProjMatrix(),cascades[i].getViewMatrix(), e-> e.getRadius()>1));
+                inCascade.add(world.getVisibleEntities(cascades[i].getProjViewMatrix(), e-> e.getRadius()>1));
             }
             shadowTimer.startQuery();
             shadowShader.bind();
@@ -70,7 +70,7 @@ public class ShadowEffect {
             for (int i = 0; i < SHADOWS_CASCADES; i++) {
                 shadowMap[i].bind();
                 shadowMap[i].clear();
-                shadowShader.loadMatrix("viewProjMatrix", cascades[i].getViewProjMatrix());
+                shadowShader.loadMatrix("viewProjMatrix", cascades[i].getProjViewMatrix());
                 renderer.prepareRenderer(inCascade.get(i));
                 renderer.render();
             }

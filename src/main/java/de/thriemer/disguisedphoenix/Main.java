@@ -86,7 +86,7 @@ public class Main {
         flightCamera.getPosition().set(worldGenerator.getNoiseFunction(new Vector3f(player.position)));
         flightCamera2.getPosition().set((float) Math.random() * 2f - 1f, (float) Math.random() * 2f - 1f, (float) Math.random() * 2f - 1f);
         float summedMS = 0f;
-        input.hideMouseCursor();
+       // input.hideMouseCursor();
         float switchCameraTimer = 0f;
         float captureMouseTimer = 0f;
         try {
