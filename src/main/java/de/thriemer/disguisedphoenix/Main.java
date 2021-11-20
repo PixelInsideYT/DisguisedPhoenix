@@ -109,6 +109,9 @@ public class Main {
                     freeFlightCamActivated = !freeFlightCamActivated;
                     switchCameraTimer = 0.25f;
                 }
+                if(input.isKeyDown(GLFW_KEY_T)){
+                    TimerQuery.resetAll();
+                }
                 switchCameraTimer -= dt;
                 captureMouseTimer -= dt;
                 pm.update(dt);
@@ -118,7 +121,7 @@ public class Main {
                 Matrix4f viewMatrix = ffc.getViewMatrix();
                 world.update(dt);
                 input.updateInputMaps();
-                masterRenderer.render(player, display, viewMatrix, ffc.getPosition(), time, world, lightPos, lightColor);
+                masterRenderer.render(player,ffc, display, viewMatrix, ffc.getPosition(), time, world, lightPos, lightColor);
                 display.clear();
                 avgFPS += zeitgeist.getFPS();
                 display.setFrameTitle("Disguised Phoenix: " + " FPS: " + zeitgeist.getFPS() + ", In frustum objects: " + inViewObjects + ", drawcalls: " + drawCalls + " faces: " + df.format(facesDrawn));
@@ -143,6 +146,7 @@ public class Main {
         Vao.cleanUpAllVaos();
         Shader.cleanUpAllShaders();
         display.destroy();
+
         world.shutdown();
     }
 

@@ -1,5 +1,6 @@
 package de.thriemer.graphics.postprocessing;
 
+import de.thriemer.graphics.core.objects.GPUTimerQuery;
 import de.thriemer.graphics.core.shaders.Shader;
 import de.thriemer.graphics.core.shaders.ShaderFactory;
 
@@ -9,6 +10,7 @@ public class FXAARenderer {
 
     private final Shader aliasShader;
     private final QuadRenderer renderer;
+    private final GPUTimerQuery fxaaTimer=new GPUTimerQuery("FXAA");
 
     public FXAARenderer(QuadRenderer renderer) {
         this.renderer = renderer;
@@ -19,11 +21,13 @@ public class FXAARenderer {
 
 
     public void render(int colorTexture) {
+        fxaaTimer.startQuery();
         aliasShader.bind();
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, colorTexture);
         renderer.renderOnlyQuad();
         aliasShader.unbind();
+        fxaaTimer.stopQuery();
     }
 
 }

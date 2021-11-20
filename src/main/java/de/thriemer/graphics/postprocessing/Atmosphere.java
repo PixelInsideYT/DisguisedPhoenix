@@ -27,12 +27,11 @@ import static org.lwjgl.opengl.GL46.GL_TEXTURE_2D_ARRAY;
 import static org.lwjgl.system.MemoryStack.stackPush;
 
 public class Atmosphere implements Gui {
-
     private static final String ATMOSPHERE_RADIUS = "atmosphereRadius";
     private static final String PLANET_RADIUS_UNIFORM_NAME = "planetRadius";
     private static final String DENSITY_FALLOFF = "densityFalloff";
 
-    private static final float[] depthCascades = new float[]{0.02f * MasterRenderer.FAR_PLANE, 0.05f * MasterRenderer.FAR_PLANE, 0.5f * MasterRenderer.FAR_PLANE, MasterRenderer.FAR_PLANE};
+    private static final float[] depthCascades = new float[]{0.01f * MasterRenderer.FAR_PLANE, 0.05f * MasterRenderer.FAR_PLANE, 0.25f * MasterRenderer.FAR_PLANE, MasterRenderer.FAR_PLANE};
 
     private final Shader atmosphereShader;
     private final Shader lookupGenerator;
@@ -42,8 +41,8 @@ public class Atmosphere implements Gui {
     private final Vector3f wavelengths = new Vector3f(700, 530, 440);
     private final Vector3f scatterCoeffiecients = new Vector3f();
     private float densityFalloff = 1f;
-    private float scatteringStrength = 1f;
-    private float atmosphereRadius = Main.radius + 12000;
+    private float scatteringStrength = 12f;
+    private float atmosphereRadius = Main.radius+1200;
     private static final float PLANET_RADIUS = Main.radius;
     private static final int NUM_OPTICAL_DEPTH_POINTS = 10;
     private final int blueNoiseTexture;

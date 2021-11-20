@@ -16,6 +16,8 @@ public class GPUTimerQuery extends TimerQuery {
     }
 
     public void startQuery() {
+        if(queryId!=0)
+            collectResult();
         if (timerEnabled) {
             queryId = glGenQueries();
             glBeginQuery(GL_TIME_ELAPSED, queryId);
@@ -25,15 +27,19 @@ public class GPUTimerQuery extends TimerQuery {
     public void stopQuery() {
         if (timerEnabled) {
             glEndQuery(GL_TIME_ELAPSED);
-            int[] done = new int[]{0};
-            while (done[0] == 0) {
-                glGetQueryObjectiv(queryId, GL_QUERY_RESULT_AVAILABLE, done);
-            }
-            long[] elapsedTime = new long[1];
-            glGetQueryObjectui64v(queryId, GL15.GL_QUERY_RESULT, elapsedTime);
-            float msTime = elapsedTime[0] / 1000000.0f;
-            addTime(msTime);
         }
+    }
+
+    private void collectResult(){
+        int[] done = new int[]{0};
+        while (done[0] == 0) {
+            glGetQueryObjectiv(queryId, GL_QUERY_RESULT_AVAILABLE, done);
+        }
+        long[] elapsedTime = new long[1];
+        glGetQueryObjectui64v(queryId, GL15.GL_QUERY_RESULT, elapsedTime);
+        float msTime = elapsedTime[0] / 1000000.0f;
+        addTime(msTime);
+        queryId=0;
     }
 
 }

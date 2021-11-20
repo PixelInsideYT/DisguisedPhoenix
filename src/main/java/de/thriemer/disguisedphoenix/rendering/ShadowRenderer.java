@@ -1,5 +1,6 @@
 package de.thriemer.disguisedphoenix.rendering;
 
+import de.thriemer.disguisedphoenix.terrain.World;
 import de.thriemer.graphics.core.objects.FrameBufferObject;
 import de.thriemer.graphics.core.renderer.MultiIndirectRenderer;
 import de.thriemer.graphics.occlusion.SSAOEffect;
@@ -20,8 +21,8 @@ public class ShadowRenderer {
         shadowEffect.disable();
     }
 
-    public void render(FrameBufferObject gBuffer,Matrix4f projMatrix,Matrix4f viewMatrix, float nearPlane, float farPlane, float fov, float aspectRatio, float time, Vector3f lightPos, MultiIndirectRenderer multiRenderer){
-        shadowEffect.render(viewMatrix, nearPlane, farPlane, (float) Math.toRadians(fov), aspectRatio, time, lightPos, multiRenderer);
+    public void render(FrameBufferObject gBuffer, Matrix4f projMatrix, Matrix4f viewMatrix, float nearPlane, float farPlane, float fov, float aspectRatio, float time, Vector3f lightPos, World world, MultiIndirectRenderer multiRenderer){
+        shadowEffect.render(viewMatrix, nearPlane, farPlane, (float) Math.toRadians(fov), aspectRatio, time, lightPos,world, multiRenderer);
         ssaoEffect.renderEffect(gBuffer, projMatrix,farPlane);
     }
 

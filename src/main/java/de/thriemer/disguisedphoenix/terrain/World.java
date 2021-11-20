@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -98,10 +99,14 @@ public class World {
     }
 
     public List<Entity> getVisibleEntities(Matrix4f projMatrix, Matrix4f viewMatrix, Function<Entity, Boolean> visibilityFunction) {
-        cullingHelper.set(cullingMatrix.set(projMatrix).mul(viewMatrix));
-        return staticEntities.getAllVisibleEntities(cullingHelper, visibilityFunction, new ArrayList<>());
+        List<Entity> returnList = new LinkedList<>();
+        consumeVisibleEntities(projMatrix,viewMatrix,visibilityFunction,returnList::add);
+        return returnList;
     }
-
+    public void consumeVisibleEntities(Matrix4f projMatrix, Matrix4f viewMatrix, Function<Entity, Boolean> visibilityFunction, Consumer<Entity> entityConsumer) {
+        cullingHelper.set(cullingMatrix.set(projMatrix).mul(viewMatrix));
+        staticEntities.getAllVisibleEntities(cullingHelper, visibilityFunction, entityConsumer);
+    }
     public List<Island> getVisibleIslands() {
         return islands.stream().filter(i -> i.isVisible(cullingHelper)).collect(Collectors.toList());
     }

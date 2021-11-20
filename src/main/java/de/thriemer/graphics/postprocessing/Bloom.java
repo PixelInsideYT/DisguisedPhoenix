@@ -1,6 +1,7 @@
 package de.thriemer.graphics.postprocessing;
 
 import de.thriemer.graphics.core.objects.FrameBufferObject;
+import de.thriemer.graphics.core.objects.GPUTimerQuery;
 import de.thriemer.graphics.core.shaders.Shader;
 import de.thriemer.graphics.core.shaders.ShaderFactory;
 import org.joml.Vector2f;
@@ -17,6 +18,7 @@ public class Bloom {
     private final FrameBufferObject outFbo;
     private final QuadRenderer renderer;
     private int mipLevel = 0;
+    private GPUTimerQuery bloomTimer = new GPUTimerQuery("Bloom");
 
     public Bloom(int width, int height, QuadRenderer renderer) {
         this.renderer = renderer;
@@ -29,6 +31,7 @@ public class Bloom {
     }
 
     public void render(int highlightTexture) {
+        bloomTimer.startQuery();
         customBlurShader.bind();
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, highlightTexture);
@@ -45,6 +48,7 @@ public class Bloom {
         outFbo.bind();
         renderer.renderOnlyQuad();
         outFbo.unbind();
+        bloomTimer.stopQuery();
     }
 
     public int getTexture() {

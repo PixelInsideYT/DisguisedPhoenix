@@ -1,6 +1,8 @@
 package de.thriemer.graphics.occlusion;
 
 import de.thriemer.disguisedphoenix.Entity;
+import de.thriemer.disguisedphoenix.terrain.World;
+import de.thriemer.engine.util.Maths;
 import de.thriemer.graphics.core.objects.FrameBufferObject;
 import de.thriemer.graphics.core.objects.GPUTimerQuery;
 import de.thriemer.graphics.core.renderer.MultiIndirectRenderer;
@@ -33,7 +35,6 @@ public class ShadowEffect {
     private final Shader shadowShader;
 
     private boolean enabled = true;
-    private final FrustumIntersection frustumIntersection = new FrustumIntersection();
 
     public ShadowEffect() {
         generate2DTextureArray();
@@ -50,16 +51,16 @@ public class ShadowEffect {
     }
     //TODO: improve shadow quality by PCF or reprojection
     //TODO: create a viewport info POJO
-    public void render(Matrix4f viewMatrix, float nearPlane, float farPlane, float fov, float aspect, float time, Vector3f lightPos, MultiIndirectRenderer renderer) {
+    public void render(Matrix4f viewMatrix, float nearPlane, float farPlane, float fov, float aspect, float time, Vector3f lightPos, World world, MultiIndirectRenderer renderer) {
         if (isEnabled()) {
             List<List<Entity>> inCascade = new ArrayList<>();
             float near = nearPlane;
             for (int i = 0; i < SHADOWS_CASCADES; i++) {
                 float cascadeFar = CASCADE_DISTANCE[i] * farPlane;
                 cascades[i].update(viewMatrix, near, cascadeFar, fov, aspect, lightPos);
-                frustumIntersection.set(cascades[i].getViewProjMatrix(), true);
                 near = cascadeFar;
-                inCascade.add(renderer.currentEntities.stream().filter(e -> frustumIntersection.testSphere(e.getCenter(),e.getRadius())).collect(Collectors.toList()));
+                Vector3f camPos = cascades[i].getLightPosition();
+                inCascade.add(world.getVisibleEntities(cascades[i].getProjMatrix(),cascades[i].getViewMatrix(), e-> e.getRadius()>1));
             }
             shadowTimer.startQuery();
             shadowShader.bind();
@@ -98,12 +99,6 @@ public class ShadowEffect {
         textureArray = glGenTextures();
         glBindTexture(GL_TEXTURE_2D_ARRAY, textureArray);
         glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT32F, SHADOW_RESOLUTION, SHADOW_RESOLUTION, SHADOWS_CASCADES);
-    }
-
-    public void print() {
-        if (isEnabled()) {
-            shadowTimer.printResults();
-        }
     }
 
 }

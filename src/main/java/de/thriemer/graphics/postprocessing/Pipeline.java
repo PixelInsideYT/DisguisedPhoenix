@@ -1,8 +1,10 @@
 package de.thriemer.graphics.postprocessing;
 
+import de.thriemer.graphics.camera.Camera;
 import de.thriemer.graphics.core.context.Display;
 import de.thriemer.graphics.core.objects.FrameBufferObject;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 public class Pipeline {
 
@@ -25,11 +27,12 @@ public class Pipeline {
         atm = new Atmosphere(quadRenderer);
     }
 
-    public void applyPostProcessing(Display display, FrameBufferObject deferredResult){
-        //bloom.render(deferredResult.getTextureID(1));
-        //combine.render(deferredResult.getTextureID(0), bloom.getTexture());
+    public void applyPostProcessing(Display display, FrameBufferObject deferredResult,int depthTexture, Camera camera, Matrix4f[] toShadowMap, int shadowMap, Vector3f lightPos){
+        bloom.render(deferredResult.getTextureID(1));
+        combine.render(deferredResult.getTextureID(0), bloom.getTexture());
         display.setViewport();
-        fxaa.render(deferredResult.getTextureID(0));
+        //atm.render(camera, projMatrix, toShadowMap, combine.getCombinedResult(), depthTexture ,shadowMap, lightPos);
+        fxaa.render(combine.getCombinedResult());
     }
 
     public void resize(int width, int height) {

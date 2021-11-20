@@ -11,14 +11,14 @@ public class CPUTimerQuery extends TimerQuery {
     @Override
     public void startQuery() {
         if(timerEnabled){
-            startTime=System.currentTimeMillis();
+            startTime=System.nanoTime();
         }
     }
 
     @Override
     public void stopQuery() {
         if(timerEnabled){
-            float msTime =(System.currentTimeMillis()-startTime);
+            float msTime =(System.nanoTime()-startTime)/1000000f;
             addTime(msTime);
         }
     }

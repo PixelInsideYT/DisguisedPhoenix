@@ -10,13 +10,14 @@ import org.joml.Vector3f;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class Octree {
 
-    private static final float MIN_SIZE = 5f;
+    private static final float MIN_SIZE = 1f;
     private static final float LOOSENESS = 1.5f;
-    private int splitSize = 40;
+    private int splitSize = 100;
     private final Vector3f centerPosition;
     private final float halfWidth;
     private final float halfHeight;
@@ -91,23 +92,21 @@ public class Octree {
         }
     }
 
-    public List<Entity> getAllVisibleEntities(FrustumIntersection frustum, Function<Entity, Boolean> visibilityFunction, List<Entity> result) {
+    public void getAllVisibleEntities(FrustumIntersection frustum, Function<Entity, Boolean> visibilityFunction, Consumer<Entity> entityConsumer) {
         if (frustum.testAab(looseMin, looseMax)) {
             List<Entity> shallowCopy = new ArrayList<>(entities);
             if (!shallowCopy.isEmpty()) {
                 for (Entity e : shallowCopy) {
                     if (visibilityFunction.apply(e) && frustum.testSphere(e.getCenter(), e.getRadius()))
-                        result.add(e);
+                        entityConsumer.accept(e);
                 }
             }
             if (hasChildren) {
                 for (Octree node : nodes) {
-                    if (node != null)
-                        node.getAllVisibleEntities(frustum, visibilityFunction, result);
+                    node.getAllVisibleEntities(frustum, visibilityFunction, entityConsumer);
                 }
             }
         }
-        return result;
     }
 
     public void collectStats(int level, Map<Integer, Integer> levelInfo) {
@@ -123,9 +122,11 @@ public class Octree {
             for (Octree o : nodes)
                 o.collectStats(level + 1, levelInfo);
     }
+
     protected boolean contains(Entity e) {
         return Intersectionf.testAabSphere(min, max, e.getCenter(), e.getRadius());
     }
+
     protected boolean containsLoosely(Entity e) {
         return Maths.aabbFullyContainsSphere(looseMin, looseMax, e.getCenter(), e.getRadius());
     }

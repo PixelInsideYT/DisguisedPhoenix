@@ -68,11 +68,9 @@ public class MultiIndirectRenderer {
         currentEntities.addAll(entities);
         //sort entities according to Vao and model (remember one vao has multiple models)
         Map<Vao, Map<RenderInfo, List<Matrix4f>>> vaoSortedEntries = new HashMap<>();
-        Map<RenderInfo, Model> modelMap=new HashMap<>();
         for (Entity e : entities) {
             RenderInfo entityRenderInfo = e.getModel().getRenderInfo();
             if (entityRenderInfo.isMultiDrawCapable()) {
-                modelMap.computeIfAbsent(entityRenderInfo,k->e.getModel());
                 Map<RenderInfo, List<Matrix4f>> instanceMap = vaoSortedEntries.computeIfAbsent(entityRenderInfo.getActualVao(), k -> new HashMap<>());
                 List<Matrix4f> entityTransformation = instanceMap.computeIfAbsent(entityRenderInfo, k -> new ArrayList<>());
                 entityTransformation.add(e.getTransformationMatrix());
@@ -80,7 +78,7 @@ public class MultiIndirectRenderer {
                 Main.facesDrawn += entityRenderInfo.getIndicesCount() / 3;
             }
         }
-        prepareRender(vaoSortedEntries);
+        prepareRenderer(vaoSortedEntries);
     }
 
     public void prepareRenderer(RenderInfo renderInfo, List<Matrix4f> matrix4fList) {
@@ -89,7 +87,7 @@ public class MultiIndirectRenderer {
             Map<RenderInfo, List<Matrix4f>> map = new HashMap<>();
             map.put(renderInfo, matrix4fList);
             vaoSortedEntries.put(renderInfo.getActualVao(), map);
-            prepareRender(vaoSortedEntries);
+            prepareRenderer(vaoSortedEntries);
         } else {
             log.error("Model not MultiDraw capable");
         }
@@ -100,7 +98,7 @@ public class MultiIndirectRenderer {
 
     }*/
 
-    private void prepareRender(Map<Vao, Map<RenderInfo, List<Matrix4f>>> vaoSortedEntries) {
+    public void prepareRenderer(Map<Vao, Map<RenderInfo, List<Matrix4f>>> vaoSortedEntries) {
         renderCommands.clear();
         //build command buffer per vao, fill matrix buffer and render
         for (Vao vao : vaoSortedEntries.keySet()) {
