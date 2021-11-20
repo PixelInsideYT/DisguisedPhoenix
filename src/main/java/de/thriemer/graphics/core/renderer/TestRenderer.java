@@ -37,7 +37,7 @@ public class TestRenderer {
         int indicesLength = vao.getIndicesLength();
         for (Matrix4f modelMatrix : modelMatrixArray) {
             shader.loadMatrix("transformationMatrixUniform", modelMatrix);
-            glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indicesLength, GL11.GL_UNSIGNED_INT, renderInfo.getIndexOffset() * 4, renderInfo.getVertexOffset());
+            glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indicesLength, GL11.GL_UNSIGNED_INT, renderInfo.getIndexOffset() * 4L, renderInfo.getVertexOffset());
             Main.inViewObjects++;
             Main.inViewVerticies += indicesLength;
             Main.drawCalls++;
@@ -54,7 +54,7 @@ public class TestRenderer {
             int indicesLength = mesh.getIndicesLength();
             for (Entity e : toRender.get(model)) {
                 shader.loadMatrix("transformationMatrixUniform", e.getTransformationMatrix());
-                glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indicesLength, GL11.GL_UNSIGNED_INT, renderInfo.getIndexOffset() * 4, renderInfo.getVertexOffset());
+                glDrawElementsBaseVertex(GL11.GL_TRIANGLES, indicesLength, GL11.GL_UNSIGNED_INT, renderInfo.getIndexOffset() * 4L, renderInfo.getVertexOffset());
                 Main.inViewObjects++;
                 Main.inViewVerticies += indicesLength;
                 Main.drawCalls++;

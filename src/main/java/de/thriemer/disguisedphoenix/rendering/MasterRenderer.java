@@ -6,9 +6,9 @@ import de.thriemer.disguisedphoenix.Player;
 import de.thriemer.disguisedphoenix.terrain.Island;
 import de.thriemer.disguisedphoenix.terrain.World;
 import de.thriemer.engine.time.CPUTimerQuery;
-import de.thriemer.engine.time.Zeitgeist;
 import de.thriemer.engine.util.Maths;
 import de.thriemer.graphics.camera.Camera;
+import de.thriemer.graphics.core.context.ContextInformation;
 import de.thriemer.graphics.core.context.Display;
 import de.thriemer.graphics.core.objects.*;
 import de.thriemer.graphics.core.renderer.MultiIndirectRenderer;
@@ -26,9 +26,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
@@ -36,17 +33,14 @@ import static org.lwjgl.opengl.GL13.glActiveTexture;
 
 public class MasterRenderer {
 
-    public static final float FAR_PLANE = 1000f;
     public static final float NEAR_PLANE = 0.05f;
-    public static final float FOV = 70;
+    public static final float FAR_PLANE = 10000;
+    private static final float FOV = 70;
 
-    private int width;
-    private int height;
-    private float aspectRatio;
+    CameraInformation cameraInformation;
+
     GPUTimerQuery vertexTimer = new GPUTimerQuery("Geometry Pass");
     CPUTimerQuery entityCollectionTimer = new CPUTimerQuery("Entity Collection");
-
-    Matrix4f projMatrix = new Matrix4f();
 
     private FrameBufferObject gBuffer;
 
@@ -61,24 +55,23 @@ public class MasterRenderer {
     Pipeline postProcessPipeline;
     private final TestRenderer renderer;
 
-    public MasterRenderer(int width, int height, float aspectRatio) {
-        this.width = width;
-        this.height = height;
-        this.aspectRatio = aspectRatio;
-        setProjMatrix();
+    public MasterRenderer(ContextInformation contextInformation) {
+       int width=contextInformation.getWidth();
+       int height=contextInformation.getHeight();
+        cameraInformation = new CameraInformation(NEAR_PLANE,FAR_PLANE,FOV,contextInformation.getAspectRatio());
         multiIndirectRenderer = new MultiIndirectRenderer();
         vegetationRenderer = new VegetationRenderer(multiIndirectRenderer);
         renderer = new TestRenderer(vegetationRenderer.vegetationShader);
         lightingPassRenderer = new LightingPassRenderer(quadRenderer, width, height);
-        shadowRenderer = new ShadowRenderer(quadRenderer, width, height);
+        shadowRenderer = new ShadowRenderer(quadRenderer, contextInformation);
         setupFBOs(width, height);
-        setupPostProcessing(width, height, projMatrix);
+        setupPostProcessing(width, height);
         occlusionCalculator = new OcclusionCalculator();
     }
 
 
-    private void setupPostProcessing(int width, int height, Matrix4f projMatrix) {
-        postProcessPipeline = new Pipeline(width, height, projMatrix, quadRenderer, blur);
+    private void setupPostProcessing(int width, int height) {
+        postProcessPipeline = new Pipeline(width, height, quadRenderer, blur);
     }
 
     private void setupFBOs(int width, int height) {
@@ -97,7 +90,7 @@ public class MasterRenderer {
     public void render(Player player, Camera camera, Display display, Matrix4f viewMatrix, Vector3f camPos, float time, World world, Vector3f lightPos, Vector3f lightColor) {
         entityCollectionTimer.startQuery();
         Map<Vao, Map<RenderInfo, List<Matrix4f>>> vaoSortedEntries=new HashMap<>();
-       world.consumeVisibleEntities(projMatrix, viewMatrix, e -> Maths.couldBeVisible(e, camPos), e->consumeRenderEntity(e,vaoSortedEntries));
+       world.consumeVisibleEntities(cameraInformation.getProjectionMatrix(), viewMatrix, e -> Maths.couldBeVisible(e, camPos), e->consumeRenderEntity(e,vaoSortedEntries));
         entityCollectionTimer.stopQuery();
         vertexTimer.startQuery();
         OpenGLState.enableBackFaceCulling();
@@ -106,7 +99,7 @@ public class MasterRenderer {
         gBuffer.bind();
         glClearColor(0.1f, 0.1f, 0.9f, 0.0f);
         gBuffer.clear();
-        renderer.begin(viewMatrix, projMatrix);
+        renderer.begin(viewMatrix, cameraInformation.getProjectionMatrix());
         for (Island island : world.getVisibleIslands()) {
             renderer.render(island.getModel(), island.getTransformation());
         }
@@ -124,18 +117,18 @@ public class MasterRenderer {
         vegetationRenderer.vegetationShader.bind();
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, vegetationRenderer.getWindTexture());
-        vegetationRenderer.vegetationShader.loadMatrix("projMatrix", projMatrix);
+        vegetationRenderer.vegetationShader.loadMatrix("projMatrix", cameraInformation.getProjectionMatrix());
         vegetationRenderer.vegetationShader.loadMatrix("viewMatrix", viewMatrix);
         vegetationRenderer.vegetationShader.loadFloat("time", time);
         vegetationRenderer.vegetationShader.loadInt("useInputTransformationMatrix", 1);
-        vegetationRenderer.render(time, projMatrix, viewMatrix);
+        vegetationRenderer.render(time, cameraInformation.getProjectionMatrix(), viewMatrix);
         hizGen.generateHiZMipMap(gBuffer);
         vertexTimer.stopQuery();
-        shadowRenderer.render(gBuffer, projMatrix, viewMatrix, NEAR_PLANE, FAR_PLANE, FOV, aspectRatio, time, lightPos,world, multiIndirectRenderer);
+        shadowRenderer.render(gBuffer, cameraInformation, viewMatrix, time, lightPos,world, multiIndirectRenderer);
         OpenGLState.enableAlphaBlending();
         OpenGLState.disableDepthTest();
         gBuffer.blitDepth(lightingPassRenderer.deferredResult);
-        lightingPassRenderer.render(gBuffer, shadowRenderer, projMatrix, viewMatrix, lightPos, lightColor, FAR_PLANE);
+        lightingPassRenderer.render(gBuffer, shadowRenderer, cameraInformation, viewMatrix, lightPos, lightColor);
         display.clear();
         postProcessPipeline.applyPostProcessing(display, lightingPassRenderer.deferredResult,gBuffer.getDepthTexture(),camera,shadowRenderer.shadowEffect.getShadowProjViewMatrix(), shadowRenderer.shadowEffect.getShadowTextureArray(),lightPos);
         // nuklearBinding.renderGUI(display.getWidth(),display.getHeight());
@@ -156,24 +149,18 @@ public class MasterRenderer {
         }
     }
 
-
-    public void resize(int width1, int height1, float aspectRatio) {
-        this.width = width1;
-        this.height = height1;
-        this.aspectRatio = aspectRatio;
-        gBuffer.resize(width1, height1);
-        lightingPassRenderer.deferredResult.resize(width1, height1);
-        shadowRenderer.ssaoEffect.resize(width1, height1);
-        postProcessPipeline.resize(width1, height1);
-        setProjMatrix();
+    public void resize(ContextInformation contextInformation) {
+        int width=contextInformation.getWidth();
+        int height=contextInformation.getHeight();
+        gBuffer.resize(width, height);
+        lightingPassRenderer.deferredResult.resize(width, height);
+        shadowRenderer.ssaoEffect.resize(width, height);
+        postProcessPipeline.resize(width, height);
+        cameraInformation.update(NEAR_PLANE,FAR_PLANE, FOV,contextInformation.getAspectRatio());
     }
 
     public BufferObject getMultiDrawVBO() {
         return multiIndirectRenderer.getPersistentMatrixVbo();
-    }
-
-    private void setProjMatrix() {
-        projMatrix.setPerspective((float) Math.toRadians(FOV), aspectRatio, NEAR_PLANE, FAR_PLANE);
     }
 
 }

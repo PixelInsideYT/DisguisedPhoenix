@@ -1,21 +1,20 @@
 package de.thriemer.graphics.occlusion;
 
 import de.thriemer.disguisedphoenix.Entity;
+import de.thriemer.disguisedphoenix.rendering.CameraInformation;
 import de.thriemer.disguisedphoenix.terrain.World;
-import de.thriemer.engine.util.Maths;
+import de.thriemer.graphics.core.context.ContextInformation;
 import de.thriemer.graphics.core.objects.FrameBufferObject;
 import de.thriemer.graphics.core.objects.GPUTimerQuery;
 import de.thriemer.graphics.core.renderer.MultiIndirectRenderer;
 import de.thriemer.graphics.core.shaders.Shader;
 import de.thriemer.graphics.core.shaders.ShaderFactory;
-import org.joml.FrustumIntersection;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.lwjgl.opengl.GL11.glBindTexture;
 import static org.lwjgl.opengl.GL11.glGenTextures;
@@ -35,8 +34,10 @@ public class ShadowEffect {
     private final Shader shadowShader;
 
     private boolean enabled = true;
+    private ContextInformation contextInformation;
 
-    public ShadowEffect() {
+    public ShadowEffect(ContextInformation contextInformation) {
+        this.contextInformation=contextInformation;
         generate2DTextureArray();
         shadowTimer = new GPUTimerQuery("Cascading Shadows");
         for (int i = 0; i < SHADOWS_CASCADES; i++) {
@@ -51,13 +52,14 @@ public class ShadowEffect {
     }
     //TODO: improve shadow quality by PCF or reprojection
     //TODO: create a viewport info POJO
-    public void render(Matrix4f viewMatrix, float nearPlane, float farPlane, float fov, float aspect, float time, Vector3f lightPos, World world, MultiIndirectRenderer renderer) {
+    public void render(Matrix4f viewMatrix, CameraInformation cameraInformation, float time, Vector3f lightPos, World world, MultiIndirectRenderer renderer) {
         if (isEnabled()) {
+
             List<List<Entity>> inCascade = new ArrayList<>();
-            float near = nearPlane;
+            float near = cameraInformation.getNearPlane();
             for (int i = 0; i < SHADOWS_CASCADES; i++) {
-                float cascadeFar = CASCADE_DISTANCE[i] * farPlane;
-                cascades[i].update(viewMatrix, near, cascadeFar, fov, aspect, lightPos);
+                float cascadeFar = CASCADE_DISTANCE[i] * cameraInformation.getFarPlane();
+                cascades[i].update(viewMatrix, near, cascadeFar, cameraInformation.getFov(), contextInformation.getAspectRatio(), lightPos);
                 near = cascadeFar;
                 Vector3f camPos = cascades[i].getLightPosition();
                 inCascade.add(world.getVisibleEntities(cascades[i].getProjMatrix(),cascades[i].getViewMatrix(), e-> e.getRadius()>1));

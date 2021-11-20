@@ -8,8 +8,6 @@ import org.joml.Vector3f;
 
 public class Pipeline {
 
-    private final Matrix4f projMatrix;
-
     private final Bloom bloom;
 
     private final Combine combine;
@@ -19,8 +17,7 @@ public class Pipeline {
 
     private final Atmosphere atm;
 
-    public Pipeline(int width, int height, Matrix4f projMatrix, QuadRenderer quadRenderer, GaussianBlur blur) {
-        this.projMatrix = projMatrix;
+    public Pipeline(int width, int height, QuadRenderer quadRenderer, GaussianBlur blur) {
         bloom = new Bloom(width, height, quadRenderer);
         combine = new Combine(width, height, quadRenderer);
         fxaa = new FXAARenderer(quadRenderer);

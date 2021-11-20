@@ -1,10 +1,10 @@
 package de.thriemer.graphics.core.context;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
-import org.lwjgl.glfw.GLFWWindowSizeCallback;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.system.MemoryStack;
@@ -20,13 +20,14 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 @Slf4j
 public class Display {
-    private final int[] size;
     private final Vector3f clearColor;
     private long window;
     private ResizeListener resizeListener;
+    @Getter
+    private ContextInformation contextInformation;
 
     public Display(String title, int width, int height) {
-        size = new int[]{width, height};
+        contextInformation = new ContextInformation(width, height);
         create(title, width, height);
         clearColor = new Vector3f(0f);
     }
@@ -82,28 +83,16 @@ public class Display {
         glfwSwapInterval(0);
         GL.createCapabilities();
         // Make the window visible
-        glfwSetWindowSizeCallback(window, new GLFWWindowSizeCallback() {
-            public void invoke(long window, int w, int h) {
-                if (w > 0 && h > 0) {
-                    GL11.glViewport(0, 0, w, h);
-                    size[0] = w;
-                    size[1] = h;
-                    if (resizeListener != null)
-                        resizeListener.resized(w, h, w / (float) h);
-                }
-                log.info("Window is resized, aspect ratio: {},{},{}", w , h , (w / (float) h));
+        glfwSetWindowSizeCallback(window, (window, newWidth, newHeight) -> {
+            if (newWidth > 0 && newHeight > 0) {
+                contextInformation.updateSize(newWidth, newHeight);
+                if (resizeListener != null)
+                    resizeListener.resized(contextInformation);
             }
+            log.info("Window is resized, aspect ratio: {},{},{}", newWidth, newHeight, (newWidth / (float) newHeight));
         });
         glfwShowWindow(window);
         pollEvents();
-    }
-
-    public int getWidth() {
-        return size[0];
-    }
-
-    public int getHeight() {
-        return size[1];
     }
 
     public void pollEvents() {
@@ -117,10 +106,6 @@ public class Display {
     public void clear() {
         glClearColor(clearColor.x, clearColor.y, clearColor.z, 1f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    }
-
-    public void setClearColor(Vector3f c) {
-        this.clearColor.set(c);
     }
 
     public void flipBuffers() {
@@ -143,8 +128,7 @@ public class Display {
     }
 
     public void setViewport() {
-        GL11.glViewport(0, 0, size[0], size[1]);
-
+        GL11.glViewport(0, 0, contextInformation.getWidth(), contextInformation.getHeight());
     }
 
     public void setResizeListener(ResizeListener resizeListener) {

@@ -12,6 +12,7 @@ import de.thriemer.engine.time.Zeitgeist;
 import de.thriemer.engine.util.ModelFileHandler;
 import de.thriemer.graphics.camera.Camera;
 import de.thriemer.graphics.camera.FreeFlightCamera;
+import de.thriemer.graphics.core.context.ContextInformation;
 import de.thriemer.graphics.core.context.Display;
 import de.thriemer.graphics.core.objects.FrameBufferObject;
 import de.thriemer.graphics.core.objects.OpenGLState;
@@ -53,10 +54,8 @@ public class Main {
         Display display = new Display("Disguised Phoenix", 1920, 1080);
         // GL11.glEnable(GL45.GL_DEBUG_OUTPUT);3
         MouseInputMap mim = new MouseInputMap();
-        int width = display.getWidth();
-        int height = display.getHeight();
-        float aspectRatio = width / (float) height;
-        MasterRenderer masterRenderer = new MasterRenderer(width, height, aspectRatio);
+        ContextInformation contextInformation = display.getContextInformation();
+        MasterRenderer masterRenderer = new MasterRenderer(contextInformation);
         ModelFileHandler.loadModelsForMultiDraw(masterRenderer.getMultiDrawVBO(), EntityAdder.getModelNameList().toArray(new String[0]));
         Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(0, radius, 0), mim);
         InputManager input = new InputManager(display.getWindowId());
@@ -146,7 +145,11 @@ public class Main {
         Vao.cleanUpAllVaos();
         Shader.cleanUpAllShaders();
         display.destroy();
-
+        Map<Integer,Integer> octreeMap = new HashMap<>();
+        world.getStaticEntities().collectStats(0,octreeMap);
+        for(Map.Entry e:octreeMap.entrySet()){
+            System.out.println(e.getKey()+":"+e.getValue());
+        }
         world.shutdown();
     }
 

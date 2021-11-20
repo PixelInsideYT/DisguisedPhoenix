@@ -1,5 +1,6 @@
 package de.thriemer.graphics.occlusion;
 
+import de.thriemer.disguisedphoenix.rendering.CameraInformation;
 import de.thriemer.graphics.core.objects.FrameBufferObject;
 import de.thriemer.graphics.core.objects.GPUTimerQuery;
 import de.thriemer.graphics.core.shaders.Shader;
@@ -56,7 +57,7 @@ public class SSAOEffect {
         return fbo.getTextureID(0);
     }
 
-    public void renderEffect(FrameBufferObject gBuffer, Matrix4f projMatrix, float farPlane) {
+    public void renderEffect(FrameBufferObject gBuffer, CameraInformation cameraInformation) {
         if (enabled) {
             ssaoTimer.startQuery();
             fbo.bind();
@@ -64,9 +65,9 @@ public class SSAOEffect {
             glActiveTexture(GL13.GL_TEXTURE0);
             GL11.glBindTexture(GL11.GL_TEXTURE_2D, gBuffer.getDepthTexture());
             ssaoShader.bind();
-            ssaoShader.loadMatrix("projMatrixInv", new Matrix4f(projMatrix).invert());
-            ssaoShader.loadFloat("farPlane", farPlane);
-            ssaoShader.loadFloat("projScale", calculateProjectionScale(projMatrix));
+            ssaoShader.loadMatrix("projMatrixInv", cameraInformation.getInvertedProjectionMatrix());
+            ssaoShader.loadFloat("farPlane", cameraInformation.getFarPlane());
+            ssaoShader.loadFloat("projScale", calculateProjectionScale(cameraInformation.getProjectionMatrix()));
             renderer.renderOnlyQuad();
             blurSSAO();
             ssaoTimer.stopQuery();

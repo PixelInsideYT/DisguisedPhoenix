@@ -26,7 +26,7 @@ public class ShadowCascade {
         // Calculate frustum corners in world space
         float maxZ = Float.MIN_VALUE;
         float minZ = Float.MAX_VALUE;
-        Matrix4f projViewMatrix = new Matrix4f().perspective(fov, aspect, near, far).mul(viewMatrix);
+        Matrix4f projViewMatrix = new Matrix4f().perspective((float)Math.toRadians(fov), aspect, near, far).mul(viewMatrix);
         for (int i = 0; i < frustumCorners.length; i++) {
             Vector3f corner = frustumCorners[i];
             projViewMatrix.frustumCorner(i, corner);

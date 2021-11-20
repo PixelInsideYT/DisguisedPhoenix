@@ -33,7 +33,7 @@ public class LightingPassRenderer {
         deferredResult= new FrameBufferObject(width, height, 2).addTextureAttachment(0).addTextureAttachment(1).unbind();
     }
 
-    public void render(FrameBufferObject gBuffer, ShadowRenderer shadowRenderer, Matrix4f projMatrix, Matrix4f viewMatrix, Vector3f lightPos, Vector3f lightColor, float farPlane) {
+    public void render(FrameBufferObject gBuffer, ShadowRenderer shadowRenderer, CameraInformation cameraInformation, Matrix4f viewMatrix, Vector3f lightPos, Vector3f lightColor) {
         lightTimer.startQuery();
         deferredResult.bind();
         bindTextures(gBuffer, shadowRenderer.ssaoEffect.getSSAOTexture(), shadowRenderer.shadowEffect.getShadowTextureArray());
@@ -42,8 +42,8 @@ public class LightingPassRenderer {
         shader.loadInt("shadowsEnabled", shadowRenderer.shadowEffect.isEnabled() ? 1 : 0);
         shader.load3DVector("lightPos", viewMatrix.transformPosition(new Vector3f(lightPos)));
         shader.load3DVector("lightColor", lightColor);
-        shader.loadFloat("zFar", farPlane);
-        shader.loadMatrix("projMatrixInv", new Matrix4f(projMatrix).invert());
+        shader.loadFloat("zFar", cameraInformation.getFarPlane());
+        shader.loadMatrix("projMatrixInv", cameraInformation.getInvertedProjectionMatrix());
         shader.loadFloatArray("splitRange", ShadowEffect.CASCADE_DISTANCE);
         Matrix4f[] shadowReprojected = shadowRenderer.shadowEffect.getShadowProjViewMatrix();
         Matrix4f[] shadowReprojectionMatrix = new Matrix4f[shadowReprojected.length];

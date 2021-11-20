@@ -1,6 +1,7 @@
 package de.thriemer.disguisedphoenix.rendering;
 
 import de.thriemer.disguisedphoenix.terrain.World;
+import de.thriemer.graphics.core.context.ContextInformation;
 import de.thriemer.graphics.core.objects.FrameBufferObject;
 import de.thriemer.graphics.core.renderer.MultiIndirectRenderer;
 import de.thriemer.graphics.occlusion.SSAOEffect;
@@ -14,16 +15,16 @@ public class ShadowRenderer {
     protected ShadowEffect shadowEffect;
     protected SSAOEffect ssaoEffect;
 
-    public ShadowRenderer(QuadRenderer quadRenderer, int width, int height) {
-        ssaoEffect = new SSAOEffect(quadRenderer, width, height);
+    public ShadowRenderer(QuadRenderer quadRenderer, ContextInformation contextInformation) {
+        ssaoEffect = new SSAOEffect(quadRenderer, contextInformation.getWidth(), contextInformation.getHeight());
         ssaoEffect.disable();
-        shadowEffect = new ShadowEffect();
+        shadowEffect = new ShadowEffect(contextInformation);
         shadowEffect.disable();
     }
 
-    public void render(FrameBufferObject gBuffer, Matrix4f projMatrix, Matrix4f viewMatrix, float nearPlane, float farPlane, float fov, float aspectRatio, float time, Vector3f lightPos, World world, MultiIndirectRenderer multiRenderer){
-        shadowEffect.render(viewMatrix, nearPlane, farPlane, (float) Math.toRadians(fov), aspectRatio, time, lightPos,world, multiRenderer);
-        ssaoEffect.renderEffect(gBuffer, projMatrix,farPlane);
+    public void render(FrameBufferObject gBuffer, CameraInformation cameraInformation, Matrix4f viewMatrix, float time, Vector3f lightPos, World world, MultiIndirectRenderer multiRenderer) {
+        shadowEffect.render(viewMatrix, cameraInformation, time, lightPos, world, multiRenderer);
+        ssaoEffect.renderEffect(gBuffer, cameraInformation);
     }
 
 }

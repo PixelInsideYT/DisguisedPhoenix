@@ -29,6 +29,7 @@ public class World {
 
     private final EntityAdder adder;
     private final FrustumIntersection cullingHelper = new FrustumIntersection();
+    @Getter
     private final Octree staticEntities;
     private final List<Island> islands = new ArrayList<>();
     private final List<Terrain> terrains = new ArrayList<>();
