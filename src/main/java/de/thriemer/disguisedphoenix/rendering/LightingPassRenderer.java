@@ -25,7 +25,7 @@ public class LightingPassRenderer {
     public LightingPassRenderer(QuadRenderer quadRenderer, int width, int height) {
         this.quadRenderer = quadRenderer;
         ShaderFactory gResolveFactory = new ShaderFactory("postProcessing/quadVS.glsl", "postProcessing/deferred/lightingPassFS.glsl").withAttributes("pos");
-        gResolveFactory.withUniforms("depthTexture", "splitRange", "shadowMapTexture", "zFar", "normalAndSpecularTexture", "colorAndGeometryCheckTexture", "ambientOcclusionTexture", "projMatrixInv", "lightPos", "lightColor", "ssaoEnabled", "shadowsEnabled");
+        gResolveFactory.withUniforms("depthTexture", "normalAndSpecularTexture", "colorAndGeometryCheckTexture", "ambientOcclusionTexture", "projMatrixInv", "lightPos", "lightColor", "ssaoEnabled", "shadowsEnabled");
         gResolveFactory.withUniformArray("shadowReprojectionMatrix", 4);
         gResolveFactory.configureSampler("depthTexture", 0).configureSampler("normalAndSpecularTexture", 1).
                 configureSampler("colorAndGeometryCheckTexture", 2).configureSampler("ambientOcclusionTexture", 3).configureSampler("shadowMapTexture", 4);
@@ -36,22 +36,13 @@ public class LightingPassRenderer {
     public void render(FrameBufferObject gBuffer, ShadowRenderer shadowRenderer, CameraInformation cameraInformation, Vector3f lightPos, Vector3f lightColor) {
         lightTimer.startQuery();
         deferredResult.bind();
-        bindTextures(gBuffer, shadowRenderer.ssaoEffect.getSSAOTexture(), shadowRenderer.shadowEffect.getShadowTextureArray());
+        bindTextures(gBuffer, shadowRenderer.ssaoEffect.getSSAOTexture(), shadowRenderer.getShadowTexture());
         shader.bind();
         shader.loadInt("ssaoEnabled", shadowRenderer.ssaoEffect.isEnabled() ? 1 : 0);
         shader.loadInt("shadowsEnabled", shadowRenderer.shadowEffect.isEnabled() ? 1 : 0);
         shader.load3DVector("lightPos", cameraInformation.getViewMatrix().transformPosition(new Vector3f(lightPos)));
         shader.load3DVector("lightColor", lightColor);
-        shader.loadFloat("zFar", cameraInformation.getFarPlane());
         shader.loadMatrix("projMatrixInv", cameraInformation.getInvertedProjectionMatrix());
-        shader.loadFloatArray("splitRange", ShadowEffect.CASCADE_DISTANCE);
-        Matrix4f[] shadowReprojected = shadowRenderer.shadowEffect.getShadowProjViewMatrix();
-        Matrix4f[] shadowReprojectionMatrix = new Matrix4f[shadowReprojected.length];
-        Matrix4f invertedCameraMatrix = new Matrix4f(cameraInformation.getViewMatrix()).invert();
-        for (int i = 0; i < shadowReprojectionMatrix.length; i++) {
-            shadowReprojectionMatrix[i] = new Matrix4f(shadowReprojected[i]).mul(invertedCameraMatrix);
-        }
-        shader.loadMatrix4fArray("shadowReprojectionMatrix", shadowReprojectionMatrix);
         quadRenderer.renderOnlyQuad();
         shader.unbind();
         OpenGLState.enableDepthTest();
@@ -64,7 +55,7 @@ public class LightingPassRenderer {
     }
 
 
-    private void bindTextures(FrameBufferObject gBuffer, int ssaoTexture, int shadowTextureArray) {
+    private void bindTextures(FrameBufferObject gBuffer, int ssaoTexture, int shadowTexture) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, gBuffer.getDepthTexture());
         glActiveTexture(GL_TEXTURE1);
@@ -74,7 +65,7 @@ public class LightingPassRenderer {
         glActiveTexture(GL_TEXTURE3);
         glBindTexture(GL_TEXTURE_2D, ssaoTexture);
         glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D_ARRAY, shadowTextureArray);
+        glBindTexture(GL_TEXTURE_2D, shadowTexture);
     }
 
 }

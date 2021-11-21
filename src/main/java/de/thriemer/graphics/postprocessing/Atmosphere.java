@@ -10,6 +10,7 @@ import de.thriemer.graphics.core.shaders.Shader;
 import de.thriemer.graphics.core.shaders.ShaderFactory;
 import de.thriemer.graphics.gui.Gui;
 import de.thriemer.graphics.loader.TextureLoader;
+import de.thriemer.graphics.occlusion.ShadowEffect;
 import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -31,11 +32,16 @@ public class Atmosphere implements Gui {
     private static final String PLANET_RADIUS_UNIFORM_NAME = "planetRadius";
     private static final String DENSITY_FALLOFF = "densityFalloff";
 
-    private static final float[] depthCascades = new float[]{0.01f * MasterRenderer.FAR_PLANE, 0.05f * MasterRenderer.FAR_PLANE, 0.25f * MasterRenderer.FAR_PLANE, MasterRenderer.FAR_PLANE};
-
+    private static final float[] DEPTH_CASCADES;
+    static {
+        DEPTH_CASCADES=new float[ShadowEffect.SHADOWS_CASCADES];
+        for(int i=0;i<DEPTH_CASCADES.length;i++){
+            DEPTH_CASCADES[i]=ShadowEffect.CASCADE_DISTANCE[i]*MasterRenderer.FAR_PLANE;
+        }
+    }
     private final Shader atmosphereShader;
     private final Shader lookupGenerator;
-    private static final int LOOKUP_TABLE_SIZE = 512;
+    private static final int LOOKUP_TABLE_SIZE = 32;
     private final FrameBufferObject lookUpTable;
     private final QuadRenderer renderer;
     private final Vector3f wavelengths = new Vector3f(700, 530, 440);
@@ -44,7 +50,7 @@ public class Atmosphere implements Gui {
     private float scatteringStrength = 12f;
     private float atmosphereRadius = Main.radius+1200;
     private static final float PLANET_RADIUS = Main.radius;
-    private static final int NUM_OPTICAL_DEPTH_POINTS = 10;
+    private static final int NUM_OPTICAL_DEPTH_POINTS = 2;
     private final int blueNoiseTexture;
     private final GPUTimerQuery timer;
     private final FloatBuffer densityFallOffBuffer = BufferUtils.createFloatBuffer(1).put(0, densityFalloff);
@@ -62,7 +68,7 @@ public class Atmosphere implements Gui {
         atmosphereFactory.configureSampler("lookUpTexture", 3);
         atmosphereFactory.configureSampler("shadowTexture", 4);
 
-        atmosphereFactory.configureShaderConstant("numInScatterPoints", 10);
+        atmosphereFactory.configureShaderConstant("numInScatterPoints", 2);
         atmosphereFactory.configureShaderConstant("numOpticalDepthPoints", NUM_OPTICAL_DEPTH_POINTS);
         atmosphereFactory.withUniformArray("frustumRays", 4);
         atmosphereShader = atmosphereFactory.built();
@@ -133,7 +139,7 @@ public class Atmosphere implements Gui {
         densityFalloff = densityFallOffBuffer.get(0);
         calculateScatterCoefficients();
         atmosphereShader.loadMatrix4fArray("toShadowMapCoords", toShadowMap);
-        atmosphereShader.loadFloatArray("cascadeDepths", depthCascades);
+        atmosphereShader.loadFloatArray("cascadeDepths", DEPTH_CASCADES);
         atmosphereShader.load3DVector("scatterCoefficients", scatterCoeffiecients);
         atmosphereShader.loadFloat(ATMOSPHERE_RADIUS, atmosphereRadius);
         atmosphereShader.loadFloat(PLANET_RADIUS_UNIFORM_NAME, PLANET_RADIUS);

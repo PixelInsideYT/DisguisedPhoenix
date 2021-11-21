@@ -15,6 +15,7 @@ import de.thriemer.graphics.core.renderer.MultiIndirectRenderer;
 import de.thriemer.graphics.core.renderer.TestRenderer;
 import de.thriemer.graphics.modelinfo.Model;
 import de.thriemer.graphics.modelinfo.RenderInfo;
+import de.thriemer.graphics.occlusion.CSMResolver;
 import de.thriemer.graphics.postprocessing.GaussianBlur;
 import de.thriemer.graphics.postprocessing.HIZGenerator;
 import de.thriemer.graphics.postprocessing.Pipeline;
@@ -34,7 +35,7 @@ import static org.lwjgl.opengl.GL13.glActiveTexture;
 public class MasterRenderer {
 
     public static final float NEAR_PLANE = 0.05f;
-    public static final float FAR_PLANE = 10000;
+    public static final float FAR_PLANE = 1000;
     private static final float FOV = 70;
 
     CameraInformation cameraInformation;
@@ -130,8 +131,9 @@ public class MasterRenderer {
         OpenGLState.disableDepthTest();
         gBuffer.blitDepth(lightingPassRenderer.deferredResult);
         lightingPassRenderer.render(gBuffer, shadowRenderer, cameraInformation, lightPos, lightColor);
+
         display.clear();
-        postProcessPipeline.applyPostProcessing(display, lightingPassRenderer.deferredResult, gBuffer.getDepthTexture(), camera, shadowRenderer.shadowEffect.getShadowProjViewMatrix(), shadowRenderer.shadowEffect.getShadowTextureArray(), lightPos);
+        postProcessPipeline.applyPostProcessing(display,cameraInformation.getProjectionMatrix(), lightingPassRenderer.deferredResult, gBuffer.getDepthTexture(), camera, shadowRenderer.shadowEffect.getShadowProjViewMatrix(), shadowRenderer.shadowEffect.getShadowTextureArray(), lightPos);
         // nuklearBinding.renderGUI(display.getWidth(),display.getHeight());
         display.flipBuffers();
     }
@@ -155,7 +157,7 @@ public class MasterRenderer {
         int height = contextInformation.getHeight();
         gBuffer.resize(width, height);
         lightingPassRenderer.deferredResult.resize(width, height);
-        shadowRenderer.ssaoEffect.resize(width, height);
+        shadowRenderer.resize(contextInformation);
         postProcessPipeline.resize(width, height);
         cameraInformation.update(NEAR_PLANE, FAR_PLANE, FOV, contextInformation.getAspectRatio());
     }

@@ -62,7 +62,7 @@ public class MultiIndirectRenderer {
         writeHead = 0;
         occlusionCalculator = new OcclusionCalculator();
     }
-
+//TODO: fix when overflow that it doesnt go wild
     public void prepareRenderer(List<Entity> entities) {
         currentEntities.clear();
         currentEntities.addAll(entities);

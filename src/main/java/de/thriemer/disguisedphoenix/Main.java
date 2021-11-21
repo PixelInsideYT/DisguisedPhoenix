@@ -40,7 +40,7 @@ public class Main {
     public static int drawCalls = 0;
     public static int facesDrawn = 0;
     public static float radius = 1000;
-
+    //TODO: develop a good distance function to decide when a entity should be renderd and have a shadow
     //get models on itch and cgtrader
 
     private static float lightAngle = 0;

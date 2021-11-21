@@ -36,14 +36,14 @@ public class SSAOEffect {
         fbo = new FrameBufferObject(width, height, 1).addTextureAttachment(0);
         helperFbo = new FrameBufferObject(width, height, 1).addTextureAttachment(0);
         fbo.unbind();
-        ShaderFactory ssaoFactory = new ShaderFactory("postProcessing/quadVS.glsl", "postProcessing/ssao/SSAOFS.glsl").withAttributes("pos");
+        ShaderFactory ssaoFactory = new ShaderFactory("postProcessing/quadVS.glsl", "postProcessing/occlusion/SSAOFS.glsl").withAttributes("pos");
         ssaoFactory.withUniforms("camera_positions", "projMatrixInv", "projScale", "radius", "kontrast", "sigma", "beta", "farPlane");
         ssaoFactory.configureShaderConstant("samples", 13).configureSampler("camera_positions", 0);
         ssaoShader = ssaoFactory.built();
         ssaoShader.bind();
         ssaoShader.loadFloat("radius", 0.05f);
         ssaoShader.unbind();
-        ShaderFactory blurFactory = new ShaderFactory("postProcessing/quadVS.glsl", "postProcessing/ssao/SSAOBlur.glsl").withAttributes("pos");
+        ShaderFactory blurFactory = new ShaderFactory("postProcessing/quadVS.glsl", "postProcessing/occlusion/SSAOBlur.glsl").withAttributes("pos");
         blurFactory.withUniforms("ao_in", BLUR_AXIS, "filter_scale", "edge_sharpness").configureSampler("ao_in", 0);
         blurShader = blurFactory.built();
         blurShader.bind();

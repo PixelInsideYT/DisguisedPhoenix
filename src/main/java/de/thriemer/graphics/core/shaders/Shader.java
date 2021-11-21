@@ -72,7 +72,11 @@ public class Shader {
     }
 
     public void loadFloatArray(String name, float[] array) {
-        GL20.glUniform1fv(uniforms.get(name), array);
+        Integer index = uniforms.get(name);
+        if(index==null){
+            System.err.println(name+" is Null");
+        }
+        GL20.glUniform1fv(index, array);
     }
 
     public void loadVector3fArray(String name, Vector3f[] array) {

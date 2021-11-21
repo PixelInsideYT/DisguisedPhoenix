@@ -12,6 +12,7 @@ import static org.lwjgl.opengl.GL40.*;
 
 @Slf4j
 public class ShaderFactory {
+    //TODO: implement an include
     public static final int VERTEX_SHADER = 0;
     public static final int GEOMETRY_SHADER = 1;
     public static final int TESSELATION_CONTROL_SHADER = 2;

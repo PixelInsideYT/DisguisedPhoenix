@@ -24,9 +24,10 @@ import static org.lwjgl.opengl.GL42.glTexStorage3D;
 
 public class ShadowEffect {
 
-    public static final float[] CASCADE_DISTANCE = {0.01f, 0.05f, 0.25f, 1f};
-    private static final int SHADOW_RESOLUTION = 2048;
-    private static final int SHADOWS_CASCADES = 4;
+    public static final float[] CASCADE_DISTANCE = {0.01f,0.05f,0.25f,1f};
+    public static final int SHADOWS_CASCADES = CASCADE_DISTANCE.length;
+    private static final int SHADOW_RESOLUTION = 4096;
+    //TODO better shadow bounds
     private GPUTimerQuery shadowTimer;
     protected FrameBufferObject[] shadowMap = new FrameBufferObject[SHADOWS_CASCADES];
     int textureArray;
@@ -51,7 +52,6 @@ public class ShadowEffect {
         shadowShader = shaderFactory.built();
     }
     //TODO: improve shadow quality by PCF or reprojection
-    //TODO: create a viewport info POJO
     public void render(CameraInformation cameraInformation, float time, Vector3f lightPos, World world, MultiIndirectRenderer renderer) {
         if (isEnabled()) {
 
@@ -61,8 +61,8 @@ public class ShadowEffect {
                 float cascadeFar = CASCADE_DISTANCE[i] * cameraInformation.getFarPlane();
                 cascades[i].update(cameraInformation.getViewMatrix(), near, cascadeFar, cameraInformation.getFov(), contextInformation.getAspectRatio(), lightPos);
                 near = cascadeFar;
-                Vector3f camPos = cascades[i].getLightPosition();
-                inCascade.add(world.getVisibleEntities(cascades[i].getProjViewMatrix(), e-> e.getRadius()>1));
+                 int finalI = i;
+                inCascade.add(world.getVisibleEntities(cascades[i].getProjViewMatrix(), e-> (e.getRadius()*e.getRadius())/cascades[finalI].size> 0.00001));
             }
             shadowTimer.startQuery();
             shadowShader.bind();

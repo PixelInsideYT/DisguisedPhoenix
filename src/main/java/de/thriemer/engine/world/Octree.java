@@ -97,7 +97,8 @@ public class Octree {
             List<Entity> shallowCopy = new ArrayList<>(entities);
             if (!shallowCopy.isEmpty()) {
                 for (Entity e : shallowCopy) {
-                    if (visibilityFunction.apply(e) && frustum.testSphere(e.getCenter(), e.getRadius()))
+                    //TODO: find out why entity is null sometimes
+                    if (e!=null&&visibilityFunction.apply(e) && frustum.testSphere(e.getCenter(), e.getRadius()))
                         entityConsumer.accept(e);
                 }
             }
