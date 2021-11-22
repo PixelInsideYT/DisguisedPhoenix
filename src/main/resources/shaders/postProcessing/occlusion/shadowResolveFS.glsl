@@ -22,7 +22,15 @@ vec3 viewPosFromDepth(vec2 TexCoord, float depth) {
     return viewSpacePosition.xyz;
 }
 
+float when_gt(float x, float y) {
+    return max(sign(x - y), 0.0);
+}
+
 const vec3[4] distanceColor=vec3[](vec3(1, 1, 0), vec3(1, 0, 0), vec3(0, 1, 0), vec3(0, 0, 1));
+
+//TODO fix PCF filtering
+const int pcfCount = 0;
+const int totalTexels = (pcfCount*2+1)*(pcfCount*2+1);
 
 float shadow(vec3 position, inout vec3 shadowColor){
     float shadow =1.0;
@@ -37,11 +45,18 @@ float shadow(vec3 position, inout vec3 shadowColor){
     }
     vec4 shadowMapPos = shadowReprojectionMatrix[index]*vec4(position, 1.0);
     vec2 uvShadowMap = shadowMapPos.xy;
-    float distanceFromLight = shadowMapPos.z;
-    if (texture(shadowMapTexture, vec3(uvShadowMap, index)).r<distanceFromLight-0.001){
-        shadow=0.4;
+    float distanceFromLight = shadowMapPos.z-0.001;
+
+    ivec3 size =textureSize(shadowMapTexture, index);
+    float texelSize = 1.0/float(size.x);
+    float total =0.0;
+    for (int x=-pcfCount;x<=pcfCount;x++){
+        for (int y=-pcfCount;y<=pcfCount;y++){
+            float shadowDistance = texture(shadowMapTexture, vec3(uvShadowMap+vec2(x,y)*texelSize, index)).r;
+            total+=when_gt(distanceFromLight,shadowDistance);
+        }
     }
-    return shadow;
+    return 1-(total/totalTexels)*0.4;
 }
 
 void main(){

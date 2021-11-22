@@ -44,6 +44,7 @@ public class Main {
     //get models on itch and cgtrader
 
     private static float lightAngle = 0;
+    private static float lightSpeed=0.01f;
     private static final float lightRadius = 2 * radius;
     private static final Vector3f lightPos = new Vector3f(0, 1, 0);
     private static final Vector3f lightColor = new Vector3f(1f);
@@ -93,8 +94,9 @@ public class Main {
             while (!display.shouldClose() && !input.isKeyDown(GLFW_KEY_ESCAPE)) {
                 long startFrame = System.currentTimeMillis();
                 float dt = zeitgeist.getDelta();
-                // lightAngle += lightSpeed * dt;
-                lightAngle = 1f;
+                if(!input.isKeyDown(GLFW_KEY_H))
+                lightAngle += lightSpeed * dt;
+                // lightAngle = 1f;
                 lightPos.z = (float) Math.cos(lightAngle) * lightRadius;
                 lightPos.y = (float) Math.sin(lightAngle) * lightRadius;
                 time += dt;
