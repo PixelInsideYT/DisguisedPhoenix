@@ -23,7 +23,7 @@ public class CameraInformation {
         this.farPlane = farPlane;
         this.nearPlane = nearPlane;
         this.fov = fov;
-        projectionMatrix.perspective((float)Math.toRadians(fov),aspectRatio,nearPlane,farPlane);
+        projectionMatrix.identity().perspective((float)Math.toRadians(fov),aspectRatio,nearPlane,farPlane);
         invertedProjectionMatrix.set(projectionMatrix).invert();
         recalculateProjViewMatrix();
     }
