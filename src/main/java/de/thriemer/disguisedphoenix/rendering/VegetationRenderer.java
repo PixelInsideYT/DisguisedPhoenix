@@ -38,8 +38,7 @@ public class VegetationRenderer {
 
     public void render(float time, CameraInformation cameraInformation){
         vegetationShader.bind();
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, windTexture);
+        vegetationShader.bind2DTexture("noiseMap",windTexture);
         vegetationShader.loadMatrix("projMatrix", cameraInformation.getProjectionMatrix());
         vegetationShader.loadMatrix("viewMatrix", cameraInformation.getViewMatrix());
         vegetationShader.loadFloat("time", time);

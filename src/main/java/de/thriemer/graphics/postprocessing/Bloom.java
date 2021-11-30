@@ -33,15 +33,14 @@ public class Bloom {
     public void render(int highlightTexture) {
         bloomTimer.startQuery();
         customBlurShader.bind();
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, highlightTexture);
+        customBlurShader.bind2DTexture("image",highlightTexture);
         glGenerateMipmap(GL_TEXTURE_2D);
         customBlurShader.load2DVector(DIRECTION, new Vector2f(3, 0));
         customBlurShader.loadInt(MIP_LEVEL, mipLevel);
         helperFbo.bind();
         renderer.renderOnlyQuad();
         helperFbo.unbind();
-        glBindTexture(GL_TEXTURE_2D, helperFbo.getTextureID(0));
+        customBlurShader.bind2DTexture("image",helperFbo.getTextureID(0));
         glGenerateMipmap(GL_TEXTURE_2D);
         customBlurShader.load2DVector(DIRECTION, new Vector2f(0, 3));
         customBlurShader.loadInt(MIP_LEVEL, 0);

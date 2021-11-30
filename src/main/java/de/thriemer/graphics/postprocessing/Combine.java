@@ -27,11 +27,9 @@ public class Combine {
 
     public void render(int lightingTexture, int bloomTexture) {
         combinedResult.bind();
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, lightingTexture);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, bloomTexture);
         shader.bind();
+        shader.bind2DTexture("colorTexture",lightingTexture);
+        shader.bind2DTexture("bloomTexture",bloomTexture);
         renderer.renderOnlyQuad();
         shader.unbind();
         combinedResult.unbind();

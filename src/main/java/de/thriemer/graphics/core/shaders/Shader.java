@@ -1,6 +1,7 @@
 package de.thriemer.graphics.core.shaders;
 
 
+import lombok.Setter;
 import org.joml.*;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL20;
@@ -10,7 +11,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
+import static org.lwjgl.opengl.GL11.glBindTexture;
+import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
+import static org.lwjgl.opengl.GL13.glActiveTexture;
 import static org.lwjgl.opengl.GL20.glUseProgram;
+import static org.lwjgl.opengl.GL30.GL_TEXTURE_2D_ARRAY;
 
 public class Shader {
 
@@ -20,6 +26,8 @@ public class Shader {
 
     private final int shaderProgram;
     private final Map<String, Integer> uniforms;
+    @Setter
+    private Map<String, Integer> nameTextureIdMap;
 
     protected Shader(int shader, Map<String, Integer> uniforms) {
         this.shaderProgram = shader;
@@ -37,6 +45,18 @@ public class Shader {
 
     public void unbind() {
         glUseProgram(0);
+    }
+
+    public void bind2DTexture(String name, int texture) {
+        int offset = nameTextureIdMap.get(name);
+        glActiveTexture(GL_TEXTURE0 + offset);
+        glBindTexture(GL_TEXTURE_2D, texture);
+    }
+
+    public void bind2DTextureArray(String name, int texture) {
+        int offset = nameTextureIdMap.get(name);
+        glActiveTexture(GL_TEXTURE0 + offset);
+        glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
     }
 
     public void loadFloat(String name, float value) {
@@ -73,8 +93,8 @@ public class Shader {
 
     public void loadFloatArray(String name, float[] array) {
         Integer index = uniforms.get(name);
-        if(index==null){
-            System.err.println(name+" is Null");
+        if (index == null) {
+            System.err.println(name + " is Null");
         }
         GL20.glUniform1fv(index, array);
     }

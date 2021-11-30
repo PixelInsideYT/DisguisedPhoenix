@@ -116,13 +116,6 @@ public class MasterRenderer {
 
         vegetationRenderer.prepareRender(vaoSortedEntries);
         gBuffer.bind();
-        vegetationRenderer.vegetationShader.bind();
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, vegetationRenderer.getWindTexture());
-        vegetationRenderer.vegetationShader.loadMatrix("projMatrix", cameraInformation.getProjectionMatrix());
-        vegetationRenderer.vegetationShader.loadMatrix("viewMatrix", cameraInformation.getViewMatrix());
-        vegetationRenderer.vegetationShader.loadFloat("time", time);
-        vegetationRenderer.vegetationShader.loadInt("useInputTransformationMatrix", 1);
         vegetationRenderer.render(time, cameraInformation);
         hizGen.generateHiZMipMap(gBuffer);
         vertexTimer.stopQuery();

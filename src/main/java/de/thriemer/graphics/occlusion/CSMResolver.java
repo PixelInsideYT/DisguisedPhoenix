@@ -29,12 +29,10 @@ public class CSMResolver {
     }
 
     public void render(CameraInformation cameraInformation,int depthTexture, ShadowEffect shadowEffect){
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, depthTexture);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D_ARRAY, shadowEffect.getShadowTextureArray());
         shadowFbo.bind();
         shadowResolveShader.bind();
+        shadowResolveShader.bind2DTexture("depthTexture",depthTexture);
+        shadowResolveShader.bind2DTextureArray("shadowMapTexture",shadowEffect.getShadowTextureArray());
         shadowResolveShader.loadInt("shadowsEnabled", shadowEffect.isEnabled() ? 1 : 0);
         shadowResolveShader.loadFloat("zFar", cameraInformation.getFarPlane());
         shadowResolveShader.loadMatrix("projMatrixInv", cameraInformation.getInvertedProjectionMatrix());

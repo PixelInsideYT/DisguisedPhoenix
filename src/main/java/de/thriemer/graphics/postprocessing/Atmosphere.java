@@ -121,16 +121,11 @@ public class Atmosphere implements Gui {
     public void render(Camera camera, Matrix4f projMatrix, Matrix4f[] toShadowMap, int texture, int depthTexture, int shadowMap, Vector3f lightPos) {
         timer.startQuery();
         atmosphereShader.bind();
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, depthTexture);
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, blueNoiseTexture);
-        glActiveTexture(GL_TEXTURE3);
-        glBindTexture(GL_TEXTURE_2D, lookUpTable.getTextureID(0));
-        glActiveTexture(GL_TEXTURE4);
-        glBindTexture(GL_TEXTURE_2D_ARRAY, shadowMap);
+        atmosphereShader.bind2DTexture("originalTexture",texture);
+        atmosphereShader.bind2DTexture("depthTexture",depthTexture);
+        atmosphereShader.bind2DTexture("noiseTexture",blueNoiseTexture);
+        atmosphereShader.bind2DTexture("lookUpTexture",lookUpTable.getTextureID(0));
+        atmosphereShader.bind2DTextureArray("shadowTexture",shadowMap);
         atmosphereShader.load3DVector("dirToSun", new Vector3f(lightPos).normalize());
         atmosphereShader.loadFloat("zNear", MasterRenderer.NEAR_PLANE);
         atmosphereShader.loadFloat("zFar", MasterRenderer.FAR_PLANE);

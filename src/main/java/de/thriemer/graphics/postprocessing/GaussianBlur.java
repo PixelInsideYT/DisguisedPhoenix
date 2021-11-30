@@ -24,14 +24,13 @@ public class GaussianBlur {
 
     public void blur(int inputTexture, int width, int height, FrameBufferObject firstTarget, FrameBufferObject secondTarget, int radius) {
         shader.bind();
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, inputTexture);
+        shader.bind2DTexture("image",inputTexture);
         shader.load2DVector(RESOLUTION, new Vector2f(width, height));
         shader.load2DVector(DIRECTION, new Vector2f(radius, 0));
         firstTarget.bind();
         renderer.renderOnlyQuad();
         firstTarget.unbind();
-        glBindTexture(GL_TEXTURE_2D, firstTarget.getTextureID(0));
+        shader.bind2DTexture("image",firstTarget.getTextureID(0));
         shader.load2DVector(DIRECTION, new Vector2f(0, radius));
         shader.load2DVector(RESOLUTION, new Vector2f(firstTarget.getBufferWidth(), firstTarget.getBufferHeight()));
         secondTarget.bind();

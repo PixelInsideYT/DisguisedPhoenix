@@ -18,7 +18,6 @@ public class ShaderFactory {
     public static final int TESSELATION_CONTROL_SHADER = 2;
     public static final int TESSELATION_EVALUATION_SHADER = 3;
     public static final int FRAGMENT_SHADER = 4;
-    //TODO: bind textures to name not to int
     int shaderProgram;
     private final String[] shaderSources = new String[5];
     private final List<String> uniformNames = new ArrayList<>();
@@ -53,20 +52,14 @@ public class ShaderFactory {
     }
 
     private static int convertOwnConventionToOpenGL(int in) {
-        switch (in) {
-            case 0:
-                return GL_VERTEX_SHADER;
-            case 1:
-                return GL_GEOMETRY_SHADER;
-            case 2:
-                return GL_TESS_CONTROL_SHADER;
-            case 3:
-                return GL_TESS_EVALUATION_SHADER;
-            case 4:
-                return GL_FRAGMENT_SHADER;
-            default:
-                return -1;
-        }
+        return switch (in) {
+            case 0 -> GL_VERTEX_SHADER;
+            case 1 -> GL_GEOMETRY_SHADER;
+            case 2 -> GL_TESS_CONTROL_SHADER;
+            case 3 -> GL_TESS_EVALUATION_SHADER;
+            case 4 -> GL_FRAGMENT_SHADER;
+            default -> -1;
+        };
     }
 
     public ShaderFactory addShaderStage(int shaderType, String shaderPath) {
@@ -157,6 +150,7 @@ public class ShaderFactory {
         for (Map.Entry<String,Integer> entry : samplerTextureIdMap.entrySet()) {
             glUniform1i(uniformLocationMap.get(entry.getKey()), entry.getValue());
         }
+        shader.setNameTextureIdMap(samplerTextureIdMap);
         deleteUnusedSources(compiledSources);
         return shader;
     }

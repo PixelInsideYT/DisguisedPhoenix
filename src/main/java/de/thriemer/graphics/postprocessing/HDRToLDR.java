@@ -26,8 +26,7 @@ public class HDRToLDR {
     public void render(int input) {
         fbo.bind();
         resolveShader.bind();
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, input);
+        resolveShader.bind2DTexture("linearInputTexture",input);
         renderer.renderOnlyQuad();
         resolveShader.unbind();
         fbo.unbind();

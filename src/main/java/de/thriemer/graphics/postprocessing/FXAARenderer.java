@@ -23,8 +23,7 @@ public class FXAARenderer {
     public void render(int colorTexture) {
         fxaaTimer.startQuery();
         aliasShader.bind();
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, colorTexture);
+        aliasShader.bind2DTexture("tex",colorTexture);
         renderer.renderOnlyQuad();
         aliasShader.unbind();
         fxaaTimer.stopQuery();

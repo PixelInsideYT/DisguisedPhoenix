@@ -31,9 +31,8 @@ public class HIZGenerator {
         OpenGLState.enableDepthTest();
         int depthTexture = fbo.getDepthTexture();
         glDepthFunc(GL_ALWAYS);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, depthTexture);
         hizShader.bind();
+        hizShader.bind2DTexture("LastMip",depthTexture);
         for (int i = 1; i < numLevels; i++) {
             Vector2i lastMipSize = new Vector2i(currentWidth, currentHeight);
             // calculate next viewport size
