@@ -80,4 +80,9 @@ public class Maths {
                 min.y < center.y && center.y < max.y &&
                 min.z < center.z && center.z < max.z;
     }
+
+    public static float lerp(float a, float b, float t){
+        return a*t+(1-t)*b;
+    }
+
 }

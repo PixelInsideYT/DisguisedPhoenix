@@ -1,34 +1,37 @@
 package de.thriemer.disguisedphoenix.terrain.generator;
 
 import de.thriemer.disguisedphoenix.terrain.World;
+import de.thriemer.engine.util.Maths;
 import de.thriemer.graphics.loader.MeshInformation;
 import de.thriemer.graphics.particles.ParticleManager;
 import org.joml.Vector3f;
 import org.spongepowered.noise.module.source.RidgedMultiSimplex;
 import org.spongepowered.noise.module.source.Simplex;
 
-//TODO: lazy octree construction
 public class WorldGenerator {
     RidgedMultiSimplex ridgedMultiSimplex = new RidgedMultiSimplex();
-    Simplex simplex = new Simplex();
     //TODO: BiomeConfig benutzen für noise funktion
     //TODO: biomeconfig für entity placement benutzen
     TerrainGenerator terrainGenerator;
-    private static final float BIOME_SELECTION_NOISE_SCALE = 0.5f;
-    private static final float RIDGE_NOISE_SCALE = 1f;
-    private static final float SIMPLEX_NOISE_SCALE = 0.7f;
 
+    Simplex moistureNoise = new Simplex();
+    Simplex bootstrapNoise = new Simplex();
+    BiomeManager biomeManager = new BiomeManager();
 
-    private static final float RIDGE_CHANGE = 0.3f;
-    private static final float SIMPLEX_CHANGE = 0.15f;
-
+    private static final int SEED = 2;
     float radius;
-    BiomeConfiguration configuration;
+    float max;
+    float seaLevel;
 
     public WorldGenerator(float radius) {
         this.radius = radius;
-        configuration = new BiomeConfiguration(radius);
         terrainGenerator = new TerrainGenerator();
+        moistureNoise.setOctaveCount(1);
+        moistureNoise.setSeed(SEED);
+        bootstrapNoise.setSeed(SEED);
+        bootstrapNoise.setSeed(2);
+        max = scaleNoise(1f);
+        seaLevel = scaleNoise(0.3f);
     }
 
     public MeshInformation createTerrainFor(int index) {
@@ -40,28 +43,62 @@ public class WorldGenerator {
         return world;
     }
 
-    float max = -Float.MAX_VALUE;
-    float min = Float.MAX_VALUE;
-
     public Vector3f getNoiseFunction(Vector3f v) {
-        v.normalize();
-        float biomeSelection = (float) simplex.getValue(v.x * BIOME_SELECTION_NOISE_SCALE, v.y * BIOME_SELECTION_NOISE_SCALE, v.z * BIOME_SELECTION_NOISE_SCALE) / 2f + 0.5f;
-        float val1 = (float) ridgedMultiSimplex.getValue(v.x * RIDGE_NOISE_SCALE, v.y * RIDGE_NOISE_SCALE, v.z * RIDGE_NOISE_SCALE);
-        float val2 = (float) simplex.getValue(v.x * SIMPLEX_NOISE_SCALE + 4, v.y * SIMPLEX_NOISE_SCALE + 6, v.z * SIMPLEX_NOISE_SCALE + 7);
-        float noise = biomeSelection * val1 * RIDGE_CHANGE + (1f - biomeSelection) * val2 * SIMPLEX_CHANGE;
-        v.mul(radius * (1f + noise));
-        max = Math.max(v.length(), max);
-        min = Math.min(v.length(), min);
+        Vector3f bootstrapped = bootstrapVector(v);
+        v.set(bootstrapped);
         return v;
     }
 
-    public Vector3f getColor(Vector3f avgHeight, Vector3f normal) {
-        Vector3f position = new Vector3f(avgHeight);
-        float dot = Math.abs(normal.dot(avgHeight.normalize()));
-        Vector3f green = new Vector3f(34f / 255f, 139f / 255f, 34f / 255f);
-        Vector3f rock = new Vector3f(0.9412f, 0.8941f, 0.8235f);
-        return rock.lerp(green, dot);
+    float realHeight = 4000;
+
+    protected static float maxHumidity = 500f;
+    protected static float minTemp = -10;
+    protected static float maxTemp = 40;
+
+    public Vector3f getColor(Vector3f height, Vector3f normal) {
+        float temperature = getTemperature(height);
+        return biomeManager.getColor(temperature, getMoisture(height, temperature));
     }
 
+
+    float tempDecreasePerMeter = 0.67f / 100f;
+
+    private float getTemperature(Vector3f bootstrappedVector) {
+        //temperature interpolated between pole and equator
+        Vector3f vec = new Vector3f(bootstrappedVector).normalize();
+        float d = Math.abs(vec.dot(new Vector3f(0, 1, 0)));
+        float angle = (float) Math.acos(d);
+        float mixAmount = angle / ((float) Math.PI / 2f);
+        float longituteTemperature = Maths.lerp(maxTemp, minTemp, mixAmount);
+        //temperature decrease with height
+        float heightTemperature = (bootstrappedVector.length() - seaLevel) * tempDecreasePerMeter / (max - seaLevel) * realHeight;
+        return longituteTemperature - heightTemperature;
+    }
+
+    private float getMoisture(Vector3f bootstrappedVector, float temperature) {
+        float moistureScale = 0.001f;
+        Vector3f v = new Vector3f(bootstrappedVector);
+        float waterMoisture = (float) (Math.pow((v.length() - seaLevel) / (max - seaLevel), 2));
+        float noiseMoisture = (float) (moistureNoise.getValue(v.x * moistureScale, v.y * moistureScale, v.z * moistureScale) / moistureNoise.getMaxValue());
+        float temperatureMultiplier = (temperature - minTemp) / (maxTemp - minTemp) * 1.2f + 0.2f;
+        return (noiseMoisture + waterMoisture) / 2f * maxHumidity*temperatureMultiplier;
+    }
+
+
+    private Vector3f bootstrapVector(Vector3f direction) {
+        Vector3f v = new Vector3f(direction.normalize());
+        float SIMPLEX_NOISE_SCALE = 2f;
+        float val2 = (float) (bootstrapNoise.getValue(v.x * SIMPLEX_NOISE_SCALE, v.y * SIMPLEX_NOISE_SCALE, v.z * SIMPLEX_NOISE_SCALE) / bootstrapNoise.getMaxValue());
+        return v.mul(scaleNoise(val2));
+    }
+
+    private float scaleNoise(float v1) {
+        float v1Scale = 1f + v1 * 0.2f;
+        return radius * v1Scale;
+    }
+
+    public void save() {
+        biomeManager.save();
+    }
 
 }

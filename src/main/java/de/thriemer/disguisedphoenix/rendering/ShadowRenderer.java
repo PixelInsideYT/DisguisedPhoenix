@@ -19,9 +19,9 @@ public class ShadowRenderer {
 
     public ShadowRenderer(QuadRenderer quadRenderer, ContextInformation contextInformation) {
         ssaoEffect = new SSAOEffect(quadRenderer, contextInformation.getWidth(), contextInformation.getHeight());
-       // ssaoEffect.disable();
+        ssaoEffect.disable();
         shadowEffect = new ShadowEffect(contextInformation);
-      //  shadowEffect.disable();
+        shadowEffect.disable();
         csmResolver = new CSMResolver(quadRenderer,contextInformation);
 
     }

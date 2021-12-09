@@ -24,7 +24,19 @@ import de.thriemer.graphics.particles.ParticleManager;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL40;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,7 +56,7 @@ public class Main {
     //get models on itch and cgtrader
 
     private static float lightAngle = 0;
-    private static float lightSpeed=0.01f;
+    private static float lightSpeed = 0.01f;
     private static final float lightRadius = 2 * radius;
     private static final Vector3f lightPos = new Vector3f(0, 1, 0);
     private static final Vector3f lightColor = new Vector3f(1f);
@@ -53,7 +65,7 @@ public class Main {
         //TODO: refactor rendering into a modular pipeline
         long startUpTime = System.currentTimeMillis();
         Display display = new Display("Disguised Phoenix", 1920, 1080);
-        // GL11.glEnable(GL45.GL_DEBUG_OUTPUT);3
+        // GL11.glEnable(GL45.GL_DEBUG_OUTPUT);
         MouseInputMap mim = new MouseInputMap();
         ContextInformation contextInformation = display.getContextInformation();
         MasterRenderer masterRenderer = new MasterRenderer(contextInformation);
@@ -87,15 +99,15 @@ public class Main {
         flightCamera.getPosition().set(worldGenerator.getNoiseFunction(new Vector3f(player.position)));
         flightCamera2.getPosition().set((float) Math.random() * 2f - 1f, (float) Math.random() * 2f - 1f, (float) Math.random() * 2f - 1f);
         float summedMS = 0f;
-       // input.hideMouseCursor();
+        // input.hideMouseCursor();
         float switchCameraTimer = 0f;
         float captureMouseTimer = 0f;
         try {
             while (!display.shouldClose() && !input.isKeyDown(GLFW_KEY_ESCAPE)) {
                 long startFrame = System.currentTimeMillis();
                 float dt = zeitgeist.getDelta();
-                if(!input.isKeyDown(GLFW_KEY_H))
-                lightAngle += lightSpeed * dt;
+                if (!input.isKeyDown(GLFW_KEY_H))
+                    lightAngle += lightSpeed * dt;
                 // lightAngle = 1f;
                 lightPos.z = (float) Math.cos(lightAngle) * lightRadius;
                 lightPos.y = (float) Math.sin(lightAngle) * lightRadius;
@@ -110,7 +122,7 @@ public class Main {
                     freeFlightCamActivated = !freeFlightCamActivated;
                     switchCameraTimer = 0.25f;
                 }
-                if(input.isKeyDown(GLFW_KEY_T)){
+                if (input.isKeyDown(GLFW_KEY_T)) {
                     TimerQuery.resetAll();
                 }
                 switchCameraTimer -= dt;
@@ -122,7 +134,8 @@ public class Main {
                 Matrix4f viewMatrix = ffc.getViewMatrix();
                 world.update(dt);
                 input.updateInputMaps();
-                masterRenderer.render(player,ffc, display, viewMatrix, ffc.getPosition(), time, world, lightPos, lightColor);
+                masterRenderer.render(player, ffc, display, viewMatrix, ffc.getPosition(), time, world, lightPos, lightColor);
+                screenShot(input,display);
                 display.clear();
                 avgFPS += zeitgeist.getFPS();
                 display.setFrameTitle("Disguised Phoenix: " + " FPS: " + zeitgeist.getFPS() + ", In frustum objects: " + inViewObjects + ", drawcalls: " + drawCalls + " faces: " + df.format(facesDrawn));
@@ -147,12 +160,54 @@ public class Main {
         Vao.cleanUpAllVaos();
         Shader.cleanUpAllShaders();
         display.destroy();
-        Map<Integer,Integer> octreeMap = new HashMap<>();
-        world.getStaticEntities().collectStats(0,octreeMap);
-        for(Map.Entry e:octreeMap.entrySet()){
-            System.out.println(e.getKey()+":"+e.getValue());
+        Map<Integer, Integer> octreeMap = new HashMap<>();
+        world.getStaticEntities().collectStats(0, octreeMap);
+        for (Map.Entry e : octreeMap.entrySet()) {
+            System.out.println(e.getKey() + ":" + e.getValue());
         }
+        worldGenerator.save();
         world.shutdown();
+    }
+
+    static long lastScreenshot = 0;
+
+    private static void screenShot(InputManager inputManager, Display display) {
+        if (inputManager.isKeyDown(GLFW_KEY_PAUSE) && System.currentTimeMillis() - lastScreenshot > 500) {
+            System.out.println("Taking screenshot");
+            lastScreenshot = System.currentTimeMillis();
+            ContextInformation contextInformation = display.getContextInformation();
+            int width = contextInformation.getWidth();
+            int height=contextInformation.getHeight();
+            BufferedImage image = glScreenshot(width,height);
+            try {
+                ImageIO.write(image,"PNG", new File("screenshot.png"));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    public static BufferedImage glScreenshot(int w,int h) {
+        GL11.glReadBuffer(GL11.GL_FRONT);
+        int bpp = 4;
+        ByteBuffer buffer = BufferUtils.createByteBuffer(w * h * bpp);
+
+        GL11.glReadPixels(0, 0, w, h, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buffer);
+
+        BufferedImage image = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+
+        for (int x = 0; x < w; x++) {
+            for (int y = 0; y < h; y++) {
+                int i = (x + (w * y)) * bpp;
+                int r = buffer.get(i) & 0xFF;
+                int g = buffer.get(i + 1) & 0xFF;
+                int b = buffer.get(i + 2) & 0xFF;
+                image.setRGB(x, h - (y + 1), (0xFF << 24) | (r << 16) | (g << 8) | b);
+            }
+        }
+
+        return image;
     }
 
 }

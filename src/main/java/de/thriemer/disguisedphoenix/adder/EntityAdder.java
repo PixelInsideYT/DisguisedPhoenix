@@ -50,7 +50,7 @@ public class EntityAdder {
             }
             return true;
         }).collect(Collectors.toList()));
-        rnd = new Random();
+        rnd = new Random(123);
     }
 
     public static List<String> getModelNameList() {
