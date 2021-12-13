@@ -1,34 +1,59 @@
 package de.thriemer.disguisedphoenix.terrain;
 
 import de.thriemer.disguisedphoenix.terrain.generator.TerrainTriangle;
+import de.thriemer.graphics.loader.MeshInformation;
 import org.joml.Vector3f;
 
+import java.util.AbstractMap;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Random;
 import java.util.function.UnaryOperator;
 
 public class PositionProvider {
 
-    Random random=new Random();
-    TerrainTriangle terrainTriangle;
+    Random random = new Random();
+    MeshInformation meshInformation;
 
-    public PositionProvider(TerrainTriangle terrainTriangle, UnaryOperator<Vector3f> noiseFunction) {
-        this.terrainTriangle = new TerrainTriangle(Arrays.stream(terrainTriangle.vecs).map(e->noiseFunction.apply(new Vector3f(e))).toArray(Vector3f[]::new));
+    public PositionProvider(MeshInformation meshInformation) {
+        this.meshInformation = meshInformation;
     }
 
-    public Vector3f getRandomPosition(){
-        Vector3f randVec = new Vector3f(random.nextFloat(),random.nextFloat(),random.nextFloat());
-        float manhattenDistance = randVec.x+randVec.y+randVec.z;
-        randVec.mul(1f/manhattenDistance);
+    public Map.Entry<Vector3f,Vector3f> getRandomPosition() {
+        int randomFaceIndex = random.nextInt(meshInformation.getFaceCount());
+        int index1 = meshInformation.indicies[randomFaceIndex * 3];
+        int index2 = meshInformation.indicies[randomFaceIndex * 3 + 1];
+        int index3 = meshInformation.indicies[randomFaceIndex * 3 + 2];
+        Vector3f vec0 = meshInformation.getVector(index1);
+        Vector3f vec1 = meshInformation.getVector(index2);
+        Vector3f vec2 = meshInformation.getVector(index3);
 
-        return new Vector3f(terrainTriangle.vecs[0])
-                .add(new Vector3f(terrainTriangle.vecs[1]).sub(terrainTriangle.vecs[0]).mul(randVec.y))
-                .add(new Vector3f(terrainTriangle.vecs[2]).sub(terrainTriangle.vecs[0]).mul(randVec.z));
+        float bary1 =random.nextFloat();
+        float bary2 = (1f-bary1)*random.nextFloat();
+        Vector3f position = vec0
+                .add(vec1.sub(vec0).mul(bary1))
+                .add(vec2.sub(vec0).mul(bary2));
+        Vector3f normal = vec1.cross(vec2).normalize();
+       return new AbstractMap.SimpleEntry<>(position,normal);
     }
 
-    public float getArea(){
-        return 1f/2f*(new Vector3f(terrainTriangle.vecs[0]).sub(terrainTriangle.vecs[1])
-                .cross(new Vector3f(terrainTriangle.vecs[2]).sub(terrainTriangle.vecs[1]))
+    public float getArea() {
+        float area = 0;
+        for (int i = 0; i < meshInformation.getFaceCount(); i++) {
+            int index1 = meshInformation.indicies[i * 3];
+            int index2 = meshInformation.indicies[i * 3 + 1];
+            int index3 = meshInformation.indicies[i * 3 + 2];
+            Vector3f vec0 = meshInformation.getVector(index1);
+            Vector3f vec1 = meshInformation.getVector(index2);
+            Vector3f vec2 = meshInformation.getVector(index3);
+            area += getArea(vec0, vec1, vec2);
+        }
+        return area;
+    }
+
+    private float getArea(Vector3f v1, Vector3f v2, Vector3f v3) {
+        return 1f / 2f * (v1.sub(v3)
+                .cross(v2.sub(v3))
                 .length());
     }
 

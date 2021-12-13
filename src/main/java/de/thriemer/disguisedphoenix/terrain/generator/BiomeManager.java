@@ -65,7 +65,7 @@ public class BiomeManager {
         return biomeInformation;
     }
 
-
+//TODO: generalize biome classification, remove duplication
     public Vector3f getColor(float temperature, float humidity) {
         List<BiomeInformation> info = new ArrayList<>(Arrays.stream(biomes).toList());
         Vector2f samplePoint = new Vector2f((temperature-WorldGenerator.minTemp)/(WorldGenerator.maxTemp-WorldGenerator.minTemp),
@@ -93,8 +93,18 @@ public class BiomeManager {
             color.add(biomeColor.mul(Math.max(0, weight / weightDivide)));
         }
         drawPoint(color, temperature, humidity);
-        return color;
+        return info.get(0).color;
     }
+
+
+    String[] getModels(float temperature, float humidity){
+        List<BiomeInformation> info = new ArrayList<>(Arrays.stream(biomes).toList());
+        Vector2f samplePoint = new Vector2f((temperature-WorldGenerator.minTemp)/(WorldGenerator.maxTemp-WorldGenerator.minTemp),
+                humidity/REFERENCE_HUMIDITY);
+        info.sort((b1, b2) -> Float.compare(b2.getBiomeDistance(samplePoint), b1.getBiomeDistance(samplePoint)));
+        return info.get(0).models;
+    }
+
 
     private void drawPoint(Vector3f color, float temperature, float humidity) {
         int x = (int) ((temperature + 10f) / 40f * 1080) + 540;

@@ -1,8 +1,6 @@
 package de.thriemer.disguisedphoenix.terrain;
 
 import de.thriemer.disguisedphoenix.Entity;
-import de.thriemer.disguisedphoenix.adder.EntityAdder;
-import de.thriemer.disguisedphoenix.rendering.CameraInformation;
 import de.thriemer.disguisedphoenix.terrain.generator.TerrainTriangle;
 import de.thriemer.disguisedphoenix.terrain.generator.WorldGenerator;
 import de.thriemer.engine.world.Octree;
@@ -28,22 +26,15 @@ import java.util.stream.Collectors;
 
 public class World {
 
-    private final EntityAdder adder;
     private final FrustumIntersection cullingHelper = new FrustumIntersection();
     @Getter
     private final Octree staticEntities;
     private final List<Island> islands = new ArrayList<>();
     private final List<Terrain> terrains = new ArrayList<>();
-    private final Matrix4f cullingMatrix = new Matrix4f();
     public static int addedEntities = 0;
 
     public World(ParticleManager pm, float worldSize) {
-        adder = new EntityAdder(pm);
         staticEntities = new Octree(new Vector3f(0), worldSize, worldSize, worldSize);
-    }
-
-    public void update(float dt) {
-        adder.update(dt);
     }
 
     public List<Entity> getPossibleCollisions(Entity e) {
@@ -74,9 +65,7 @@ public class World {
         for (int terrainIndex : choosenTriangle) {
             if (!addedTerrains.contains(terrainIndex)) {
                 addedTerrains.add(terrainIndex);
-                terrainFutures.add(executor.submit(() -> generator.createTerrainFor(terrainIndex)));
-                PositionProvider positionProvider = new PositionProvider(TerrainTriangle.getTriangle(terrainIndex), generator::getNoiseFunction);
-                executor.submit(() -> adder.getAllEntities(positionProvider.getArea(), positionProvider, generator::getNoiseFunction).forEach(this::placeUprightEntity));
+                terrainFutures.add(executor.submit(() -> generateChunk(generator, terrainIndex)));
             }
         }
         Iterator<Future<MeshInformation>> itr = terrainFutures.iterator();
@@ -100,33 +89,25 @@ public class World {
         }
     }
 
+    private MeshInformation generateChunk(WorldGenerator generator, int terrainIndex) {
+        MeshInformation generatedChunk = generator.createTerrainFor(terrainIndex);
+        generator.addEntities(generatedChunk,this::addEntity);
+        return generatedChunk;
+    }
+
     public List<Entity> getVisibleEntities(Matrix4f projViewMatrix, Function<Entity, Boolean> visibilityFunction) {
         List<Entity> returnList = new LinkedList<>();
-        consumeVisibleEntities(projViewMatrix,visibilityFunction,returnList::add);
+        consumeVisibleEntities(projViewMatrix, visibilityFunction, returnList::add);
         return returnList;
     }
+
     public void consumeVisibleEntities(Matrix4f projViewMatrix, Function<Entity, Boolean> visibilityFunction, Consumer<Entity> entityConsumer) {
         cullingHelper.set(projViewMatrix);
         staticEntities.getAllVisibleEntities(cullingHelper, visibilityFunction, entityConsumer);
     }
+
     public List<Island> getVisibleIslands() {
         return islands.stream().filter(i -> i.isVisible(cullingHelper)).collect(Collectors.toList());
-    }
-
-    public EntityAdder getEntityAdder() {
-        return adder;
-    }
-
-    public void placeUprightEntity(Entity e) {
-        Vector3f eulerAngles = new Vector3f();
-        Quaternionf qf = new Quaternionf();
-        qf.rotateTo(new Vector3f(0, 1, 0), new Vector3f(e.getPosition()).normalize());
-        qf.mul(new Quaternionf().rotateLocalY(new Random().nextFloat() * 7f), qf);
-        qf.getEulerAnglesXYZ(eulerAngles);
-        e.setRotX(eulerAngles.x);
-        e.setRotY(eulerAngles.y);
-        e.setRotZ(eulerAngles.z);
-        addEntity(e);
     }
 
     public void addEntity(Entity e) {

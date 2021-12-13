@@ -1,6 +1,6 @@
 package de.thriemer.disguisedphoenix;
 
-import de.thriemer.disguisedphoenix.adder.EntityAdder;
+import com.google.gson.Gson;
 import de.thriemer.disguisedphoenix.rendering.MasterRenderer;
 import de.thriemer.disguisedphoenix.terrain.World;
 import de.thriemer.disguisedphoenix.terrain.generator.WorldGenerator;
@@ -9,6 +9,7 @@ import de.thriemer.engine.input.KeyboardInputMap;
 import de.thriemer.engine.input.MouseInputMap;
 import de.thriemer.engine.time.TimerQuery;
 import de.thriemer.engine.time.Zeitgeist;
+import de.thriemer.engine.util.ModelConfig;
 import de.thriemer.engine.util.ModelFileHandler;
 import de.thriemer.graphics.camera.Camera;
 import de.thriemer.graphics.camera.FreeFlightCamera;
@@ -26,27 +27,25 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL40;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.IntBuffer;
 import java.text.DecimalFormat;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46.GL_ONE_MINUS_SRC_ALPHA;
 
 @Slf4j
 public class Main {
-
     public static int inViewVerticies = 0;
     public static int inViewObjects = 0;
     public static int drawCalls = 0;
@@ -69,7 +68,7 @@ public class Main {
         MouseInputMap mim = new MouseInputMap();
         ContextInformation contextInformation = display.getContextInformation();
         MasterRenderer masterRenderer = new MasterRenderer(contextInformation);
-        ModelFileHandler.loadModelsForMultiDraw(masterRenderer.getMultiDrawVBO(), EntityAdder.getModelNameList().toArray(new String[0]));
+        ModelFileHandler.loadModelsForMultiDraw(masterRenderer.getMultiDrawVBO(), getModelNameList().toArray(new String[0]));
         Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(0, radius, 0), mim);
         InputManager input = new InputManager(display.getWindowId());
         KeyboardInputMap kim = new KeyboardInputMap().addMapping("forward", GLFW_KEY_W).addMapping("backward", GLFW_KEY_S).addMapping("turnLeft", GLFW_KEY_A).addMapping("turnRight", GLFW_KEY_D).addMapping("accel", GLFW_KEY_SPACE);
@@ -132,10 +131,9 @@ public class Main {
                 ffc.update(dt);
                 world.updatePlayerPos(ffc.getPosition(), worldGenerator);
                 Matrix4f viewMatrix = ffc.getViewMatrix();
-                world.update(dt);
                 input.updateInputMaps();
                 masterRenderer.render(player, ffc, display, viewMatrix, ffc.getPosition(), time, world, lightPos, lightColor);
-                screenShot(input,display);
+                screenShot(input, display);
                 display.clear();
                 avgFPS += zeitgeist.getFPS();
                 display.setFrameTitle("Disguised Phoenix: " + " FPS: " + zeitgeist.getFPS() + ", In frustum objects: " + inViewObjects + ", drawcalls: " + drawCalls + " faces: " + df.format(facesDrawn));
@@ -177,10 +175,10 @@ public class Main {
             lastScreenshot = System.currentTimeMillis();
             ContextInformation contextInformation = display.getContextInformation();
             int width = contextInformation.getWidth();
-            int height=contextInformation.getHeight();
-            BufferedImage image = glScreenshot(width,height);
+            int height = contextInformation.getHeight();
+            BufferedImage image = glScreenshot(width, height);
             try {
-                ImageIO.write(image,"PNG", new File("screenshot.png"));
+                ImageIO.write(image, "PNG", new File("screenshot.png"));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -188,7 +186,7 @@ public class Main {
     }
 
 
-    public static BufferedImage glScreenshot(int w,int h) {
+    public static BufferedImage glScreenshot(int w, int h) {
         GL11.glReadBuffer(GL11.GL_FRONT);
         int bpp = 4;
         ByteBuffer buffer = BufferUtils.createByteBuffer(w * h * bpp);
@@ -208,6 +206,13 @@ public class Main {
         }
 
         return image;
+    }
+
+    public static List<String> getModelNameList() {
+        ModelConfig[] modelConfigs = new Gson().fromJson(new InputStreamReader(Main.class.getResourceAsStream("/models/ModelBuilder.info")), ModelConfig[].class);
+        return Arrays.stream(modelConfigs)
+                .map(modelConfig -> modelConfig.modelFilePath)
+                .collect(Collectors.toList());
     }
 
 }

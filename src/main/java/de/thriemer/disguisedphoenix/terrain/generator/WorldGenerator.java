@@ -1,18 +1,32 @@
 package de.thriemer.disguisedphoenix.terrain.generator;
 
+import de.thriemer.disguisedphoenix.Entity;
+import de.thriemer.disguisedphoenix.terrain.PositionProvider;
 import de.thriemer.disguisedphoenix.terrain.World;
 import de.thriemer.engine.util.Maths;
+import de.thriemer.engine.util.ModelFileHandler;
 import de.thriemer.graphics.loader.MeshInformation;
+import de.thriemer.graphics.modelinfo.Model;
 import de.thriemer.graphics.particles.ParticleManager;
+import org.joml.Quaternionf;
 import org.joml.Vector3f;
-import org.spongepowered.noise.module.source.RidgedMultiSimplex;
 import org.spongepowered.noise.module.source.Simplex;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 public class WorldGenerator {
-    RidgedMultiSimplex ridgedMultiSimplex = new RidgedMultiSimplex();
     //TODO: BiomeConfig benutzen für noise funktion
     //TODO: biomeconfig für entity placement benutzen
     TerrainGenerator terrainGenerator;
+
+    Random random;
 
     Simplex moistureNoise = new Simplex();
     Simplex bootstrapNoise = new Simplex();
@@ -32,6 +46,7 @@ public class WorldGenerator {
         bootstrapNoise.setSeed(2);
         max = scaleNoise(1f);
         seaLevel = scaleNoise(0.3f);
+        random = new Random(SEED);
     }
 
     public MeshInformation createTerrainFor(int index) {
@@ -81,7 +96,7 @@ public class WorldGenerator {
         float waterMoisture = (float) (Math.pow((v.length() - seaLevel) / (max - seaLevel), 2));
         float noiseMoisture = (float) (moistureNoise.getValue(v.x * moistureScale, v.y * moistureScale, v.z * moistureScale) / moistureNoise.getMaxValue());
         float temperatureMultiplier = (temperature - minTemp) / (maxTemp - minTemp) * 1.2f + 0.2f;
-        return (noiseMoisture + waterMoisture) / 2f * maxHumidity*temperatureMultiplier;
+        return (noiseMoisture + waterMoisture) / 2f * maxHumidity * temperatureMultiplier;
     }
 
 
@@ -100,5 +115,36 @@ public class WorldGenerator {
     public void save() {
         biomeManager.save();
     }
+
+    public void addEntities(MeshInformation meshInformation, Consumer<Entity> entityInserter) {
+        PositionProvider positionProvider = new PositionProvider(meshInformation);
+        float area = positionProvider.getArea();
+        while (area>0){
+            Map.Entry<Vector3f,Vector3f> positionAndNormal=positionProvider.getRandomPosition();
+            Vector3f position= positionAndNormal.getKey();
+            Vector3f normal = positionAndNormal.getValue();
+            float temperature = getTemperature(position);
+            String[] possibleModels =biomeManager.getModels(temperature,getMoisture(position,temperature));
+            String chosen = possibleModels[random.nextInt(possibleModels.length)];
+            Model model = ModelFileHandler.getModel(chosen);
+            float scaleDifference = (random.nextFloat() * 2f - 1) * 0.5f + 1.0f;
+            float modelAreaEstimate = (float) Math.PI * model.getRadiusXZ() * model.getRadiusXZ() * 2f*scaleDifference;
+            area-=modelAreaEstimate;
+            entityInserter.accept(rotateUpRight(new Entity(model, position, 0,  random.nextFloat() * 7f,0f, scaleDifference),normal));
+        }
+    }
+
+    private Entity rotateUpRight(Entity e, Vector3f normal){
+        Vector3f eulerAngles = new Vector3f();
+        Quaternionf qf = new Quaternionf();
+        qf.rotateTo(new Vector3f(0, 1, 0), normal);
+        qf.mul(new Quaternionf().rotateLocalY(e.getRotY()), qf);
+        qf.getEulerAnglesXYZ(eulerAngles);
+        e.setRotX(eulerAngles.x);
+        e.setRotY(eulerAngles.y);
+        e.setRotZ(eulerAngles.z);
+        return e;
+    }
+
 
 }

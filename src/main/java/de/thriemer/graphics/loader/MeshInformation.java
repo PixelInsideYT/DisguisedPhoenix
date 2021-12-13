@@ -49,6 +49,11 @@ public class MeshInformation {
         return indicies.length / 3;
     }
 
+    public Vector3f getVector(int index){
+        int localIndex = index*4;
+        return new Vector3f(vertexPositions[localIndex++],vertexPositions[localIndex++],vertexPositions[localIndex]);
+    }
+
     @Deprecated
     public int getVertexCount() {
         //TODO: make relevant again

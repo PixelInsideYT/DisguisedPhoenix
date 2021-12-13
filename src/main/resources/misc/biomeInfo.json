@@ -15,6 +15,10 @@
         "y": 0.25543994
       }
     ],
+    "models": [
+      "misc/rock.modelFile",
+      "misc/tutorialCrystal.modelFile"
+    ],
     "color": {
       "x": 0.576,
       "y": 0.655,
@@ -45,6 +49,10 @@
         "y": 0.25543994
       }
     ],
+    "models": [
+      "misc/fox.modelFile",
+      "plants/glockenblume.modelFile"
+    ],
     "color": {
       "x": 0.357,
       "y": 0.561,
@@ -66,6 +74,10 @@
         "x": 0.7838828,
         "y": 0.31315044
       }
+    ],
+    "models": [
+      "plants/grass.modelFile",
+      "plants/mushroom.modelFile"
     ],
     "color": {
       "x": 0.702,
@@ -93,6 +105,10 @@
         "y": 0.11825922
       }
     ],
+    "models": [
+      "plants/grass.modelFile",
+      "plants/mushroom.modelFile"
+    ],
     "color": {
       "x": 0.573,
       "y": 0.494,
@@ -119,6 +135,11 @@
         "y": 0.42478713
       }
     ],
+    "models": [
+      "bush/mountain_ash_1.modelFile",
+      "bush/mountain_ash_2.modelFile",
+      "bush/mountain_ash_3.modelFile"
+    ],
     "color": {
       "x": 0.173,
       "y": 0.537,
@@ -144,6 +165,9 @@
         "x": 0.4569597,
         "y": 0.5014191
       }
+    ],
+    "models": [
+      "lowPolyTree/ballTree.modelFile"
     ],
     "color": {
       "x": 0.039,
@@ -175,6 +199,10 @@
         "y": 0.31315044
       }
     ],
+    "models": [
+      "lowPolyTree/bendyTree.modelFile",
+      "lowPolyTree/tree2.modelFile"
+    ],
     "color": {
       "x": 0.592,
       "y": 0.647,
@@ -201,6 +229,12 @@
         "y": 0.8429518
       }
     ],
+    "models": [
+      "bush/mountain_ash_with_berries_1.modelFile",
+      "bush/mountain_ash_with_berries_2.modelFile",
+      "bush/mountain_ash_with_berries_3.modelFile",
+      "plants/flowerTest1.modelFile"
+    ],
     "color": {
       "x": 0.027,
       "y": 0.325,
@@ -226,6 +260,10 @@
         "x": 0.78479856,
         "y": 0.1333964
       }
+    ],
+    "models": [
+      "desertPlants/cactus01.modelFile",
+      "desertPlants/cactus02.modelFile"
     ],
     "color": {
       "x": 0.784,
