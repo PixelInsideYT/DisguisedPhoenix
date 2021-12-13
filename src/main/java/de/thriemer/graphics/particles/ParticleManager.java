@@ -1,6 +1,7 @@
 package de.thriemer.graphics.particles;
 
 import de.thriemer.disguisedphoenix.Main;
+import de.thriemer.disguisedphoenix.rendering.CameraInformation;
 import de.thriemer.graphics.core.objects.BufferObject;
 import de.thriemer.graphics.core.objects.Vao;
 import de.thriemer.graphics.core.shaders.Shader;
@@ -57,7 +58,9 @@ public class ParticleManager {
         inGameParticles.removeIf(p -> p.update(dt));
     }
 
-    public void render(Matrix4f projMatrix, Matrix4f viewMatrix) {
+    public void render(CameraInformation cameraInformation) {
+        Matrix4f viewMatrix = cameraInformation.getViewMatrix();
+        Matrix4f projMatrix = cameraInformation.getProjectionMatrix();
         Matrix4f transposedViewMatrix = new Matrix4f(viewMatrix).transpose();
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
         shader.bind();

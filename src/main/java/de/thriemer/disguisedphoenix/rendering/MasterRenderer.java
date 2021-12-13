@@ -16,6 +16,7 @@ import de.thriemer.graphics.core.renderer.TestRenderer;
 import de.thriemer.graphics.modelinfo.Model;
 import de.thriemer.graphics.modelinfo.RenderInfo;
 import de.thriemer.graphics.occlusion.CSMResolver;
+import de.thriemer.graphics.particles.ParticleManager;
 import de.thriemer.graphics.postprocessing.GaussianBlur;
 import de.thriemer.graphics.postprocessing.HIZGenerator;
 import de.thriemer.graphics.postprocessing.Pipeline;
@@ -56,14 +57,14 @@ public class MasterRenderer {
     Pipeline postProcessPipeline;
     private final TestRenderer renderer;
 
-    public MasterRenderer(ContextInformation contextInformation) {
+    public MasterRenderer(ParticleManager particleManager,ContextInformation contextInformation) {
         int width = contextInformation.getWidth();
         int height = contextInformation.getHeight();
         cameraInformation = new CameraInformation(NEAR_PLANE, FAR_PLANE, FOV, contextInformation.getAspectRatio());
         multiIndirectRenderer = new MultiIndirectRenderer();
         vegetationRenderer = new VegetationRenderer(multiIndirectRenderer);
         renderer = new TestRenderer(vegetationRenderer.vegetationShader);
-        lightingPassRenderer = new LightingPassRenderer(quadRenderer, width, height);
+        lightingPassRenderer = new LightingPassRenderer(particleManager,quadRenderer, width, height);
         shadowRenderer = new ShadowRenderer(quadRenderer, contextInformation);
         setupFBOs(width, height);
         setupPostProcessing(width, height);

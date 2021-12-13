@@ -22,6 +22,7 @@ import de.thriemer.graphics.core.shaders.Shader;
 import de.thriemer.graphics.gui.NuklearBinding;
 import de.thriemer.graphics.loader.TextureLoader;
 import de.thriemer.graphics.particles.ParticleManager;
+import de.thriemer.graphics.particles.UpwardsParticles;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -67,7 +68,8 @@ public class Main {
         // GL11.glEnable(GL45.GL_DEBUG_OUTPUT);
         MouseInputMap mim = new MouseInputMap();
         ContextInformation contextInformation = display.getContextInformation();
-        MasterRenderer masterRenderer = new MasterRenderer(contextInformation);
+        ParticleManager pm = new ParticleManager();
+        MasterRenderer masterRenderer = new MasterRenderer(pm,contextInformation);
         ModelFileHandler.loadModelsForMultiDraw(masterRenderer.getMultiDrawVBO(), getModelNameList().toArray(new String[0]));
         Player player = new Player(ModelFileHandler.getModel("misc/birb.modelFile"), new Vector3f(0, radius, 0), mim);
         InputManager input = new InputManager(display.getWindowId());
@@ -77,7 +79,6 @@ public class Main {
         input.addInputMapping(freeFlightCam);
         input.addInputMapping(mim);
         //GLUtil.setupDebugMessageCallback();
-        ParticleManager pm = new ParticleManager();
         WorldGenerator worldGenerator = new WorldGenerator(radius);
         World world = worldGenerator.generateWorld(pm);
         //world.loadEntireWorld(worldGenerator);
@@ -97,6 +98,7 @@ public class Main {
         NuklearBinding nuklearBinding = new NuklearBinding(input, display);
         flightCamera.getPosition().set(worldGenerator.getNoiseFunction(new Vector3f(player.position)));
         flightCamera2.getPosition().set((float) Math.random() * 2f - 1f, (float) Math.random() * 2f - 1f, (float) Math.random() * 2f - 1f);
+        pm.addParticleEmitter(new UpwardsParticles(new Vector3f(flightCamera.getPosition()).add(0,50,0),200,50,100,60*60));
         float summedMS = 0f;
         // input.hideMouseCursor();
         float switchCameraTimer = 0f;

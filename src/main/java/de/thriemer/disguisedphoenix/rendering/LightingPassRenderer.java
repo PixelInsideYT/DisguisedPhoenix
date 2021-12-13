@@ -6,6 +6,7 @@ import de.thriemer.graphics.core.objects.OpenGLState;
 import de.thriemer.graphics.core.shaders.Shader;
 import de.thriemer.graphics.core.shaders.ShaderFactory;
 import de.thriemer.graphics.occlusion.ShadowEffect;
+import de.thriemer.graphics.particles.ParticleManager;
 import de.thriemer.graphics.postprocessing.QuadRenderer;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -21,8 +22,9 @@ public class LightingPassRenderer {
     private final QuadRenderer quadRenderer;
     FrameBufferObject deferredResult;
     private final Shader shader;
+    ParticleManager particleManager;
 
-    public LightingPassRenderer(QuadRenderer quadRenderer, int width, int height) {
+    public LightingPassRenderer(ParticleManager particleManager,QuadRenderer quadRenderer, int width, int height) {
         this.quadRenderer = quadRenderer;
         ShaderFactory gResolveFactory = new ShaderFactory("postProcessing/quadVS.glsl", "postProcessing/deferred/lightingPassFS.glsl").withAttributes("pos");
         gResolveFactory.withUniforms("depthTexture", "normalAndSpecularTexture", "colorAndGeometryCheckTexture", "ambientOcclusionTexture","shadowMapTexture", "projMatrixInv", "lightPos", "lightColor", "ssaoEnabled", "shadowsEnabled");
@@ -30,11 +32,14 @@ public class LightingPassRenderer {
         gResolveFactory.configureSampler("depthTexture", 0).configureSampler("normalAndSpecularTexture", 1).
                 configureSampler("colorAndGeometryCheckTexture", 2).configureSampler("ambientOcclusionTexture", 3).configureSampler("shadowMapTexture", 4);
         shader = gResolveFactory.built();
-        deferredResult= new FrameBufferObject(width, height, 2).addTextureAttachment(0).addTextureAttachment(1).unbind();
+        deferredResult= new FrameBufferObject(width, height, 2).addTextureAttachment(0).addTextureAttachment(1).addDepthTextureAttachment(false).unbind();
+        this.particleManager=particleManager;
     }
+
 
     public void render(FrameBufferObject gBuffer, ShadowRenderer shadowRenderer, CameraInformation cameraInformation, Vector3f lightPos, Vector3f lightColor) {
         lightTimer.startQuery();
+        gBuffer.blitDepth(deferredResult);
         deferredResult.bind();
         shader.bind();
         bindTextures(shader,gBuffer, shadowRenderer.ssaoEffect.getSSAOTexture(), shadowRenderer.getShadowTexture());
@@ -48,7 +53,7 @@ public class LightingPassRenderer {
         shader.unbind();
         OpenGLState.enableDepthTest();
         OpenGLState.enableAlphaBlending();
-        //TODO: particle rendering
+        particleManager.render(cameraInformation);
         OpenGLState.disableAlphaBlending();
         OpenGLState.disableDepthTest();
         deferredResult.unbind();
