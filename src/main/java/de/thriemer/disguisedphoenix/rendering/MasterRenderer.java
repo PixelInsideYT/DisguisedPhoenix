@@ -21,6 +21,7 @@ import de.thriemer.graphics.postprocessing.GaussianBlur;
 import de.thriemer.graphics.postprocessing.HIZGenerator;
 import de.thriemer.graphics.postprocessing.Pipeline;
 import de.thriemer.graphics.postprocessing.QuadRenderer;
+import lombok.Getter;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -36,9 +37,10 @@ import static org.lwjgl.opengl.GL13.glActiveTexture;
 public class MasterRenderer {
 
     public static final float NEAR_PLANE = 0.05f;
-    public static final float FAR_PLANE = 1000;
+    public static final float FAR_PLANE =500;
     private static final float FOV = 70;
 
+    @Getter
     CameraInformation cameraInformation;
 
     GPUTimerQuery vertexTimer = new GPUTimerQuery("Geometry Pass");

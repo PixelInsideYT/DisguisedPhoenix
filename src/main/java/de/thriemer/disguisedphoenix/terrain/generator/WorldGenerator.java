@@ -10,16 +10,12 @@ import de.thriemer.graphics.modelinfo.Model;
 import de.thriemer.graphics.particles.ParticleManager;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import org.joml.Vector3i;
 import org.spongepowered.noise.module.source.Simplex;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class WorldGenerator {
     //TODO: BiomeConfig benutzen für noise funktion
@@ -49,8 +45,8 @@ public class WorldGenerator {
         random = new Random(SEED);
     }
 
-    public MeshInformation createTerrainFor(int index) {
-        return terrainGenerator.buildTerrain(6, index, this::getNoiseFunction, this::getColor);
+    public MeshInformation createTerrainFor(Vector3i terrainIndex) {
+        return terrainGenerator.buildTerrain(terrainIndex, this::getNoiseFunction, this::getColor);
     }
 
     public World generateWorld(ParticleManager pm) {
@@ -58,10 +54,9 @@ public class WorldGenerator {
         return world;
     }
 
-    public Vector3f getNoiseFunction(Vector3f v) {
-        Vector3f bootstrapped = bootstrapVector(v);
-        v.set(bootstrapped);
-        return v;
+    public float getNoiseFunction(Vector3f v) {
+        float SIMPLEX_NOISE_SCALE = 0.001f;
+        return (float) (bootstrapNoise.getValue(v.x * SIMPLEX_NOISE_SCALE, v.y * SIMPLEX_NOISE_SCALE, v.z * SIMPLEX_NOISE_SCALE) / bootstrapNoise.getMaxValue());
     }
 
     float realHeight = 4000;
@@ -100,13 +95,6 @@ public class WorldGenerator {
     }
 
 
-    private Vector3f bootstrapVector(Vector3f direction) {
-        Vector3f v = new Vector3f(direction.normalize());
-        float SIMPLEX_NOISE_SCALE = 2f;
-        float val2 = (float) (bootstrapNoise.getValue(v.x * SIMPLEX_NOISE_SCALE, v.y * SIMPLEX_NOISE_SCALE, v.z * SIMPLEX_NOISE_SCALE) / bootstrapNoise.getMaxValue());
-        return v.mul(scaleNoise(val2));
-    }
-
     private float scaleNoise(float v1) {
         float v1Scale = 1f + v1 * 0.2f;
         return radius * v1Scale;
@@ -134,7 +122,7 @@ public class WorldGenerator {
         }
     }
 
-    private Entity rotateUpRight(Entity e, Vector3f normal){
+    private Entity rotateUpRight(Entity e, Vector3f normal) {
         Vector3f eulerAngles = new Vector3f();
         Quaternionf qf = new Quaternionf();
         qf.rotateTo(new Vector3f(0, 1, 0), normal);

@@ -2,6 +2,7 @@ package de.thriemer.disguisedphoenix.rendering;
 
 import lombok.Getter;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 @Getter
 public class CameraInformation {
@@ -31,6 +32,10 @@ public class CameraInformation {
     public void updateCameraMatrix(Matrix4f viewMatrix){
         this.viewMatrix.set(viewMatrix);
         recalculateProjViewMatrix();
+    }
+
+    public Vector3f getCameraPosition(){
+       return viewMatrix.getTranslation(new Vector3f()).negate();
     }
 
     private void recalculateProjViewMatrix(){

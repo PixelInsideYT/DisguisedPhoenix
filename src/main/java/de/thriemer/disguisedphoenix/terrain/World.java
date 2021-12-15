@@ -1,7 +1,8 @@
 package de.thriemer.disguisedphoenix.terrain;
 
 import de.thriemer.disguisedphoenix.Entity;
-import de.thriemer.disguisedphoenix.terrain.generator.TerrainTriangle;
+import de.thriemer.disguisedphoenix.rendering.CameraInformation;
+import de.thriemer.disguisedphoenix.terrain.generator.TerrainGenerator;
 import de.thriemer.disguisedphoenix.terrain.generator.WorldGenerator;
 import de.thriemer.engine.world.Octree;
 import de.thriemer.graphics.core.objects.Vao;
@@ -12,8 +13,8 @@ import de.thriemer.graphics.particles.ParticleManager;
 import lombok.Getter;
 import org.joml.FrustumIntersection;
 import org.joml.Matrix4f;
-import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import org.joml.Vector3i;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -23,6 +24,8 @@ import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static de.thriemer.disguisedphoenix.terrain.generator.TerrainGenerator.CHUNK_SIZE;
 
 public class World {
 
@@ -42,30 +45,45 @@ public class World {
         return new ArrayList<>();
     }
 
-    Set<Integer> addedTerrains = new HashSet<>();
+    Set<Vector3i> addedTerrains = new HashSet<>();
 
     List<Future<MeshInformation>> terrainFutures = new ArrayList<>();
 
 
     private ExecutorService executor = Executors.newWorkStealingPool();
+    private int activeTasks =0;
 
-
-    public void updatePlayerPos(Vector3f vector3f, WorldGenerator generator) {
-        Vector3f normalized = new Vector3f(vector3f).normalize();
-        List<Integer> choosenTriangle = new ArrayList<>();
-        ListIterator<TerrainTriangle> triangleIteratoritr = TerrainTriangle.getTriangleIterator();
-        while (triangleIteratoritr.hasNext()) {
-            int index = triangleIteratoritr.nextIndex();
-            TerrainTriangle triangle = triangleIteratoritr.next();
-            float dot = triangle.getDirection().normalize().dot(normalized);
-            if (dot > 0.9) {
-                choosenTriangle.add(index);
+    private List<Vector3i> getChunksInView(CameraInformation cameraInformation) {
+        List<Vector3i> chunkList = new ArrayList<>();
+        Vector3f frustumCornerMin = new Vector3f(Float.MAX_VALUE);
+        Vector3f frustumCornerMax = new Vector3f(-Float.MAX_VALUE);
+        for (int i = 0; i < 8; i++) {
+            Vector3f corner = cameraInformation.getProjViewMatrix().frustumCorner(i, new Vector3f());
+            frustumCornerMin.min(corner);
+            frustumCornerMax.max(corner);
+        }
+        for (int x = (int) Math.floor(frustumCornerMin.x / CHUNK_SIZE); x < Math.ceil(frustumCornerMax.x / CHUNK_SIZE); x++) {
+            for (int y = (int) Math.floor(frustumCornerMin.y / CHUNK_SIZE); y < Math.ceil(frustumCornerMax.y / CHUNK_SIZE); y++) {
+                for (int z = (int) Math.floor(frustumCornerMin.z / CHUNK_SIZE); z < Math.ceil(frustumCornerMax.z / CHUNK_SIZE); z++) {
+                    chunkList.add(new Vector3i(x, y, z));
+                }
             }
         }
-        for (int terrainIndex : choosenTriangle) {
-            if (!addedTerrains.contains(terrainIndex)) {
+        Vector3f camPos =cameraInformation.getCameraPosition();
+        Vector3i camPosInteger = new Vector3i((int)(camPos.x/CHUNK_SIZE),(int)(camPos.y/CHUNK_SIZE),(int)(camPos.z/CHUNK_SIZE));
+        chunkList.sort(Comparator.comparingDouble(v -> v.distance(camPosInteger)));
+        return chunkList;
+    }
+
+    public void updatePlayerPos(CameraInformation cameraInformation, WorldGenerator generator) {
+        List<Vector3i> inViewChunks = getChunksInView(cameraInformation);
+        int enqueued = 0;
+        for (Vector3i terrainIndex : inViewChunks) {
+            if (!addedTerrains.contains(terrainIndex)&&enqueued<5&&activeTasks<5) {
                 addedTerrains.add(terrainIndex);
                 terrainFutures.add(executor.submit(() -> generateChunk(generator, terrainIndex)));
+                enqueued++;
+                activeTasks++;
             }
         }
         Iterator<Future<MeshInformation>> itr = terrainFutures.iterator();
@@ -74,24 +92,27 @@ public class World {
             if (singleMesh.isDone()) {
                 try {
                     MeshInformation terrainMesh = singleMesh.get();
-                    Vao vao = new Vao();
-                    vao.addDataAttributes(0, 4, terrainMesh.vertexPositions);
-                    vao.addDataAttributes(1, 4, terrainMesh.colors);
-                    vao.addIndicies(terrainMesh.indicies);
-                    terrains.add(new Terrain(new Model(new RenderInfo(vao), null, 0, 0, new Vector3f(), new Vector3f(), null)));
+                    if (terrainMesh.indicies.length > 0) {
+                        Vao vao = new Vao();
+                        vao.addDataAttributes(0, 4, terrainMesh.vertexPositions);
+                        vao.addDataAttributes(1, 4, terrainMesh.colors);
+                        vao.addIndicies(terrainMesh.indicies);
+                        terrains.add(new Terrain(new Model(new RenderInfo(vao), null, 0, 0, new Vector3f(), new Vector3f(), null)));
+                    }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
                     e.printStackTrace();
                 }
+                activeTasks--;
                 itr.remove();
             }
         }
     }
 
-    private MeshInformation generateChunk(WorldGenerator generator, int terrainIndex) {
+    private MeshInformation generateChunk(WorldGenerator generator, Vector3i terrainIndex) {
         MeshInformation generatedChunk = generator.createTerrainFor(terrainIndex);
-        generator.addEntities(generatedChunk,this::addEntity);
+        generator.addEntities(generatedChunk, this::addEntity);
         return generatedChunk;
     }
 

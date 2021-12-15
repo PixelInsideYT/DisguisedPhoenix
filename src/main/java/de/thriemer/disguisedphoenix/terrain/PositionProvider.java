@@ -1,14 +1,11 @@
 package de.thriemer.disguisedphoenix.terrain;
 
-import de.thriemer.disguisedphoenix.terrain.generator.TerrainTriangle;
 import de.thriemer.graphics.loader.MeshInformation;
 import org.joml.Vector3f;
 
 import java.util.AbstractMap;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Random;
-import java.util.function.UnaryOperator;
 
 public class PositionProvider {
 

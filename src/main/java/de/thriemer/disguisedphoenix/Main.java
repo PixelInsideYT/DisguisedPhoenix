@@ -83,7 +83,6 @@ public class Main {
         World world = worldGenerator.generateWorld(pm);
         //world.loadEntireWorld(worldGenerator);
         FreeFlightCamera flightCamera = new FreeFlightCamera(mim, freeFlightCam);
-        FreeFlightCamera flightCamera2 = new FreeFlightCamera(mim, freeFlightCam);
         player.movement = kim;
         OpenGLState.enableDepthTest();
         OpenGLState.setAlphaBlending(GL_ONE_MINUS_SRC_ALPHA);
@@ -96,8 +95,7 @@ public class Main {
         int frameCounter = 0;
         display.setResizeListener(masterRenderer::resize);
         NuklearBinding nuklearBinding = new NuklearBinding(input, display);
-        flightCamera.getPosition().set(worldGenerator.getNoiseFunction(new Vector3f(player.position)));
-        flightCamera2.getPosition().set((float) Math.random() * 2f - 1f, (float) Math.random() * 2f - 1f, (float) Math.random() * 2f - 1f);
+        flightCamera.getPosition().set(0,25,0);
         pm.addParticleEmitter(new UpwardsParticles(new Vector3f(flightCamera.getPosition()).add(0,50,0),200,50,100,60*60));
         float summedMS = 0f;
         // input.hideMouseCursor();
@@ -131,7 +129,7 @@ public class Main {
                 pm.update(dt);
                 Camera ffc = flightCamera;
                 ffc.update(dt);
-                world.updatePlayerPos(ffc.getPosition(), worldGenerator);
+                world.updatePlayerPos(masterRenderer.getCameraInformation(), worldGenerator);
                 Matrix4f viewMatrix = ffc.getViewMatrix();
                 input.updateInputMaps();
                 masterRenderer.render(player, ffc, display, viewMatrix, ffc.getPosition(), time, world, lightPos, lightColor);

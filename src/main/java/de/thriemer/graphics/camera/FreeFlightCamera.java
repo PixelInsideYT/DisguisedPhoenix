@@ -45,21 +45,14 @@ public class FreeFlightCamera extends Camera {
         } else if (otherMovement.getValueForAction("down") > 0) {
             ySpeed = -flySpeed;
         }
-        Vector3f up = new Vector3f(position).normalize();
+        Vector3f up = new Vector3f(0,1,0);
         Vector3f right = up.cross(lookDirection, new Vector3f()).normalize();
         Vector3f forward = right.cross(up, new Vector3f()).normalize();
         lookDirection.add(new Vector3f(up).mul(movement.getValueForAction(MouseInputMap.MOUSE_DY) * UP_SPEED * dt));
         lookDirection.add(new Vector3f(right).mul(movement.getValueForAction(MouseInputMap.MOUSE_DX) * TURN_SPEED * dt));
         lookDirection.normalize();
         position.add(forward.mul(xzSpeed * dt));
-        //account for curvature in view direction
-        Vector3f afterForwardTranslation = new Vector3f(position).normalize();
-        if (up.distance(afterForwardTranslation) > 0) {
-            float rotationAngle = afterForwardTranslation.dot(up);
-            Vector3f rotationAxis = up.cross(afterForwardTranslation, new Vector3f());
-            lookDirection.rotateAxis(rotationAngle, rotationAxis.x, rotationAxis.y, rotationAxis.z);
-        }
-        position.add(new Vector3f(right).mul(sideSpeed * dt));
+        position.add(right.mul(sideSpeed * dt));
         position.add(up.mul(ySpeed * dt));
     }
 
