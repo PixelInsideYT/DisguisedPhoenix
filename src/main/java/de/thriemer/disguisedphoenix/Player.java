@@ -1,6 +1,5 @@
 package de.thriemer.disguisedphoenix;
 
-import de.thriemer.disguisedphoenix.terrain.Island;
 import de.thriemer.engine.collision.CollisionShape;
 import de.thriemer.engine.input.InputMap;
 import de.thriemer.engine.input.MouseInputMap;
@@ -35,7 +34,7 @@ public class Player extends Entity {
         currentTurnDirection = new Vector3i();
     }
 
-    public void move(List<Island> terrain, float dt, List<Entity> possibleCollisions, List<CollisionShape> shapes) {
+    public void move(float dt, List<Entity> possibleCollisions, List<CollisionShape> shapes) {
         checkInputs();
         up = new Vector3f(position).normalize();
         this.acceleration.set(up).mul(-1f * GRAVITY);

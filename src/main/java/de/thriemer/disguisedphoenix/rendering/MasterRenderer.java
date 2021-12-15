@@ -3,7 +3,6 @@ package de.thriemer.disguisedphoenix.rendering;
 import de.thriemer.disguisedphoenix.Entity;
 import de.thriemer.disguisedphoenix.Main;
 import de.thriemer.disguisedphoenix.Player;
-import de.thriemer.disguisedphoenix.terrain.Island;
 import de.thriemer.disguisedphoenix.terrain.World;
 import de.thriemer.engine.time.CPUTimerQuery;
 import de.thriemer.engine.util.Maths;
@@ -15,7 +14,6 @@ import de.thriemer.graphics.core.renderer.MultiIndirectRenderer;
 import de.thriemer.graphics.core.renderer.TestRenderer;
 import de.thriemer.graphics.modelinfo.Model;
 import de.thriemer.graphics.modelinfo.RenderInfo;
-import de.thriemer.graphics.occlusion.CSMResolver;
 import de.thriemer.graphics.particles.ParticleManager;
 import de.thriemer.graphics.postprocessing.GaussianBlur;
 import de.thriemer.graphics.postprocessing.HIZGenerator;
@@ -31,8 +29,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
-import static org.lwjgl.opengl.GL13.glActiveTexture;
 
 public class MasterRenderer {
 
@@ -105,12 +101,8 @@ public class MasterRenderer {
         glClearColor(0.1f, 0.1f, 0.9f, 0.0f);
         gBuffer.clear();
         renderer.begin(cameraInformation);
-        for (Island island : world.getVisibleIslands()) {
-            renderer.render(island.getModel(), island.getTransformation());
-        }
-        //TODO: put earth management in World.java
         Matrix4f unitMatrix = new Matrix4f();
-        for (Model model : world.getTerrain()) {
+        for (Model model : world.getVisibleTerrains()) {
             renderer.render(model, unitMatrix);
         }
         renderer.render(player.getModel(), player.getTransformationMatrix());

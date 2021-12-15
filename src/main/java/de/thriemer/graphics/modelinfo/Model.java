@@ -12,27 +12,27 @@ public class Model {
     private Collider collider;
 
     private Vector3f relativeCenter;
-    private Vector3f topLeftAABB;
-    private Vector3f botRightAABB;
+    private Vector3f minAABB;
+    private Vector3f maxAABB;
     private float radiusXZ;
     private float radius;
 
-    public Model(RenderInfo info, Vector3f relativeCenter, float radiusXZ, float radius, Vector3f topLeftAABB, Vector3f botRightAABB) {
+    public Model(RenderInfo info, Vector3f relativeCenter, float radiusXZ, float radius, Vector3f minAABB, Vector3f maxAABB) {
         this.renderInfo = info;
         this.radius = radius;
         this.radiusXZ = radiusXZ;
         this.relativeCenter = relativeCenter;
-        this.topLeftAABB = topLeftAABB;
-        this.botRightAABB = botRightAABB;
+        this.minAABB = minAABB;
+        this.maxAABB = maxAABB;
     }
 
-    public Model(RenderInfo info, Vector3f relativeCenter, float radiusXZ, float radius, Vector3f topLeftAABB, Vector3f botRightAABB, Collider collider) {
-        this(info, relativeCenter, radiusXZ, radius, topLeftAABB, botRightAABB);
+    public Model(RenderInfo info, Vector3f relativeCenter, float radiusXZ, float radius, Vector3f minAABB, Vector3f maxAABB, Collider collider) {
+        this(info, relativeCenter, radiusXZ, radius, minAABB, maxAABB);
         this.collider = collider;
     }
 
     public Model(RenderInfo info, MeshInformation meshInformation) {
-        this(info, meshInformation.centerPoint, meshInformation.radiusXZPlane, meshInformation.radius, meshInformation.topLeftAABB, meshInformation.botRightAABB, meshInformation.collider);
+        this(info, meshInformation.centerPoint, meshInformation.radiusXZPlane, meshInformation.radius, meshInformation.minAABB, meshInformation.maxAABB, meshInformation.collider);
     }
 
 }

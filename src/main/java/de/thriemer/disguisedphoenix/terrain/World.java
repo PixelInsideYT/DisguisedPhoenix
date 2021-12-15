@@ -2,7 +2,6 @@ package de.thriemer.disguisedphoenix.terrain;
 
 import de.thriemer.disguisedphoenix.Entity;
 import de.thriemer.disguisedphoenix.rendering.CameraInformation;
-import de.thriemer.disguisedphoenix.terrain.generator.TerrainGenerator;
 import de.thriemer.disguisedphoenix.terrain.generator.WorldGenerator;
 import de.thriemer.engine.world.Octree;
 import de.thriemer.graphics.core.objects.Vao;
@@ -23,7 +22,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static de.thriemer.disguisedphoenix.terrain.generator.TerrainGenerator.CHUNK_SIZE;
 
@@ -32,7 +30,6 @@ public class World {
     private final FrustumIntersection cullingHelper = new FrustumIntersection();
     @Getter
     private final Octree staticEntities;
-    private final List<Island> islands = new ArrayList<>();
     private final List<Terrain> terrains = new ArrayList<>();
     public static int addedEntities = 0;
 
@@ -97,7 +94,8 @@ public class World {
                         vao.addDataAttributes(0, 4, terrainMesh.vertexPositions);
                         vao.addDataAttributes(1, 4, terrainMesh.colors);
                         vao.addIndicies(terrainMesh.indicies);
-                        terrains.add(new Terrain(new Model(new RenderInfo(vao), null, 0, 0, new Vector3f(), new Vector3f(), null)));
+                        Model terrainModel = new Model(new RenderInfo(vao), terrainMesh);
+                        terrains.add(new Terrain(terrainModel));
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -127,18 +125,16 @@ public class World {
         staticEntities.getAllVisibleEntities(cullingHelper, visibilityFunction, entityConsumer);
     }
 
-    public List<Island> getVisibleIslands() {
-        return islands.stream().filter(i -> i.isVisible(cullingHelper)).collect(Collectors.toList());
-    }
-
     public void addEntity(Entity e) {
         staticEntities.insert(e);
         //  staticEntities.add(e);
         addedEntities++;
     }
 
-    public Model[] getTerrain() {
-        return terrains.stream().map(Terrain::getModel).toArray(Model[]::new);
+    public Model[] getVisibleTerrains() {
+        return terrains.stream()
+                .filter(t-> cullingHelper.testAab(t.model.getMinAABB(), t.getModel().getMaxAABB()))
+                .map(Terrain::getModel).toArray(Model[]::new);
     }
 
     public void shutdown() {

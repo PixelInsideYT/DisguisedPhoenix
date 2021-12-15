@@ -17,8 +17,8 @@ public class MeshInformation {
     public float[] vertexPositions;
     public float[] colors;
     public int[] indicies;
-    public Vector3f topLeftAABB;
-    public Vector3f botRightAABB;
+    public Vector3f maxAABB;
+    public Vector3f minAABB;
 
     public float radiusXZPlane;
     public float height;
@@ -36,12 +36,12 @@ public class MeshInformation {
     }
 
     private void calculateAABB() {
-        topLeftAABB = new Vector3f(-Float.MAX_VALUE);
-        botRightAABB = new Vector3f(Float.MAX_VALUE);
+        maxAABB = new Vector3f(-Float.MAX_VALUE);
+        minAABB = new Vector3f(Float.MAX_VALUE);
         for (int i = 0; i < getVertexCount(); i++) {
             Vector3f v = new Vector3f(vertexPositions[i], vertexPositions[i + 1], vertexPositions[i + 2]);
-            topLeftAABB.max(v);
-            botRightAABB.min(v);
+            maxAABB.max(v);
+            minAABB.min(v);
         }
     }
 
