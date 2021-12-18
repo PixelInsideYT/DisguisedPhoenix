@@ -3,17 +3,20 @@ package de.thriemer.disguisedphoenix.terrain.generator;
 import de.thriemer.graphics.loader.MeshInformation;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
+import org.spongepowered.noise.module.source.RidgedMultiSimplex;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
 public class TerrainGenerator {
 
     public static final float CHUNK_SIZE = 64;
-    private static final float MESH_RESOLUTION = 2f;//every $MESH_RESOLUTION a vertex is placed
-    private static final float ISO_LEVEL = 0.75f;
+    private static final float MESH_RESOLUTION = 8f;//every $MESH_RESOLUTION a vertex is placed
+    private static final float ISO_LEVEL = 0.8f;
 
     private static final Vector3f[] CUBE_CORNERS = new Vector3f[]{
             new Vector3f(0, 0, 0),
@@ -26,43 +29,30 @@ public class TerrainGenerator {
             new Vector3f(0, 1, 1)
     };
 
-    private static final Vector3f[] CUBE_EDGES = new Vector3f[]{
-            //bot edges
-            new Vector3f(CUBE_CORNERS[0]).add(CUBE_CORNERS[1]).div(2f),
-            new Vector3f(CUBE_CORNERS[1]).add(CUBE_CORNERS[2]).div(2f),
-            new Vector3f(CUBE_CORNERS[2]).add(CUBE_CORNERS[3]).div(2f),
-            new Vector3f(CUBE_CORNERS[3]).add(CUBE_CORNERS[0]).div(2f),
-            //top edges
-            new Vector3f(CUBE_CORNERS[4]).add(CUBE_CORNERS[5]).div(2f),
-            new Vector3f(CUBE_CORNERS[5]).add(CUBE_CORNERS[6]).div(2f),
-            new Vector3f(CUBE_CORNERS[6]).add(CUBE_CORNERS[7]).div(2f),
-            new Vector3f(CUBE_CORNERS[7]).add(CUBE_CORNERS[4]).div(2f),
-            //vertical edges
-            new Vector3f(CUBE_CORNERS[4]).add(CUBE_CORNERS[0]).div(2f),
-            new Vector3f(CUBE_CORNERS[5]).add(CUBE_CORNERS[1]).div(2f),
-            new Vector3f(CUBE_CORNERS[6]).add(CUBE_CORNERS[2]).div(2f),
-            new Vector3f(CUBE_CORNERS[7]).add(CUBE_CORNERS[3]).div(2f)
-    };
-
 
     public MeshInformation buildTerrain(Vector3i chunkIndex, Function<Vector3f, Float> noiseFunction, BinaryOperator<Vector3f> colorMapper) {
         List<Vector3f> triangleVertices = new ArrayList<>();
+        Map<Vector3f, Float> cachedNoiseFunction = new HashMap<>();
         List<Integer> indices = new ArrayList<>();
         for (int x = 0; x < CHUNK_SIZE / MESH_RESOLUTION; x++) {
             for (int y = 0; y < CHUNK_SIZE / MESH_RESOLUTION; y++) {
                 for (int z = 0; z < CHUNK_SIZE / MESH_RESOLUTION; z++) {
                     //single cube
                     int configuration = 0;
+                    float[] noiseValues = new float[8];
+                    Vector3f[] transformedVecs = new Vector3f[8];
                     for (int i = 0; i < 8; i++) {
                         Vector3f translated = transform(CUBE_CORNERS[i], chunkIndex, x, y, z);
-                        float noiseValue = noiseFunction.apply(translated);
+                        transformedVecs[i] = translated;
+                        float noiseValue = cachedNoiseFunction.computeIfAbsent(translated, noiseFunction);
+                        noiseValues[i] = noiseValue;
                         if (noiseValue > ISO_LEVEL) {
                             configuration |= 1 << i;
                         }
                     }
                     int[] cubeLocalIndices = MarchingCubesLookupTable.INDICES[configuration];
                     for (int i : cubeLocalIndices) {
-                        Vector3f transformed = transform(CUBE_EDGES[i], chunkIndex, x, y, z);
+                        Vector3f transformed = transform(transformedVecs, noiseValues, MarchingCubesLookupTable.CUBE_EDGES[i]);
                         if (!triangleVertices.contains(transformed)) {
                             triangleVertices.add(transformed);
                         }
@@ -87,6 +77,7 @@ public class TerrainGenerator {
         return new MeshInformation(chunkIndex.toString(), null, vertices, colors, indicesArray);
     }
 
+
     private void addColorToArray(int start, float[] array, Vector3f color) {
         array[start * 4] += color.x;
         array[start * 4 + 1] += color.y;
@@ -99,6 +90,13 @@ public class TerrainGenerator {
                 .add(chunkIndex.x * CHUNK_SIZE + x * MESH_RESOLUTION,
                         chunkIndex.y * CHUNK_SIZE + y * MESH_RESOLUTION,
                         chunkIndex.z * CHUNK_SIZE + z * MESH_RESOLUTION);
+    }
+
+    private Vector3f transform(Vector3f[] vecs, float[] values, int[] edge) {
+        int li = edge[0];
+        int ri = edge[1];
+        float a = (ISO_LEVEL - values[li]) / (values[ri] - values[li]);
+        return new Vector3f(vecs[ri]).sub(vecs[li]).mul(a).add(vecs[li]);
     }
 
 }

@@ -8,7 +8,7 @@ import org.joml.Vector3f;
 public class FreeFlightCamera extends Camera {
 
     private static final float NORMAL_SPEED = 5;
-    private static final float FAST_SPEED = 50;
+    private static final float FAST_SPEED = 200;
     private static final float TURN_SPEED = 1.6f / 50f;
     private static final float UP_SPEED = 0.1f / 5f;
     private final MouseInputMap movement;

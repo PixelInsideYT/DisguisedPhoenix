@@ -11,7 +11,10 @@ import de.thriemer.graphics.particles.ParticleManager;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
+import org.spongepowered.noise.module.source.Billow;
+import org.spongepowered.noise.module.source.RidgedMultiSimplex;
 import org.spongepowered.noise.module.source.Simplex;
+import org.spongepowered.noise.module.source.Voronoi;
 
 import java.util.Map;
 import java.util.Random;
@@ -25,10 +28,10 @@ public class WorldGenerator {
     Random random;
 
     Simplex moistureNoise = new Simplex();
-    Simplex bootstrapNoise = new Simplex();
+    Billow bootstrapNoise = new Billow();
     BiomeManager biomeManager = new BiomeManager();
 
-    private static final int SEED = 2;
+    public static final int SEED = 2;
     float radius;
     float max;
     float seaLevel;
@@ -39,7 +42,6 @@ public class WorldGenerator {
         moistureNoise.setOctaveCount(1);
         moistureNoise.setSeed(SEED);
         bootstrapNoise.setSeed(SEED);
-        bootstrapNoise.setSeed(2);
         max = scaleNoise(1f);
         seaLevel = scaleNoise(0.3f);
         random = new Random(SEED);
@@ -55,8 +57,10 @@ public class WorldGenerator {
     }
 
     public float getNoiseFunction(Vector3f v) {
-        float SIMPLEX_NOISE_SCALE = 0.001f;
-        return (float) (bootstrapNoise.getValue(v.x * SIMPLEX_NOISE_SCALE, v.y * SIMPLEX_NOISE_SCALE, v.z * SIMPLEX_NOISE_SCALE) / bootstrapNoise.getMaxValue());
+        float SIMPLEX_NOISE_SCALE = 0.002f;
+        float noise= (float) (bootstrapNoise.getValue(v.x * SIMPLEX_NOISE_SCALE, v.y * SIMPLEX_NOISE_SCALE, v.z * SIMPLEX_NOISE_SCALE));
+        float floor=(float)Math.exp(-v.y*0.01);
+        return noise+floor;
     }
 
     float realHeight = 4000;

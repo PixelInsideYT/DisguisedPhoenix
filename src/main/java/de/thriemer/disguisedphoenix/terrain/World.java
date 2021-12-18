@@ -48,7 +48,7 @@ public class World {
 
 
     private ExecutorService executor = Executors.newWorkStealingPool();
-    private int activeTasks =0;
+    int enqueued = 0;
 
     private List<Vector3i> getChunksInView(CameraInformation cameraInformation) {
         List<Vector3i> chunkList = new ArrayList<>();
@@ -74,13 +74,11 @@ public class World {
 
     public void updatePlayerPos(CameraInformation cameraInformation, WorldGenerator generator) {
         List<Vector3i> inViewChunks = getChunksInView(cameraInformation);
-        int enqueued = 0;
         for (Vector3i terrainIndex : inViewChunks) {
-            if (!addedTerrains.contains(terrainIndex)&&enqueued<5&&activeTasks<5) {
+            if (!addedTerrains.contains(terrainIndex)&&enqueued<10) {
                 addedTerrains.add(terrainIndex);
                 terrainFutures.add(executor.submit(() -> generateChunk(generator, terrainIndex)));
                 enqueued++;
-                activeTasks++;
             }
         }
         Iterator<Future<MeshInformation>> itr = terrainFutures.iterator();
@@ -102,7 +100,7 @@ public class World {
                 } catch (ExecutionException e) {
                     e.printStackTrace();
                 }
-                activeTasks--;
+                enqueued--;
                 itr.remove();
             }
         }

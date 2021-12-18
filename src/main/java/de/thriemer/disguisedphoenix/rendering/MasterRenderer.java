@@ -33,7 +33,7 @@ import static org.lwjgl.opengl.GL11.*;
 public class MasterRenderer {
 
     public static final float NEAR_PLANE = 0.05f;
-    public static final float FAR_PLANE =500;
+    public static final float FAR_PLANE =2000;
     private static final float FOV = 70;
 
     @Getter
