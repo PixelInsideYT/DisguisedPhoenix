@@ -62,7 +62,7 @@ public class ShadowEffect {
                 cascades[i].update(cameraInformation.getViewMatrix(), near, cascadeFar, cameraInformation.getFov(), contextInformation.getAspectRatio(), lightPos);
                 near = cascadeFar;
                  int finalI = i;
-                inCascade.add(world.getVisibleEntities(cascades[i].getProjViewMatrix(), e-> (e.getRadius()*e.getRadius())/cascades[finalI].size> 0.00001));
+                inCascade.add(world.getVisibleEntities(cascades[i].getProjViewMatrix(), (v,r)-> (r*r)/cascades[finalI].size> 0.00001));
             }
             shadowTimer.startQuery();
             shadowShader.bind();

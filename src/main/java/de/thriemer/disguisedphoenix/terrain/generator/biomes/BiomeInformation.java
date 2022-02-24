@@ -1,4 +1,4 @@
-package de.thriemer.disguisedphoenix.terrain.generator;
+package de.thriemer.disguisedphoenix.terrain.generator.biomes;
 
 import com.google.gson.annotations.SerializedName;
 import org.joml.Vector2f;

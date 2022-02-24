@@ -1,22 +1,20 @@
 package de.thriemer.disguisedphoenix.terrain.generator;
 
 import de.thriemer.graphics.loader.MeshInformation;
+import org.joml.Vector2i;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 import org.spongepowered.noise.module.source.RidgedMultiSimplex;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
 public class TerrainGenerator {
 
     public static final float CHUNK_SIZE = 64;
-    private static final float MESH_RESOLUTION = 8f;//every $MESH_RESOLUTION a vertex is placed
-    private static final float ISO_LEVEL = 0.8f;
+    private static final float MESH_RESOLUTION = 4f;//every $MESH_RESOLUTION a vertex is placed
+    private static final float ISO_LEVEL = 0.4f;
 
     private static final Vector3f[] CUBE_CORNERS = new Vector3f[]{
             new Vector3f(0, 0, 0),
@@ -29,11 +27,15 @@ public class TerrainGenerator {
             new Vector3f(0, 1, 1)
     };
 
+    public static final int DELTA_CHUNK=5;
 
-    public MeshInformation buildTerrain(Vector3i chunkIndex, Function<Vector3f, Float> noiseFunction, BinaryOperator<Vector3f> colorMapper) {
+
+    public MeshInformation buildTerrain(Vector2i chunkIndex,Function<Vector2i,Float> baseHeightFunction, Function<Vector3f, Float> noiseFunction, BinaryOperator<Vector3f> colorMapper) {
         List<Vector3f> triangleVertices = new ArrayList<>();
         Map<Vector3f, Float> cachedNoiseFunction = new HashMap<>();
         List<Integer> indices = new ArrayList<>();
+        int baseHeight =(int)Math.floor(baseHeightFunction.apply(chunkIndex)/CHUNK_SIZE);
+        for(int chunkOffset=baseHeight-DELTA_CHUNK;chunkOffset<baseHeight+DELTA_CHUNK;chunkOffset++){
         for (int x = 0; x < CHUNK_SIZE / MESH_RESOLUTION; x++) {
             for (int y = 0; y < CHUNK_SIZE / MESH_RESOLUTION; y++) {
                 for (int z = 0; z < CHUNK_SIZE / MESH_RESOLUTION; z++) {
@@ -42,7 +44,7 @@ public class TerrainGenerator {
                     float[] noiseValues = new float[8];
                     Vector3f[] transformedVecs = new Vector3f[8];
                     for (int i = 0; i < 8; i++) {
-                        Vector3f translated = transform(CUBE_CORNERS[i], chunkIndex, x, y, z);
+                        Vector3f translated = transform(CUBE_CORNERS[i], chunkIndex,chunkOffset, x, y, z);
                         transformedVecs[i] = translated;
                         float noiseValue = cachedNoiseFunction.computeIfAbsent(translated, noiseFunction);
                         noiseValues[i] = noiseValue;
@@ -58,7 +60,7 @@ public class TerrainGenerator {
                         }
                         indices.add(triangleVertices.indexOf(transformed));
                     }
-                }
+                }}
             }
         }
         float[] vertices = new float[triangleVertices.size() * 4];
@@ -77,7 +79,6 @@ public class TerrainGenerator {
         return new MeshInformation(chunkIndex.toString(), null, vertices, colors, indicesArray);
     }
 
-
     private void addColorToArray(int start, float[] array, Vector3f color) {
         array[start * 4] += color.x;
         array[start * 4 + 1] += color.y;
@@ -85,11 +86,11 @@ public class TerrainGenerator {
     }
 
 
-    private Vector3f transform(Vector3f input, Vector3i chunkIndex, int x, int y, int z) {
+    private Vector3f transform(Vector3f input, Vector2i chunkIndex,int chunkOffset, int x, int y, int z) {
         return new Vector3f(input).mul(MESH_RESOLUTION)
                 .add(chunkIndex.x * CHUNK_SIZE + x * MESH_RESOLUTION,
-                        chunkIndex.y * CHUNK_SIZE + y * MESH_RESOLUTION,
-                        chunkIndex.z * CHUNK_SIZE + z * MESH_RESOLUTION);
+                        chunkOffset * CHUNK_SIZE + y * MESH_RESOLUTION,
+                        chunkIndex.y * CHUNK_SIZE + z * MESH_RESOLUTION);
     }
 
     private Vector3f transform(Vector3f[] vecs, float[] values, int[] edge) {

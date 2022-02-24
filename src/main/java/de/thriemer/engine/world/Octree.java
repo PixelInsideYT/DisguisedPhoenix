@@ -10,14 +10,15 @@ import org.joml.Vector3f;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class Octree {
 
-    private static final float MIN_SIZE = 1f;
+    private static final float MIN_SIZE = 2f;
     private static final float LOOSENESS = 1.5f;
-    private int splitSize = 100;
+    private static final int FACE_SPLIT_COUNT = 1000;
+    private int faces = 0;
     private final Vector3f centerPosition;
     private final float halfWidth;
     private final float halfHeight;
@@ -26,6 +27,7 @@ public class Octree {
     private Octree[] nodes;
     private final Vector3f min;
     private final Vector3f max;
+    private final float radius;
     private final Vector3f looseMin;
     private final Vector3f looseMax;
     private final List<Entity> entities = new ArrayList<>();
@@ -35,6 +37,7 @@ public class Octree {
         this.halfWidth = width / 2f;
         this.halfHeight = height / 2f;
         this.halfDepth = depth / 2f;
+        this.radius = (float) Math.sqrt(halfWidth * halfWidth + halfHeight * halfHeight + halfDepth * halfDepth);
         min = new Vector3f(centerPosition).sub(halfWidth, halfHeight, halfDepth);
         max = new Vector3f(centerPosition).add(halfWidth, halfHeight, halfDepth);
         looseMin = new Vector3f(centerPosition).sub(LOOSENESS * halfWidth, LOOSENESS * halfHeight, LOOSENESS * halfDepth);
@@ -53,12 +56,14 @@ public class Octree {
                 }
             }
             if (stillFree) {
+                faces += e.getModel().getRenderInfo().getIndicesCount() / 3;
                 entities.add(e);
             }
         } else {
+            faces += e.getModel().getRenderInfo().getIndicesCount() / 3;
             entities.add(e);
         }
-        if (entities.size() > splitSize && !hasChildren && !hasMinSize()) {
+        if (faces > FACE_SPLIT_COUNT && !hasChildren && !hasMinSize()) {
             splitTree();
         }
     }
@@ -68,6 +73,7 @@ public class Octree {
     }
 
     private void splitTree() {
+        faces = 0;
         nodes = new Octree[8];
         //cache all the entities to not end up in an endless loop
         List<Entity> toReinsert = new ArrayList<>(entities);
@@ -92,13 +98,12 @@ public class Octree {
         }
     }
 
-    public void getAllVisibleEntities(FrustumIntersection frustum, Function<Entity, Boolean> visibilityFunction, Consumer<Entity> entityConsumer) {
-        if (frustum.testAab(looseMin, looseMax)) {
-            List<Entity> shallowCopy = new ArrayList<>(entities);
-            if (!shallowCopy.isEmpty()) {
+    public void getAllVisibleEntities(FrustumIntersection frustum, BiFunction<Vector3f, Float, Boolean> visibilityFunction, Consumer<Entity> entityConsumer) {
+        if ((hasChildren || !entities.isEmpty()) && frustum.testAab(looseMin, looseMax) && visibilityFunction.apply(centerPosition, radius)) {
+            if (!entities.isEmpty()) {
+                ArrayList<Entity> shallowCopy = new ArrayList<>(entities);
                 for (Entity e : shallowCopy) {
-                    //TODO: find out why entity is null sometimes
-                    if (e!=null&&visibilityFunction.apply(e) && frustum.testSphere(e.getCenter(), e.getRadius()))
+                    if (visibilityFunction.apply(e.getCenter(), e.getRadius()))
                         entityConsumer.accept(e);
                 }
             }
@@ -152,6 +157,16 @@ public class Octree {
             }
         }
         return list;
+    }
+
+    public int countEntities() {
+        int count = entities.size();
+        if (hasChildren) {
+            for (Octree node : nodes) {
+                count += node.countEntities();
+            }
+        }
+        return count;
     }
 
     public Vector3f getCenter() {

@@ -7,6 +7,7 @@ import de.thriemer.disguisedphoenix.terrain.generator.WorldGenerator;
 import de.thriemer.engine.input.InputManager;
 import de.thriemer.engine.input.KeyboardInputMap;
 import de.thriemer.engine.input.MouseInputMap;
+import de.thriemer.engine.time.CPUTimerQuery;
 import de.thriemer.engine.time.TimerQuery;
 import de.thriemer.engine.time.Zeitgeist;
 import de.thriemer.engine.util.ModelConfig;
@@ -51,7 +52,7 @@ public class Main {
     public static int inViewObjects = 0;
     public static int drawCalls = 0;
     public static int facesDrawn = 0;
-    public static float radius = 1000;
+    public static float radius = 10000;
     //TODO: develop a good distance function to decide when a entity should be renderd and have a shadow
     //get models on itch and cgtrader
 
@@ -101,6 +102,7 @@ public class Main {
         // input.hideMouseCursor();
         float switchCameraTimer = 0f;
         float captureMouseTimer = 0f;
+        CPUTimerQuery mainThread = new CPUTimerQuery("Main Thread");
         try {
             while (!display.shouldClose() && !input.isKeyDown(GLFW_KEY_ESCAPE)) {
                 long startFrame = System.currentTimeMillis();
@@ -119,7 +121,7 @@ public class Main {
                 }
                 if (input.isKeyDown(GLFW_KEY_C) && switchCameraTimer < 0) {
                     freeFlightCamActivated = !freeFlightCamActivated;
-                    switchCameraTimer = 0.25f;
+                    OpenGLState.enableWireframe();
                 }
                 if (input.isKeyDown(GLFW_KEY_T)) {
                     TimerQuery.resetAll();
@@ -132,11 +134,13 @@ public class Main {
                 world.updatePlayerPos(masterRenderer.getCameraInformation(), worldGenerator);
                 Matrix4f viewMatrix = ffc.getViewMatrix();
                 input.updateInputMaps();
-                masterRenderer.render(player, ffc, display, viewMatrix, ffc.getPosition(), time, world, lightPos, lightColor);
+                mainThread.startQuery();
+                masterRenderer.render(freeFlightCamActivated,player, ffc, display, viewMatrix, ffc.getPosition(), time, world, lightPos, lightColor);
+                mainThread.stopQuery();
                 screenShot(input, display);
                 display.clear();
                 avgFPS += zeitgeist.getFPS();
-                display.setFrameTitle("Disguised Phoenix: " + " FPS: " + zeitgeist.getFPS() + ", In frustum objects: " + inViewObjects + ", drawcalls: " + drawCalls + " faces: " + df.format(facesDrawn));
+                display.setFrameTitle("Disguised Phoenix: " + " FPS: " + zeitgeist.getFPS() + ", In frustum objects: " + inViewObjects + ", drawcalls: " + drawCalls + " faces: " + df.format(facesDrawn)+" "+flightCamera.getPosition());
                 inViewObjects = 0;
                 inViewVerticies = 0;
                 facesDrawn = 0;
@@ -163,6 +167,7 @@ public class Main {
         for (Map.Entry e : octreeMap.entrySet()) {
             System.out.println(e.getKey() + ":" + e.getValue());
         }
+        System.out.println("Entities in Scene: "+world.getStaticEntities().countEntities());
         worldGenerator.save();
         world.shutdown();
     }

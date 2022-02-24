@@ -1,6 +1,7 @@
-package de.thriemer.disguisedphoenix.terrain.generator;
+package de.thriemer.disguisedphoenix.terrain.generator.biomes;
 
 import com.google.gson.Gson;
+import de.thriemer.disguisedphoenix.terrain.generator.WorldGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -68,7 +69,7 @@ public class BiomeManager {
 //TODO: generalize biome classification, remove duplication
     public Vector3f getColor(float temperature, float humidity) {
         List<BiomeInformation> info = new ArrayList<>(Arrays.stream(biomes).toList());
-        Vector2f samplePoint = new Vector2f((temperature-WorldGenerator.minTemp)/(WorldGenerator.maxTemp-WorldGenerator.minTemp),
+        Vector2f samplePoint = new Vector2f((temperature- WorldGenerator.minTemp)/(WorldGenerator.maxTemp-WorldGenerator.minTemp),
                 humidity/REFERENCE_HUMIDITY);
         info.sort((b1, b2) -> Float.compare(b2.getBiomeDistance(samplePoint), b1.getBiomeDistance(samplePoint)));
         Vector3f color = new Vector3f(0);
@@ -97,7 +98,7 @@ public class BiomeManager {
     }
 
 
-    String[] getModels(float temperature, float humidity){
+    public String[] getModels(float temperature, float humidity){
         List<BiomeInformation> info = new ArrayList<>(Arrays.stream(biomes).toList());
         Vector2f samplePoint = new Vector2f((temperature-WorldGenerator.minTemp)/(WorldGenerator.maxTemp-WorldGenerator.minTemp),
                 humidity/REFERENCE_HUMIDITY);

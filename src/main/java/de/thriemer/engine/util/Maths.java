@@ -62,10 +62,9 @@ public class Maths {
 
     private static final float NEEDED_SIZE_PER_LENGTH_UNIT = 0.000025f;
 
-    public static boolean couldBeVisible(Entity e, Vector3f cameraPos) {
-        float size = e.getRadius();
-        float distance = e.getPosition().distanceSquared(cameraPos);
-        return size > distance * NEEDED_SIZE_PER_LENGTH_UNIT;
+    public static boolean couldBeVisible(Vector3f position, float radius, Vector3f cameraPos) {
+        float distance = position.distanceSquared(cameraPos);
+        return radius > distance * NEEDED_SIZE_PER_LENGTH_UNIT;
     }
 
 

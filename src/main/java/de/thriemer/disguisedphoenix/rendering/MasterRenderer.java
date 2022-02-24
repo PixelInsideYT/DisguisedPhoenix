@@ -87,11 +87,13 @@ public class MasterRenderer {
 
     //TODO: deferred rendering with heck ton of lights
 
-    public void render(Player player, Camera camera, Display display, Matrix4f viewMatrix, Vector3f camPos, float time, World world, Vector3f lightPos, Vector3f lightColor) {
+    public void render(boolean wireframe,Player player, Camera camera, Display display, Matrix4f viewMatrix, Vector3f camPos, float time, World world, Vector3f lightPos, Vector3f lightColor) {
+       if(wireframe)
+           OpenGLState.enableWireframe();
         cameraInformation.updateCameraMatrix(viewMatrix);
         entityCollectionTimer.startQuery();
         Map<Vao, Map<RenderInfo, List<Matrix4f>>> vaoSortedEntries = new HashMap<>();
-        world.consumeVisibleEntities(cameraInformation.getProjViewMatrix(), e -> Maths.couldBeVisible(e, camPos), e -> consumeRenderEntity(e, vaoSortedEntries));
+        world.consumeVisibleEntities(cameraInformation.getProjViewMatrix(), (v,f) -> Maths.couldBeVisible(v,f, camPos), e -> consumeRenderEntity(e, vaoSortedEntries));
         entityCollectionTimer.stopQuery();
         vertexTimer.startQuery();
         OpenGLState.enableBackFaceCulling();
@@ -102,7 +104,7 @@ public class MasterRenderer {
         gBuffer.clear();
         renderer.begin(cameraInformation);
         Matrix4f unitMatrix = new Matrix4f();
-        for (Model model : world.getVisibleTerrains()) {
+        for (Model model : world.getVisibleTerrains(cameraInformation.getProjViewMatrix())) {
             renderer.render(model, unitMatrix);
         }
         renderer.render(player.getModel(), player.getTransformationMatrix());
@@ -114,6 +116,7 @@ public class MasterRenderer {
         vegetationRenderer.render(time, cameraInformation);
         hizGen.generateHiZMipMap(gBuffer);
         vertexTimer.stopQuery();
+        OpenGLState.disableWireframe();
         shadowRenderer.render(gBuffer, cameraInformation, time, lightPos, world, multiIndirectRenderer);
         OpenGLState.enableAlphaBlending();
         OpenGLState.disableDepthTest();

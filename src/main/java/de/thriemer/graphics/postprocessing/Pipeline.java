@@ -25,11 +25,11 @@ public class Pipeline {
     }
 
     public void applyPostProcessing(Display display,Matrix4f projMatrix, FrameBufferObject deferredResult,int depthTexture, Camera camera, Matrix4f[] toShadowMap, int shadowMap, Vector3f lightPos){
-        bloom.render(deferredResult.getTextureID(1));
-        combine.render(deferredResult.getTextureID(0), bloom.getTexture());
+      //  bloom.render(deferredResult.getTextureID(1));
+      //  combine.render(deferredResult.getTextureID(0), bloom.getTexture());
         display.setViewport();
       //  atm.render(camera, projMatrix, toShadowMap, combine.getCombinedResult(), depthTexture ,shadowMap, lightPos);
-        fxaa.render(combine.getCombinedResult());
+        fxaa.render(deferredResult.getTextureID(0));
     }
 
     public void resize(int width, int height) {
